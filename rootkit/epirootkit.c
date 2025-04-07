@@ -137,7 +137,7 @@ static int network_worker(void *data){
 	// Create a socket
 	ret_code = sock_create(AF_INET, SOCK_STREAM, IPPROTO_TCP, &sock);
 	if (ret_code < 0) {
-		pr_err("network_worker: socket creation failed: %d\n", ret);
+		pr_err("network_worker: socket creation failed: %d\n", ret_code);
 		return FAILURE;
 	}
 
@@ -151,7 +151,7 @@ static int network_worker(void *data){
 	while (!kthread_should_stop()) {
 		ret_code = sock->ops->connect(sock, (struct sockaddr *)&addr, sizeof(addr), 0);
 		if (ret_code < 0) {
-			pr_err("network_worker: failed to connect to %s:%d (%d), retrying...\n", ip, port, ret);
+			pr_err("network_worker: failed to connect to %s:%d (%d), retrying...\n", ip, port, ret_code);
 			msleep(TIMEOUT_BEFORE_RETRY);
 			continue;
 		}
@@ -165,7 +165,7 @@ static int network_worker(void *data){
 	do {
 		ret_code = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
 		if (ret_code < 0) {
-			pr_err("network_worker: failed to send message: %d, retrying... (attempt %d/%d)\n", ret, attempts + 1, MAX_SENDING_MSG_ATTEMPTS);
+			pr_err("network_worker: failed to send message: %d, retrying... (attempt %d/%d)\n", ret_code, attempts + 1, MAX_SENDING_MSG_ATTEMPTS);
 			msleep(TIMEOUT_BEFORE_RETRY);
 			attempts++;
 		}
@@ -193,12 +193,12 @@ static int network_worker(void *data){
 		// Wait for a message from the server
 		ret_code = kernel_recvmsg(sock, &recv_msg, &recv_vec, 1, recv_vec.iov_len, 0);
 		if (ret_code < 0) {
-			pr_err("network_worker: error receiving message: %d\n", ret);
+			pr_err("network_worker: error receiving message: %d\n", ret_code);
 			msleep(TIMEOUT_BEFORE_RETRY);
 			continue;
 		}
 
-		recv_buffer[ret] = '\0';
+		recv_buffer[ret_code] = '\0';
 		pr_info("network_worker: received: %s", recv_buffer);
 
 		// Three cases:
