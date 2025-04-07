@@ -86,6 +86,13 @@ enum text_level {
 	CRIT,
 };
 
+/**
+ * @brief Prints the content of a file to the kernel log.
+ *
+ * @param filename The name of the file to read.
+ * @param level The log level to use for printing (INFO, WARN, ERR, CRIT).
+ * @return int - Returns SUCCESS on success, or an error code on failure.
+ */
 static int print_file_content(char *filename, enum text_level level)
 {
 	struct file *file = NULL;
