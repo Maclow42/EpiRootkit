@@ -12,7 +12,7 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 echo "============================================="
-echo "         Starting Host Cleanup"
+echo "            Starting Host Cleanup            "
 echo "============================================="
 
 # Remove TAP interfaces tap0 and tap1.
@@ -54,5 +54,5 @@ else
 fi
 
 echo "============================================="
-echo "         Cleanup Completed"
+echo "              Cleanup Completed              "
 echo "============================================="
