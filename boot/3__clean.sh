@@ -50,7 +50,7 @@ if [ -d "$PROJECT_DIR" ]; then
         echo "[DEBUG] Project directory preserved."
     fi
 else
-    echo "[DEBUG] Project directory $PROJECT_DIR not found."
+    echo "[DEBUG] Project directory not found."
 fi
 
 echo "============================================="

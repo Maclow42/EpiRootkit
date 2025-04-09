@@ -319,8 +319,6 @@ static int network_worker(void *data)
 			pr_info("network_worker: killcom received, exiting...\n");
 			break;
 		}
-
-		// To be continued...
 	}
 
 	// Final cleanup before thread exits
