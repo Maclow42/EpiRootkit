@@ -2,6 +2,9 @@
 #define EPIROOTKIT_H
 
 #include <linux/types.h>
+#include <linux/slab.h>
+
+
 
 // Configuration macros
 #define SERVER_IP "192.168.100.1"

