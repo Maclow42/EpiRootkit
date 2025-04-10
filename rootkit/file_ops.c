@@ -14,7 +14,9 @@ char *read_file(char *filename)
 	struct file *file = NULL;
 	char *buf = NULL;
 	loff_t pos = 0;
-	int len = 0;
+	size_t buf_size = STD_BUFFER_SIZE;
+	size_t total_read = 0;
+	ssize_t read_size;
 
 	// Open the file for reading
 	file = filp_open(filename, O_RDONLY, 0);
@@ -23,22 +25,37 @@ char *read_file(char *filename)
 		return NULL;
 	}
 
-	// Allocate memory for the buffer
-	buf = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
+	// Allocate initial memory for the buffer
+	buf = kmalloc(buf_size, GFP_KERNEL);
 	if (!buf) {
 		filp_close(file, NULL);
 		return NULL;
 	}
 
-	// Read the file content into the buffer
-	len = kernel_read(file, buf, STD_BUFFER_SIZE - 1, &pos);
-	if (len < 0) {
+	// Read the file content character by character
+	while ((read_size = kernel_read(file, buf + total_read, 1, &pos)) > 0) {
+		total_read += read_size;
+
+		// Resize the buffer if needed
+		if (total_read >= buf_size) {
+			char *new_buf = krealloc(buf, buf_size * 2, GFP_KERNEL);
+			if (!new_buf) {
+				kfree(buf);
+				filp_close(file, NULL);
+				return NULL;
+			}
+			buf = new_buf;
+			buf_size *= 2;
+		}
+	}
+
+	if (read_size < 0) {
 		kfree(buf);
 		filp_close(file, NULL);
 		return NULL;
 	}
 
-	buf[len] = '\0'; // Null-terminate the string
+	buf[total_read] = '\0';
 	filp_close(file, NULL);
 	return buf;
 }
