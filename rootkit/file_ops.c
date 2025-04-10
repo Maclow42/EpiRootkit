@@ -21,7 +21,7 @@ char *read_file(char *filename)
 	// Open the file for reading
 	file = filp_open(filename, O_RDONLY, 0);
 	if (IS_ERR(file)) {
-		pr_err("epirootkit: read_file: failed to open file %s\n", filename);
+		pr_err("read_file: failed to open file %s\n", filename);
 		return NULL;
 	}
 
@@ -69,7 +69,7 @@ char *read_file(char *filename)
 void print_file(char *content, enum text_level level)
 {
 	if (!content) {
-		pr_err("epirootkit: print_file: content is NULL\n");
+		pr_err("print_file: content is NULL\n");
 		return;
 	}
 
