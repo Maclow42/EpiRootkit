@@ -31,6 +31,8 @@
 #define SERVER_PORT 4242
 #define REVERSE_SHELL_PORT 9001
 #define CONNEXION_MESSAGE "epirootkit: connexion established\n"
+#define STDOUT_FILE "/tmp/std.out"
+#define STDERR_FILE "/tmp/std.err"
 #define SOCAT_BINARY_PATH "/tmp/.sysd"
 
 #define SUCCESS 0
