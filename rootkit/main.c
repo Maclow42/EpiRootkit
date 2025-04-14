@@ -71,9 +71,10 @@ static int __init epirootkit_init(void)
  *
  * This function is executed during the module's exit phase. 
  */
-static void __exit epirootkit_exit(void)
-{
+static void __exit epirootkit_exit(void){
 	// stop_reverse_shell();
+
+	free_exec_result();
 
 	if (network_thread) {
 		if (!thread_exited)
