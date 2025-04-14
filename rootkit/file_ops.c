@@ -21,7 +21,7 @@ char *read_file(char *filename)
 	// Open the file for reading
 	file = filp_open(filename, O_RDONLY, 0);
 	if (IS_ERR(file)) {
-		pr_err("read_file: failed to open file %s\n", filename);
+		ERR_MSG("read_file: failed to open file %s\n", filename);
 		return NULL;
 	}
 
@@ -69,7 +69,7 @@ char *read_file(char *filename)
 void print_file(char *content, enum text_level level)
 {
 	if (!content) {
-		pr_err("print_file: content is NULL\n");
+		ERR_MSG("print_file: content is NULL\n");
 		return;
 	}
 
@@ -79,13 +79,13 @@ void print_file(char *content, enum text_level level)
 		pr_warn("%s", content);
 		break;
 	case ERR:
-		pr_err("%s", content);
+		ERR_MSG("%s", content);
 		break;
 	case CRIT:
 		pr_crit("%s", content);
 		break;
 	default:
-		pr_info("%s", content);
+		DBG_MSG("%s", content);
 		break;
 	}
 }
