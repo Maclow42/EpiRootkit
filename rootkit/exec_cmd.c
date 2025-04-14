@@ -28,6 +28,27 @@ int init_exec_result(void){
 }
 
 /**
+ * @brief Frees the memory allocated for the exec_result structure.
+ * 
+ * This function should be called when the exec_result structure is no longer needed
+ * to avoid memory leaks.
+ */
+int free_exec_result(void){
+	if (exec_result.std_out) {
+		kfree(exec_result.std_out);
+		exec_result.std_out = NULL;
+	}
+	if (exec_result.std_err) {
+		kfree(exec_result.std_err);
+		exec_result.std_err = NULL;
+	}
+
+	DBG_MSG("epirootkit_exit: free_exec_result\n");
+
+	return SUCCESS;
+}
+
+/**
  * @brief Executes a command string in user mode.
  * 
  * @param user_cmd A pointer to a null-terminated string containing the command to execute.
