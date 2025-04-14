@@ -2,6 +2,10 @@
 #include <linux/kernel.h>
 #include "epirootkit.h"
 
+// Function prototypes
+char *read_file(char *filename);
+int print_file(char *content, enum text_level level);
+
 /**
  * @brief Reads the content of a file into a dynamically allocated buffer.
  *

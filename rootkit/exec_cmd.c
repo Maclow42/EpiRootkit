@@ -5,6 +5,11 @@
 
 struct exec_code_stds exec_result;
 
+// Function prototypes
+int init_exec_result(void);
+int free_exec_result(void);
+int exec_str_as_command(char *user_cmd);
+
 /**
  * @brief Initializes the exec_result structure.
  * 

