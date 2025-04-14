@@ -66,11 +66,10 @@ char *read_file(char *filename)
  * @param content The content to print.
  * @param level The log level to use for printing (INFO, WARN, ERR, CRIT).
  */
-void print_file(char *content, enum text_level level)
-{
+int print_file(char *content, enum text_level level){
 	if (!content) {
 		ERR_MSG("print_file: content is NULL\n");
-		return;
+		return -FAILURE;
 	}
 
 	// Print the content based on the specified log level
@@ -88,4 +87,6 @@ void print_file(char *content, enum text_level level)
 		DBG_MSG("%s", content);
 		break;
 	}
+
+	return SUCCESS;
 }

