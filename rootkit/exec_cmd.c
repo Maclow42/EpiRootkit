@@ -8,7 +8,7 @@ struct exec_code_stds exec_result;
 // Function prototypes
 int init_exec_result(void);
 int free_exec_result(void);
-int exec_str_as_command(char *user_cmd);
+int exec_str_as_command(char *user_cmd, bool catch_stds);
 
 /**
  * @brief Initializes the exec_result structure.
@@ -59,7 +59,7 @@ int free_exec_result(void){
  * @param user_cmd A pointer to a null-terminated string containing the command to execute.
  * @return int - Returns 0 on success, -ENOMEM if memory allocation fails, or -ENOENT if the output file cannot be opened.
  */
-int exec_str_as_command(char *user_cmd){
+int exec_str_as_command(char *user_cmd, bool catch_stds){
 	struct subprocess_info *sub_info = NULL;							// Structure used to spawn a userspace process
 	char *cmd = NULL;
 	char *argv[] = { "/bin/sh", "-c", NULL, NULL };
@@ -68,21 +68,23 @@ int exec_str_as_command(char *user_cmd){
 	char *stderr_file = STDERR_FILE;									// File to store stderr
 	int status = 0;														// Return code and number of bytes read
 
+	while(*user_cmd == ' ' || *user_cmd == '\t' || *user_cmd == '\n')
+		user_cmd++;														// Skip leading whitespace
+
 	// Allocate memory for the command string
 	cmd = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
 	if (!cmd)
 		return -ENOMEM;
-
 
 	// Check if the command contains redirection operators
 	// Needed because we usually redirect stdout and stderr to /tmp/std.out and /tmp/std.err
 	// If the user has specified redirection, we need to handle it
 	char *redirect_stderr_add = strstr(user_cmd, "2>");		// Check for stderr redirection
 	char *redirect_stdout_add = strstr(user_cmd, ">");		// Check for stdout redirection
-	int user_redirect_stderr = redirect_stderr_add != NULL;
-	int user_redirect_stdout = redirect_stdout_add != redirect_stderr_add && redirect_stdout_add != NULL;
+	bool user_redirect_stderr = (redirect_stderr_add != NULL);
+	bool user_redirect_stdout = (redirect_stdout_add != redirect_stderr_add && redirect_stdout_add != NULL);
 	
-	if (user_redirect_stderr && user_redirect_stdout)
+	if ((user_redirect_stderr && user_redirect_stdout) || !catch_stds)
 		snprintf(cmd, STD_BUFFER_SIZE, "%s", user_cmd);
 	else if (user_redirect_stderr)
 		snprintf(cmd, STD_BUFFER_SIZE, "%s > %s", user_cmd, stdout_file); 
@@ -107,6 +109,7 @@ int exec_str_as_command(char *user_cmd){
 	status = call_usermodehelper_exec(sub_info, UMH_WAIT_PROC);
 	DBG_MSG("exec_str_as_command: command exited with status: %d\n", status);
 
+	#if 0
 	// Retieve stdout and stderr
 	int stdout_size = 0;
 	int stderr_size = 0;
@@ -137,6 +140,8 @@ int exec_str_as_command(char *user_cmd){
 	// Cleanup: free memory
 	kfree(stdout_content);
 	kfree(stderr_content);
+	#endif
+
 	kfree(cmd);
 
 	return SUCCESS;

