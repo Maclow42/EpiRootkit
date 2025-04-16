@@ -11,5 +11,5 @@
 *.cmd
 *.order
 *.symvers
-*.mod
+*.mod*
 *.ko
