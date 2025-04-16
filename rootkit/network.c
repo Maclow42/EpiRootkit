@@ -272,8 +272,10 @@ int network_worker(void *data)
 		recv_buffer = NULL;
 	}
 
+	if(restart_on_error)
+		network_worker(data);
+
 	// Final cleanup before thread exits
-	DBG_MSG("network_worker: thread ends.\n");
 	thread_exited = true;
 	close_socket();
 

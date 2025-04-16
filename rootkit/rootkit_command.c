@@ -167,6 +167,7 @@ int shellon_handler(char *args) {
 
 int killcom_handler(char *args) {
 	DBG_MSG("killcom_handler: killcom received, exiting...\n");
+	restart_on_error = false;
 	thread_exited = true;
 	return 0;
 }

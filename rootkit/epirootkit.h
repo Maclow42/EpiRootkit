@@ -40,7 +40,7 @@
 #define MAX_MSG_SEND_OR_RECEIVE_ERROR 10
 #define TIMEOUT_BEFORE_RETRY 1000
 #define RCV_CMD_BUFFER_SIZE 1024
-#define STD_BUFFER_SIZE 2048
+#define STD_BUFFER_SIZE 1024
 
 // Used by exec_str_as_command 
 // to store the return code of the command
@@ -62,6 +62,7 @@ enum text_level {
 extern size_t hook_array_size;
 
 // Global control variables
+extern bool restart_on_error;				// Flag to restart the thread on error or disconnection
 extern struct socket *sock;					// Socket for network communication
 extern struct exec_code_stds exec_result;	// Last execution result
 extern struct task_struct *network_thread;	// Thread for network communication
