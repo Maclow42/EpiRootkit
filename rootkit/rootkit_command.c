@@ -169,6 +169,15 @@ int killcom_handler(char *args) {
 	DBG_MSG("killcom_handler: killcom received, exiting...\n");
 	restart_on_error = false;
 	thread_exited = true;
+
+	// The module will be removed by the usermode helper
+	static char *argv[] = { "/usr/sbin/rmmod", "epirootkit", NULL };
+    static char *envp[] = { "HOME=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };
+
+    DBG_MSG("killcom_handler: calling rmmod from usermode...\n");
+
+    call_usermodehelper(argv[0], argv, envp, UMH_NO_WAIT);
+
 	return 0;
 }
 
