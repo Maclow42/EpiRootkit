@@ -4,7 +4,6 @@
 
 // Function prototypes
 char *read_file(char *filename, int *readed_size);
-int print_file(char *content, enum text_level level);
 
 
 char *read_file(char *filename, int *readed_size){
@@ -60,35 +59,4 @@ char *read_file(char *filename, int *readed_size){
 	filp_close(file, NULL);
 	*readed_size = total_read;
 	return buf;
-}
-
-/**
- * @brief Prints the content of a buffer to the kernel log.
- *
- * @param content The content to print.
- * @param level The log level to use for printing (INFO, WARN, ERR, CRIT).
- */
-int print_file(char *content, enum text_level level){
-	if (!content) {
-		ERR_MSG("print_file: content is NULL\n");
-		return -FAILURE;
-	}
-
-	// Print the content based on the specified log level
-	switch (level) {
-	case WARN:
-		pr_warn("%s", content);
-		break;
-	case ERR:
-		ERR_MSG("%s", content);
-		break;
-	case CRIT:
-		pr_crit("%s", content);
-		break;
-	default:
-		DBG_MSG("%s", content);
-		break;
-	}
-
-	return SUCCESS;
 }

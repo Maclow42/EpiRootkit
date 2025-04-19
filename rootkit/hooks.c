@@ -4,6 +4,19 @@
 
 #include "epirootkit.h"
 
+// Directory entry structure as 'returned' (by pointer) by getdents64 syscall
+// Used to read a directory content
+// If I do not define it here, I have a compilation error... does not seem to be included in linux headers
+// (tried dirent.h, with no success)
+// (at least not in the ones I have on my system LOL)
+struct linux_dirent64 { 
+    u64 d_ino;
+    s64 d_off;
+    unsigned short d_reclen;
+    unsigned char d_type;
+    char d_name[];
+};
+
 // Structure to hold hidden directory names
 // Linux linked List implementation
 struct hidden_dir_entry {
