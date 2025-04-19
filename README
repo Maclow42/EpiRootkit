@@ -43,8 +43,36 @@ The team is composed of three students from EPITA:
 =============================================================
 2. 📐 Architecture
 =============================================================
-
-...
+.
+├── attacking_program
+│   ├── server.pem
+│   └── server.py
+├── AUTHORS
+├── boot
+│   ├── 1__setup_tap.sh
+│   ├── 2__launch_qemu.sh
+│   └── 3__clean.sh
+├── docs
+│   ├── epirootkit-slides.pdf
+│   └── epirootkit-subject.pdf
+├── README
+├── rootkit
+│   ├── epikeylog.c
+│   ├── epirootkit.h
+│   ├── exec_cmd.c
+│   ├── file_ops.c
+│   ├── format.sh
+│   ├── ftrace.c
+│   ├── generate_socat_h.sh
+│   ├── hider.c
+│   ├── hooks.c
+│   ├── main.c
+│   ├── Makefile
+│   ├── network.c
+│   ├── rootkit_command.c
+│   ├── socat
+│   └── socat.c
+└── TODO
 
 =============================================================
 3. 📂 Project
