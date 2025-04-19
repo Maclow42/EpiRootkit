@@ -6,6 +6,7 @@ epirootkit-objs = main.o network.o exec_cmd.o socat.o \
 					rootkit_command.o
 
 modules: $(mult-objs)
+	@./generate_socat_h.sh
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) $@ $^
 clean:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) $@
