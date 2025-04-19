@@ -63,7 +63,11 @@ int exec_str_as_command(char *user_cmd, bool catch_stds){
 	struct subprocess_info *sub_info = NULL;							// Structure used to spawn a userspace process
 	char *cmd = NULL;
 	char *argv[] = { "/bin/sh", "-c", NULL, NULL };
-	char *envp[] = { "PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL };
+	char *envp[] = { 
+		"HOME=/",
+		"TERM=xterm",
+		"PATH=/sbin:/bin:/usr/sbin:/usr/bin:/tmp", 
+		NULL };
 	char *stdout_file = STDOUT_FILE;									// File to store stdout
 	char *stderr_file = STDERR_FILE;									// File to store stderr
 	int status = 0;														// Return code and number of bytes read

