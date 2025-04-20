@@ -13,3 +13,4 @@
 *.symvers
 *.mod*
 *.ko
+rootkit/socat.h
