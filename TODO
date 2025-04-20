@@ -9,14 +9,31 @@ each task!
 -------------------------------------------------------------
 1. 📝 General Tasks
 -------------------------------------------------------------
-- [✅] ...
-- [❌] ...
+- [✅] Compile: 0.5 point  
+- [✅] Connection: 3 points  
+- [❌] Persistence: 1.5 points							(yols) 
+- [✅] Executing commands: 5 points  
+- [❌] Password: 1 point  								(maclow)
+- [❌] Upload: 1.5 points  								(evann)
+- [❌] Download: 1.5 points 								(evann)
+- [✅] Hide the rootkit from the module list: 1 point  
+- [❌] Hide a line from a file in userland: 2 points 	(evann)
+- [✅] Hide a directory / files from userland: 2 points  
+- [❌] Cipher the data on the network: 1 point  			(maclow)
+
 
 -------------------------------------------------------------
-2. 📝 Others
+2. 📝 Bonus
 -------------------------------------------------------------
-- [✅] ...
-- [❌] ...
+- [✅] Reverse shell
+- [✅] Keylogger
+- [❌] Communication using DNS requests					(evann)
+- [❌] Hide network activity								(evann)
+- [❌] Autopropagation
+- [❌] Anti-VM || Anti-Debugging
+- [❌] Auto-update rootkit								(maclow)
+
+
 
 =============================================================
                          END OF TODO
