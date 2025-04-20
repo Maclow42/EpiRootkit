@@ -14,8 +14,8 @@ each task!
 - [❌] Persistence: 1.5 points							(yols) 
 - [✅] Executing commands: 5 points  
 - [✅] Password: 1 point
-- [❌] Upload: 1.5 points  								(evann+yols)
-- [❌] Download: 1.5 points 								(evann+yols)
+- [❌] Upload: 1.5 points  								(yols)
+- [❌] Download: 1.5 points 								(yols)
 - [✅] Hide the rootkit from the module list: 1 point  
 - [❌] Hide a line from a file in userland: 2 points 	(evann)
 - [✅] Hide a directory / files from userland: 2 points  
