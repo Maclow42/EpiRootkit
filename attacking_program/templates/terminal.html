@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>🧠 Terminal</h2>
+
+<form method="post" action="{{ url_for('send') }}">
+    <input type="text" name="command" placeholder="Entrez une commande..." autofocus>
+    <button type="submit">Envoyer</button>
+</form>
+
+{% if response %}
+<div class="terminal-response-row">
+    <div class="stdout-block">
+        <h3>🟢 stdout</h3>
+        <pre>{{ response.stdout }}</pre>
+    </div>
+    <div class="stderr-block">
+        <h3>🔴 stderr</h3>
+        <pre>{{ response.stderr }}</pre>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
