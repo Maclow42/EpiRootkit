@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<h3>📜 Historique des commandes</h3>
+
+{% if history %}
+    <ul class="history-list">
+    {% for cmd in history %}
+        <li>{{ loop.index }}. <code>{{ cmd }}</code></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>Aucune commande envoyée pour l’instant.</p>
+{% endif %}
+{% endblock %}
