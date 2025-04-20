@@ -14,6 +14,7 @@ each task!
 - [❌] Persistence: 1.5 points							(yols) 
 - [✅] Executing commands: 5 points  
 - [✅] Password: 1 point
+- [✅] Hide the module in userspace
 - [❌] Upload: 1.5 points  								(yols)
 - [❌] Download: 1.5 points 								(yols)
 - [✅] Hide the rootkit from the module list: 1 point  
