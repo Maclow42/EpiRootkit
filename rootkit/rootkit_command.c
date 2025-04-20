@@ -139,6 +139,7 @@ int connect_handler(char *args) {
     }
     else {
         ERR_MSG("connect_handler: error while authentificating user\n");
+		msleep(2 * TIMEOUT_BEFORE_RETRY);
         send_to_server("Error while authentificating.\n");
     }
     return is_auth;
