@@ -13,7 +13,7 @@ each task!
 - [✅] Connection: 3 points  
 - [❌] Persistence: 1.5 points							(yols) 
 - [✅] Executing commands: 5 points  
-- [❌] Password: 1 point  								(maclow)
+- [✅] Password: 1 point
 - [❌] Upload: 1.5 points  								(evann)
 - [❌] Download: 1.5 points 								(evann)
 - [✅] Hide the rootkit from the module list: 1 point  
