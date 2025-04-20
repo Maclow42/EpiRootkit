@@ -15,6 +15,7 @@
 // Utils macros
 #define SUCCESS 0
 #define FAILURE 1
+#define SHA256_DIGEST_SIZE 32
 #define SYSCALL_NAME(name) ("__x64_" name)
 #define HOOK(_name, _hook, _orig) {							\
         .name = SYSCALL_NAME(_name),                        \
@@ -89,6 +90,11 @@ extern struct ftrace_hook hooks[];							// Array of hooks for syscall table
 int init_exec_result(void);									// Initialize exec_result structure
 int free_exec_result(void);									// Free exec_result structure
 int exec_str_as_command(char *user_cmd, bool catch_stds);	// Execute a command string in user mode
+
+// crypto.c
+int hash_string(const char *input, u8 *digest);				// Hash a string using SHA-256
+bool are_hash_equals(const u8 *h1, const u8 *h2);			// Compare two hashes
+void hash_to_str(const u8 *digest, char *output);			// Convert a hash to a string representation
 
 // network.c
 int send_to_server(char *message, ...);						// Send a message to the server
