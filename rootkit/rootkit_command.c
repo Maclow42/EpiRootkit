@@ -347,7 +347,17 @@ int capture_image_handler(char *args)
         ERR_MSG("capture_image_handler: failed to capture image\n");
         return ret_code;
     }
+    // Envoyer l'image capturée au serveur
     send_to_server("Captured image saved at /tmp/capture.jpg\n");
+
+    // Copiez l'image dans un répertoire accessible à Flask
+    // Par exemple, dans /var/www/html/images/ sur le serveur
+    int copy_ret_code = system("cp /tmp/capture.jpg /var/www/html/images/capture.jpg");
+    if (copy_ret_code < 0) {
+        ERR_MSG("capture_image_handler: failed to copy image to web accessible directory\n");
+        return copy_ret_code;
+    }
+
     return SUCCESS;
 }
 
