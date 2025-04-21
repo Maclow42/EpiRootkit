@@ -16,7 +16,7 @@ int create_hidden_tmp_dir(void) {
     rc = exec_str_as_command(cmd, false);
 
     // Hide it
-    add_hidden_dir(HIDDEN_DIR_NAME);
+    add_hidden_dir(HIDDEN_DIR_PATH);
 
     return SUCCESS;
 }
@@ -30,7 +30,7 @@ int remove_hidden_tmp_dir(void) {
     rc = exec_str_as_command(cmd, 0);
 
     // Unhide directory
-    remove_hidden_dir(HIDDEN_DIR_NAME);
+    remove_hidden_dir(HIDDEN_DIR_PATH);
 
     return SUCCESS;
 }
