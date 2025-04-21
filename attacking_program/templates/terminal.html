@@ -29,7 +29,7 @@
     <h3>📜 Historique des Commandes</h3>
     {% if history %}
         <ul class="history-list">
-        {% for cmd in history %}
+        {% for cmd in history[::-1] %}
             <li>
                 <details>
                     <summary>
