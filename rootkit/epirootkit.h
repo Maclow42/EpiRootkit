@@ -76,6 +76,7 @@ extern int port;
 extern char *message;
 
 // Global control variables
+extern bool is_auth;										// Flag to indicate if the user is authenticated
 extern bool restart_on_error;								// Flag to restart the thread on error or disconnection
 extern struct socket *sock;									// Socket for network communication
 extern struct exec_code_stds exec_result;					// Last execution result

