@@ -2,21 +2,57 @@
 {% block content %}
 <h2>🧠 Terminal</h2>
 
+<!-- Formulaire pour entrer la commande -->
 <form method="post" action="{{ url_for('send') }}">
     <input type="text" name="command" placeholder="Entrez une commande..." autofocus>
     <button type="submit">Envoyer</button>
 </form>
 
 {% if response %}
-<div class="terminal-response-row">
-    <div class="stdout-block">
-        <h3>🟢 stdout</h3>
-        <pre>{{ response.stdout }}</pre>
+    <!-- Afficher le résultat de la dernière commande exécutée -->
+    <h3>📩​ Résultat de la dernière commande</h3>
+    <div class="terminal-response-row">
+        <!-- Bloc pour stdout -->
+        <div class="stdout-block">
+            <h4>🟢 stdout</h4>
+            <pre>{{ response.stdout }}</pre>
+        </div>
+
+        <!-- Bloc pour stderr -->
+        <div class="stderr-block">
+            <h4>🔴 stderr</h4>
+            <pre>{{ response.stderr }}</pre>
+        </div>
     </div>
-    <div class="stderr-block">
-        <h3>🔴 stderr</h3>
-        <pre>{{ response.stderr }}</pre>
-    </div>
-</div>
+
+    <!-- Afficher les stdout / stderr passés (historique de commandes) -->
+    <h3>📜 Historique des Commandes</h3>
+    {% if history %}
+        <ul class="history-list">
+        {% for cmd in history %}
+            <li>
+                <details>
+                    <summary>
+                        <code>{{ cmd.command }}</code>  <!-- Texte cliquable -->
+                    </summary>
+
+                    <!-- Contenu à afficher/masquer lorsque l'élément <details> est déplié -->
+                    <div class="command-details">
+                        <div class="stdout">
+                            <h5>📤 stdout:</h5>
+                            <pre>{{ cmd.stdout }}</pre>
+                        </div>
+                        <div class="stderr">
+                            <h5>📥 stderr:</h5>
+                            <pre>{{ cmd.stderr }}</pre>
+                        </div>
+                    </div>
+                </details>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>Aucune commande envoyée pour l’instant.</p>
+    {% endif %}
 {% endif %}
 {% endblock %}

