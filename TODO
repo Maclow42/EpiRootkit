@@ -18,15 +18,16 @@ each task!
 - [❌] Upload: 1.5 points  								(yols)
 - [❌] Download: 1.5 points 								(yols)
 - [✅] Hide the rootkit from the module list: 1 point  
-- [❌] Hide a line from a file in userland: 2 points 	(evann)
+- [✅] Hide a line from a file in userland: 2 points 	(evann) (done but need to improve ergonomy lol)
 - [✅] Hide a directory / files from userland: 2 points  
 - [❌] Cipher the data on the network: 1 point  			(maclow)
 - [❌] Documentation
-- [❌] Get a personal directory at startup to put files
+- [✅] Get a personal directory at startup to put files
+- [❌] Filtrage des logs...                              (evann)
 
 
 -------------------------------------------------------------
-2. 📝 Bonus
+2. 📝 Bonus et idees
 -------------------------------------------------------------
 - [✅] Reverse shell
 - [✅] Keylogger
@@ -35,7 +36,9 @@ each task!
 - [❌] Autopropagation
 - [❌] Anti-VM || Anti-Debugging
 - [❌] Auto-update rootkit								(maclow)
-
+- [❌] Brute-force password
+- [❌] Chiffrement du filesystem personnel du rooktit
+- 
 
 
 =============================================================

