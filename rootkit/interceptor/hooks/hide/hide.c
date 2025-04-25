@@ -11,7 +11,7 @@ asmlinkage int getdents64_hook(const struct pt_regs *regs) {
     int fd = (int)regs->di;
     struct file *dir_f;
     struct path parent_path;
-    char dirbuf[512];
+    char dirbuf[256];
     char *dirstr = NULL;
 
     dir_f = fget(fd);
