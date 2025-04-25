@@ -3,7 +3,7 @@ PWD       := $(shell pwd)
 
 ccflags-y += \
     -I$(PWD) \
-    -I$(PWD)/interceptor/core \
+    -I$(PWD)/interceptor/core/include \
     -I$(PWD)/interceptor/hooks/alterate \
     -I$(PWD)/interceptor/hooks/forbid \
     -I$(PWD)/interceptor/hooks/hide

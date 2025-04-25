@@ -8,7 +8,7 @@
 #include <linux/socket.h>
 #include <linux/string.h>
 
-#include "interceptor/core/menu.h"
+#include "interceptor/core/include/menu.h"
 #include "epirootkit.h"
 
 u8 passwd_hash[SHA256_DIGEST_SIZE] = {
