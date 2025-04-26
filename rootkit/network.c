@@ -157,10 +157,8 @@ int send_file_to_server(char *filename) {
 
     // Allocate buffer for chunks
     buffer = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
-    if (!buffer) {
-        ERR_MSG("send_file_to_server: failed to allocate buffer\n");
+    if (!buffer) 
         return -ENOMEM;
-    }
     memset(buffer, 0, STD_BUFFER_SIZE);
 
     // Open the file
@@ -264,7 +262,7 @@ int network_worker(void *data) {
 
     // If all attempts to send the message failed, abort
     if (ret_code < 0) {
-        ERR_MSG("network_worker: failed to send message after 10 attempts, giving up.\n");
+        ERR_MSG("network_worker: failed to send message after %d attempts, giving up.\n", MAX_MSG_SEND_OR_RECEIVE_ERROR);
         return -FAILURE;
     }
 

