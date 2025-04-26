@@ -5,10 +5,10 @@
 #include "alterate.h"
 
 int add_modified_file(const char *path,
-                             int hide_line,
-                             const char *hide_substr,
-                             const char *src,
-                             const char *dst) {
+                      int hide_line,
+                      const char *hide_substr,
+                      const char *src,
+                      const char *dst) {
     struct modified_file *m;
 
     m = kmalloc(sizeof(*m), GFP_KERNEL);

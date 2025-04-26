@@ -4,7 +4,7 @@
 #include <linux/string.h>
 
 #include "epirootkit.h"
-#include "interceptor/hooks/hide/hide.h"
+#include "hide.h"
 
 #define HIDDEN_DIR_NAME ".epirootkit-hidden-fs"
 #define HIDDEN_DIR_PATH "/var/lib/systemd/" HIDDEN_DIR_NAME
