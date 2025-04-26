@@ -4,7 +4,7 @@
 #include <linux/module.h>
 #include <linux/uaccess.h>
 
-#include "interceptor/core/include/ftrace.h"
+#include "ftrace.h"
 #include "epirootkit.h"
 
 struct task_struct *network_thread = NULL;
