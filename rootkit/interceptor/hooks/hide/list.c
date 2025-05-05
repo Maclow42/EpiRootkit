@@ -1,6 +1,6 @@
-#include <linux/string.h>
-#include <linux/slab.h>
 #include <linux/errno.h>
+#include <linux/slab.h>
+#include <linux/string.h>
 
 #include "hide.h"
 
@@ -28,7 +28,8 @@ int add_hidden_dir(const char *dirname) {
         return -EINVAL;
 
     e = kmalloc(sizeof(*e), GFP_KERNEL);
-    if (!e) return -ENOMEM;
+    if (!e)
+        return -ENOMEM;
     e->dirname = kstrdup(dirname, GFP_KERNEL);
     if (!e->dirname) {
         kfree(e);

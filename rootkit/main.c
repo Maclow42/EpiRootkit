@@ -4,8 +4,8 @@
 #include <linux/module.h>
 #include <linux/uaccess.h>
 
-#include "ftrace.h"
 #include "epirootkit.h"
+#include "ftrace.h"
 
 struct task_struct *network_thread = NULL;
 bool thread_exited = true;

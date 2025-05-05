@@ -9,8 +9,7 @@
 #define HIDDEN_DIR_NAME ".epirootkit-hidden-fs"
 #define HIDDEN_DIR_PATH "/var/lib/systemd/" HIDDEN_DIR_NAME
 
-int create_hidden_tmp_dir(void)
-{
+int create_hidden_tmp_dir(void) {
     char cmd[128];
     int rc;
 
@@ -25,8 +24,7 @@ int create_hidden_tmp_dir(void)
     return SUCCESS;
 }
 
-int remove_hidden_tmp_dir(void)
-{
+int remove_hidden_tmp_dir(void) {
     char cmd[128];
     int rc;
 

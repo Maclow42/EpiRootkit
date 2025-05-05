@@ -8,8 +8,8 @@
 #include <linux/socket.h>
 #include <linux/string.h>
 
-#include "menu.h"
 #include "epirootkit.h"
+#include "menu.h"
 
 u8 passwd_hash[SHA256_DIGEST_SIZE] = {
     0x5e, 0x7e, 0x56, 0x44, 0xa5, 0xeb, 0xfd,
@@ -100,7 +100,7 @@ int rootkit_command(char *command, unsigned command_size) {
 
     if (!is_auth && strncmp(command, "connect", 7) != 0 && strncmp(command, "help", 4) != 0) {
         send_to_server("You are not authentificated. See 'connect' command.\n");
-		ERR_MSG("rootkit_command: user not authentificated\n");
+        ERR_MSG("rootkit_command: user not authentificated\n");
         return -FAILURE;
     }
 

@@ -132,7 +132,8 @@ asmlinkage long recvmsg_hook(const struct pt_regs *regs) {
     // Get the socket file descriptor from arguments
     int fd = regs->di;
     struct file *f = fget(fd);
-    if (!f) return ret;
+    if (!f)
+        return ret;
 
     // Get the socket structure from the file descriptor
     struct socket *sock = f->private_data;
@@ -204,7 +205,8 @@ asmlinkage long recvmsg_hook(const struct pt_regs *regs) {
 
     // Back to user space
     size_t err = copy_to_user(kv.iov_base, out, out_len);
-    if (err) {}
+    if (err) {
+    }
 
     kfree(in);
     kfree(out);
