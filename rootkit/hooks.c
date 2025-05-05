@@ -1,15 +1,13 @@
 #include <linux/file.h>
-#include <linux/file.h>
 #include <linux/fs.h>
 #include <linux/list.h>
 #include <linux/spinlock.h>
 #include <linux/string.h>
-#include <linux/file.h>
 
 #include "epirootkit.h"
 
 // C'EST LE BORDEL, A COMMENTER, TRIER ET ORGANISER PROCHAINEMENT
-// PTET AMELIORER : 
+// PTET AMELIORER :
 //  - possibilite d'avoir plusieurs lignes caches
 //  - possibilite d'avoir plusieurs rules de replacement
 //  - possiblite d'avoir plusieurs rules de keyword a cacher
