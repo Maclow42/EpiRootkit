@@ -200,7 +200,7 @@ def send():
                     stderr_content = response[start_stderr:].strip()
 
                     last_response = {
-                        "stdout": stdout_content,
+                        "stdout": stdout_content, 
                         "stderr": stderr_content
                     }
 

