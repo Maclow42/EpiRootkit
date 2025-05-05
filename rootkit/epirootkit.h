@@ -94,7 +94,7 @@ void hash_to_str(const u8 *digest, char *output);			// Convert a hash to a strin
 
 // network.c
 int send_to_server(char *message, ...);						// Send a message to the server
-int receive_from_server(char *recv_buffer, int buffer_size);// Wait for a message from the server
+int receive_from_server(char *buffer, size_t max_len);		// Wait for a message from the server
 int send_file_to_server(char *filename);					// Send a file to the server
 int network_worker(void *data);								// Kernel thread for network communication
 int close_socket(void);										// Release the socket
