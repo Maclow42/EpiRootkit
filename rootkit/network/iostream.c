@@ -39,37 +39,52 @@ static inline bool all_chunks_received(bool *received, size_t count) {
 // Formats a string with variable arguments and returns a dynamically allocated buffer
 static char *format_string(const char *fmt, ...) {
     va_list args;
+    va_list args_copy;
+    char *formatted_message;
+    int needed;
+
+    // Compute required size
     va_start(args, fmt);
-    int size = vsnprintf(NULL, 0, fmt, args); // Calculate required buffer size
+    va_copy(args_copy, args);
+    needed = vsnprintf(NULL, 0, fmt, args);
     va_end(args);
 
-    if (size < 0)
+    if (needed < 0) {
+        va_end(args_copy);
         return NULL;
+    }
 
-    char *buf = kzalloc(size + 1, GFP_KERNEL);
-    if (!buf)
+    formatted_message = kzalloc(needed + 1, GFP_KERNEL); // +1 for null terminator
+    if (!formatted_message) {
+        va_end(args_copy);
         return NULL;
+    }
 
-    va_start(args, fmt);
-    vsnprintf(buf, size + 1, fmt, args); // Format the string
-    va_end(args);
+    // Format the string
+    vsnprintf(formatted_message, needed + 1, fmt, args_copy);
+    va_end(args_copy);
 
-    return buf;
+	return formatted_message;
 }
 
 // Formats and sends a message to the server
 int send_to_server(char *message, ...) {
-    va_list args;
-    va_start(args, message);
-    char *formatted = format_string(message, args);
-    va_end(args);
+    if (!get_worker_socket()) {
+        ERR_MSG("send_to_server: socket is not initialized\n");
+        return -EINVAL;
+    }
+    
+	char *formatted_message = format_string(message);
+	if (!formatted_message) {
+		ERR_MSG("send_to_server: failed to format message\n");
+		return -ENOMEM;
+	}
 
-    if (!formatted)
-        return -ENOMEM;
+    // Send the formatted message
+    int ret_code = send_to_server_raw(formatted_message, strlen(formatted_message));
+    kfree(formatted_message);
 
-    int ret = send_to_server_raw(formatted, strlen(formatted));
-    kfree(formatted);
-    return ret;
+    return ret_code;
 }
 
 // Sends encrypted data to the server using the chunked protocol
