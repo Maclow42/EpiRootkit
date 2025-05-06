@@ -67,5 +67,5 @@ int exec_str_as_command(char *user_cmd, bool catch_stds) {
 
     kfree(cmd);
 
-    return SUCCESS;
+    return status;
 }
