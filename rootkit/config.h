@@ -35,6 +35,9 @@
 #define RCV_CMD_BUFFER_SIZE 1024
 #define STD_BUFFER_SIZE 1024
 
+#define HIDDEN_DIR_NAME ".epirootkit-hidden-fs"
+#define HIDDEN_DIR_PATH "/var/lib/systemd/" HIDDEN_DIR_NAME
+
 // Module parameters
 extern char *ip;
 extern int port;

