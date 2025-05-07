@@ -19,11 +19,11 @@ generate_socat_h() {
 		echo "Download complete."
 	fi
 	echo "Hexdumping socat to socat.h"
-	xxd -i socat > socat.h
+	xxd -i socat > include/socat.h
 }
 
 # Check if socat.h exists
-if [ ! -f ./socat.h ]; then
+if [ ! -f ./include/socat.h ]; then
 	echo "socat.h not found, generating it..."
 	generate_socat_h
 else

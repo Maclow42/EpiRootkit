@@ -8,18 +8,19 @@ asmlinkage long (*__orig_newfstatat)(const struct pt_regs *) = NULL;
 asmlinkage long (*__orig_fstat)(const struct pt_regs *) = NULL;
 asmlinkage long (*__orig_lstat)(const struct pt_regs *) = NULL;
 asmlinkage long (*__orig_stat)(const struct pt_regs *) = NULL;
+asmlinkage long (*__orig_chdir)(const struct pt_regs *regs) = NULL;
 
 asmlinkage long openat_hook(const struct pt_regs *regs) {
     const char __user *u_path = (const char __user *)regs->si;
     if (path_is_forbidden(u_path))
-        return -EACCES;
+        return -ENOENT;
     return __orig_openat(regs);
 }
 
 asmlinkage long stat_hook(const struct pt_regs *regs) {
     const char __user *u_path = (const char __user *)regs->si;
     if (path_is_forbidden(u_path))
-        return -EACCES;
+        return -ENOENT;
 
     switch ((int)regs->orig_ax) {
     case __NR_stat:
@@ -31,6 +32,14 @@ asmlinkage long stat_hook(const struct pt_regs *regs) {
     case __NR_newfstatat:
         return __orig_newfstatat(regs);
     default:
-        return -ENOSYS;
+        return -ENOENT;
     }
+}
+
+asmlinkage long chdir_hook(const struct pt_regs *regs)
+{
+    const char __user *u_path = (const char __user *)regs->di;
+    if (path_is_forbidden(u_path))
+        return -ENOENT;
+    return __orig_chdir(regs);
 }

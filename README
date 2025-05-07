@@ -44,35 +44,54 @@ The team is composed of three students from EPITA:
 2. 📐 Architecture
 =============================================================
 .
-├── attacking_program
-│   ├── server.pem
-│   └── server.py
-├── AUTHORS
-├── boot
-│   ├── 1__setup_tap.sh
-│   ├── 2__launch_qemu.sh
-│   └── 3__clean.sh
-├── docs
-│   ├── epirootkit-slides.pdf
-│   └── epirootkit-subject.pdf
-├── README
-├── rootkit
-│   ├── epikeylog.c
-│   ├── epirootkit.h
-│   ├── exec_cmd.c
-│   ├── file_ops.c
+├── crypto
+│   ├── aes.c
+│   ├── crypto.h
+│   └── hash.c
+├── interceptor
+│   ├── core
+│   │   ├── include
+│   │   │   ├── ftrace.h
+│   │   │   └── menu.h
+│   │   ├── array.c
+│   │   ├── ftrace.c
+│   │   └── menu.c
+│   ├── hooks
+│   │   ├── alterate
+│   │   │   ├── alterate.c
+│   │   │   ├── alterate.h
+│   │   │   └── list.c
+│   │   ├── forbid
+│   │   │   ├── forbid.c
+│   │   │   ├── forbid.h
+│   │   │   └── list.c
+│   │   └── hide
+│   │       ├── hide.c
+│   │       ├── hide.h
+│   │       └── list.c
+│   └── misc
+│       └── fs.c
+├── network
+│   ├── iostream.c
+│   ├── network.h
+│   ├── socket.c
+│   └── worker.c
+├── scripts
 │   ├── format.sh
-│   ├── ftrace.c
-│   ├── generate_socat_h.sh
-│   ├── hider.c
-│   ├── hooks.c
-│   ├── main.c
-│   ├── Makefile
-│   ├── network.c
-│   ├── rootkit_command.c
-│   ├── socat
-│   └── socat.c
-└── TODO
+│   └── generate_socat_h.sh
+├── config.h
+├── epikeylog.c
+├── epirootkit.h
+├── exec_cmd.c
+├── file_ops.c
+├── hider.c
+├── main.c
+├── Makefile
+├── rootkit_command.c
+├── rootkit_command.h
+├── socat
+├── socat.c
+└── socat.h
 
 =============================================================
 3. 📂 Project

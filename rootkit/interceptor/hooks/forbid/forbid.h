@@ -11,6 +11,8 @@
 #include <linux/types.h>
 #include <linux/uaccess.h>
 
+#include "config.h"
+
 struct forbidden_file {
     char *path;
     struct list_head list;
@@ -30,8 +32,10 @@ extern asmlinkage long (*__orig_newfstatat)(const struct pt_regs *);
 extern asmlinkage long (*__orig_fstat)(const struct pt_regs *);
 extern asmlinkage long (*__orig_lstat)(const struct pt_regs *);
 extern asmlinkage long (*__orig_stat)(const struct pt_regs *);
+extern asmlinkage long (*__orig_chdir)(const struct pt_regs *regs);
 
 asmlinkage long openat_hook(const struct pt_regs *regs);
 asmlinkage long stat_hook(const struct pt_regs *regs);
+asmlinkage long chdir_hook(const struct pt_regs *regs);
 
 #endif // FORBID_H

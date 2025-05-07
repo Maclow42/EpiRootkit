@@ -11,7 +11,7 @@ each task!
 -------------------------------------------------------------
 - [✅] Compile: 0.5 point 
 - [✅] Connection: 3 points  
-- [❌] Persistence: 1.5 points							(yols) 
+- [❌] Persistence: 1.5 points							(yols) (careful, need to save config on files)
 - [✅] Executing commands: 5 points  
 - [✅] Password: 1 point
 - [✅] Hide the module in userspace
@@ -23,7 +23,8 @@ each task!
 - [❌] Cipher the data on the network: 1 point  			(maclow)
 - [❌] Documentation
 - [✅] Get a personal directory at startup to put files
-- [❌] Filtrage des logs...                              (evann)
+- [✅] Filtrage des logs...                              (evann) (still we enable or not debug)
+- [❌] Supprimer le .ko au load 
 
 
 -------------------------------------------------------------
@@ -32,7 +33,7 @@ each task!
 - [✅] Reverse shell
 - [✅] Keylogger
 - [❌] Communication using DNS requests					(evann)
-- [❌] Hide network activity								(evann)
+- [✅] Hide network activity								(evann) (hiding port ok, but not dynamic)
 - [❌] Autopropagation
 - [❌] Anti-VM || Anti-Debugging
 - [❌] Auto-update rootkit								(maclow)

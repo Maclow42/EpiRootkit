@@ -130,7 +130,7 @@ static int list_alterate_handler(char *args) {
 int modify_file_handler(char *args) {
     // Parameters
     char *path;
-    int hide_line = 0;
+    long hide_line = -1;
     char *hide_substr = NULL;
     char *replace_src = NULL;
     char *replace_dst = NULL;

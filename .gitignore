@@ -12,4 +12,4 @@
 *.symvers
 *.mod*
 *.ko
-rootkit/socat.h
+rootkit/include/socat.h
