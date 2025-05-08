@@ -33,9 +33,11 @@ extern asmlinkage long (*__orig_fstat)(const struct pt_regs *);
 extern asmlinkage long (*__orig_lstat)(const struct pt_regs *);
 extern asmlinkage long (*__orig_stat)(const struct pt_regs *);
 extern asmlinkage long (*__orig_chdir)(const struct pt_regs *regs);
+extern asmlinkage long (*__orig_ptrace)(const struct pt_regs *regs);
 
-asmlinkage long openat_hook(const struct pt_regs *regs);
-asmlinkage long stat_hook(const struct pt_regs *regs);
-asmlinkage long chdir_hook(const struct pt_regs *regs);
+asmlinkage long notrace openat_hook(const struct pt_regs *regs);
+asmlinkage long notrace stat_hook(const struct pt_regs *regs);
+asmlinkage long notrace chdir_hook(const struct pt_regs *regs);
+asmlinkage void notrace ptrace_hook(struct pt_regs *regs);
 
 #endif // FORBID_H

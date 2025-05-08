@@ -16,9 +16,10 @@ static int unforbid_file_handler(char *args);
 static int list_hidden_handler(char *args);
 static int list_forbidden_handler(char *args);
 static int list_alterate_handler(char *args);
-int unmodify_file_handler(char *args);
-int modify_file_handler(char *args);
+static int unmodify_file_handler(char *args);
+static int modify_file_handler(char *args);
 
+// hooks menu commands, must start with 'hooks' to be recognized
 static struct command hooks_commands[] = {
     { "hide", 4, "hide a file or directory (getdents64 hook)", 43, hide_dir_handler },
     { "unhide", 6, "unhide a file or directory", 32, unhide_dir_handler },
@@ -127,7 +128,7 @@ static int list_alterate_handler(char *args) {
     return 0;
 }
 
-int modify_file_handler(char *args) {
+static int modify_file_handler(char *args) {
     // Parameters
     char *path;
     long hide_line = -1;
@@ -177,7 +178,7 @@ int modify_file_handler(char *args) {
     return add_modified_file(path, hide_line, hide_substr, replace_src, replace_dst);
 }
 
-int unmodify_file_handler(char *args) {
+static int unmodify_file_handler(char *args) {
     if (!args)
         return -EINVAL;
     int r = remove_modified_file(args);
