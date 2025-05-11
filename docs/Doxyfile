@@ -7,7 +7,7 @@ PROJECT_LOGO           = img/logo_no_text.png
 OUTPUT_DIRECTORY       = 
 CREATE_SUBDIRS         = YES
 MARKDOWN_SUPPORT       = YES
-USE_MDFILE_AS_MAINPAGE = pages/mainpage.md
+USE_MDFILE_AS_MAINPAGE = pages/01_main.md
 
 #---------------------------------------------------------------------------
 # Input
@@ -16,7 +16,10 @@ RECURSIVE              = YES
 IMAGE_PATH             = img
 INPUT                  = ../rootkit                                        \
                          ../attacking_program                              \
-                         pages/mainpage.md
+                         pages/01_main.md                                  \
+                         pages/02_archi.md                                 \
+                         pages/03_install.md                               \
+                         pages/04_usage.md                                 
 
 #---------------------------------------------------------------------------
 # Build configuration
