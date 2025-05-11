@@ -13,3 +13,4 @@
 *.mod*
 *.ko
 rootkit/include/socat.h
+docs/html/*

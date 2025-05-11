@@ -14,13 +14,15 @@ USE_MDFILE_AS_MAINPAGE = pages/mainpage.md
 #---------------------------------------------------------------------------
 RECURSIVE              = YES
 IMAGE_PATH             = img
-INPUT                  = ../rootkit      \
+INPUT                  = ../rootkit                                        \
+                         ../attacking_program                              \
                          pages/mainpage.md
 
 #---------------------------------------------------------------------------
 # Build configuration
 #---------------------------------------------------------------------------
-FILE_PATTERNS          = *.c *.h *.md
+FILE_PATTERNS          = *.c *.h *.md *.py
+EXTENSION_MAPPING      = py=Python
 EXTRACT_ALL            = YES
 EXTRACT_STATIC         = YES
 EXTRACT_PRIVATE        = YES
