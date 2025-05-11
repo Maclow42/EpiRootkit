@@ -186,8 +186,6 @@ static int exec_handler(char *args) {
         send_file_to_server(STDOUT_FILE);
         send_to_server("stderr:");
         send_file_to_server(STDERR_FILE);
-        send_to_server("terminated with code %i ", ret_code);
-        DBG_MSG("exec_handler: terminated with code %d\n", ret_code);
     }
 
     return ret_code;

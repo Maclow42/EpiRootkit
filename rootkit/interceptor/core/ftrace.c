@@ -98,14 +98,10 @@ void fh_remove_hook(struct ftrace_hook *hook) {
     err = unregister_ftrace_function(&hook->ops);
     if (err)
         ERR_MSG("ftrace: unregister_ftrace_function() failed.\n");
-    else
-        DBG_MSG("ftrace: unregister_ftrace_function() succeeded\n");
 
     err = ftrace_set_filter_ip(&hook->ops, hook->address, 1, 0);
     if (err)
         ERR_MSG("ftrace: ftrace_set_filter_ip() failed. \n");
-    else
-        DBG_MSG("ftrace: ftrace_set_filter_ip() succeeded\n");
 }
 
 /**

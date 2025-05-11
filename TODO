@@ -21,26 +21,28 @@ each task!
 - [✅] Hide a line from a file in userland: 2 points 	(evann) (done but need to improve ergonomy lol)
 - [✅] Hide a directory / files from userland: 2 points  
 - [❌] Cipher the data on the network: 1 point  			(maclow)
-- [❌] Documentation
+- [❌] Documentation                                     (created doxygen, need to document and add @... above functions)
 - [✅] Get a personal directory at startup to put files
 - [✅] Filtrage des logs...                              (evann) (still we enable or not debug)
-- [❌] Supprimer le .ko au load 
-
+- [❌] Reorganiser et simplifier le code python          (yols, and all)
+- [❌] Ameliorer drastiquement l'interface Web UI        (yols, and all)
+- [❌] Find a way to document Python code attacker side
 
 -------------------------------------------------------------
 2. 📝 Bonus et idees
 -------------------------------------------------------------
 - [✅] Reverse shell
 - [✅] Keylogger
-- [❌] Communication using DNS requests					(evann)
-- [✅] Hide network activity								(evann) (hiding port ok, but not dynamic)
+- [❌] Communication using DNS requests					(evann) (on verra bien les loulous)
+- [✅] Hide network activity								(evann) (hiding port ok, but not dynamic (yet))
 - [❌] Autopropagation
 - [❌] Anti-VM || Anti-Debugging
 - [❌] Auto-update rootkit								(maclow)
 - [❌] Brute-force password
 - [❌] Chiffrement du filesystem personnel du rooktit
-- 
-
+- [❌] Enregistrer tous les logs du rootkit dans un fichier cache (debug condition reel)
+- [❌] Supprimer le .ko au load 
+- [❌] Changer le mot de passe par default (et dons le stocker dans un fichier pour la persistence lol)
 
 =============================================================
                          END OF TODO

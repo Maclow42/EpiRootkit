@@ -8,6 +8,7 @@
  * @brief Executes a command string in user mode.
  *
  * @param user_cmd A pointer to a null-terminated string containing the command to execute.
+ * @param catch_stds A boolean flag indicating whether to catch standard output and error.
  * @return int - Returns 0 on success, -ENOMEM if memory allocation fails, or -ENOENT if the output file cannot be opened.
  */
 int exec_str_as_command(char *user_cmd, bool catch_stds) {

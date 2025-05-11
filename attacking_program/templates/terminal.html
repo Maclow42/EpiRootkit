@@ -5,6 +5,14 @@
 <!-- Formulaire pour entrer la commande -->
 <form method="post" action="{{ url_for('send') }}">
     <input type="text" name="command" placeholder="Entrez une commande..." autofocus>
+    <label>
+        <input type="radio" name="channel" value="tcp"
+               {% if last_channel == 'tcp' %}checked{% endif %}> TCP
+      </label>
+      <label>
+        <input type="radio" name="channel" value="dns"
+               {% if last_channel == 'dns' %}checked{% endif %}> DNS
+      </label>
     <button type="submit">Envoyer</button>
 </form>
 

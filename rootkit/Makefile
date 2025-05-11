@@ -4,8 +4,8 @@ PWD       := $(shell pwd)
 ccflags-y := 								    \
         -I$(src) 							    \
 		-I$(src)/crypto						    \
-		-I$(src)/network					    \
         -I$(src)/include 					    \
+        -I$(src)/network/core					\
         -I$(src)/interceptor/core/include 	    \
         -I$(src)/interceptor/hooks/alterate     \
         -I$(src)/interceptor/hooks/forbid 	    \
@@ -22,9 +22,11 @@ epirootkit-objs :=                              \
     rootkit_command.o                           \
 	crypto/hash.o                               \
 	crypto/aes.o                                \
-	network/worker.o                            \
-	network/socket.o                            \
-	network/iostream.o                          \
+    network/core/network.o                      \
+	network/protocols/tcp/socket.o              \
+    network/protocols/tcp/worker.o              \
+    network/protocols/dns/dns.o                 \
+    network/protocols/dns/worker.o              \
     interceptor/core/init.o                     \
     interceptor/core/array.o                    \
     interceptor/core/menu.o                     \

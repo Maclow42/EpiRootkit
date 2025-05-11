@@ -1,6 +1,3 @@
-#include <linux/mutex.h>
-#include <linux/net.h>
-
 #include "network.h"
 
 static struct socket *worker_socket = NULL;

@@ -1,0 +1,61 @@
+#---------------------------------------------------------------------------
+# Project Metadata
+#---------------------------------------------------------------------------
+PROJECT_NAME           = "EpiRootkit"
+PROJECT_BRIEF          = "By STDBOOL"
+PROJECT_LOGO           = img/logo_no_text.png
+OUTPUT_DIRECTORY       = 
+CREATE_SUBDIRS         = YES
+MARKDOWN_SUPPORT       = YES
+USE_MDFILE_AS_MAINPAGE = pages/mainpage.md
+
+#---------------------------------------------------------------------------
+# Input
+#---------------------------------------------------------------------------
+RECURSIVE              = YES
+IMAGE_PATH             = img
+INPUT                  = ../rootkit      \
+                         pages/mainpage.md
+
+#---------------------------------------------------------------------------
+# Build configuration
+#---------------------------------------------------------------------------
+FILE_PATTERNS          = *.c *.h *.md
+EXTRACT_ALL            = YES
+EXTRACT_STATIC         = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_LOCAL_METHODS  = YES
+HIDE_UNDOC_MEMBERS     = NO
+HIDE_UNDOC_CLASSES     = NO
+GENERATE_LATEX         = NO
+GENERATE_HTML          = YES
+GENERATE_MAN           = NO
+FULL_SIDEBAR           = NO
+DISABLE_INDEX          = NO
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = YES
+
+#---------------------------------------------------------------------------
+# Graphs
+#---------------------------------------------------------------------------
+HAVE_DOT               = YES
+DOT_GRAPH_MAX_NODES    = 100
+INTERACTIVE_SVG        = YES
+DOT_IMAGE_FORMAT       = svg
+
+#---------------------------------------------------------------------------
+# HTML options
+#---------------------------------------------------------------------------
+GENERATE_TREEVIEW      = YES
+HTML_HEADER            = 
+HTML_STYLESHEET        = 
+HTML_EXTRA_STYLESHEET  = css/doxygen-awesome.css
+HTML_COLORSTYLE        = LIGHT
+HTML_EXTRA_FILES       = 
+                         
+
+#---------------------------------------------------------------------------
+# Misc
+#---------------------------------------------------------------------------
+QUIET                  = YES
+WARNINGS               = YES

