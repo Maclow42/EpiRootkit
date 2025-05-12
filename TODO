@@ -43,6 +43,12 @@ each task!
 - [❌] Changer le mot de passe par default (et donc le stocker dans un fichier pour la persistence lol)
 - [❌] Documenter Python avec docstrings
 - [❌] Voir l'alteration des logs
+- [❌] Port knocking / flux chiffré
+- [❌] Détection d’analyseurs/machines virtuelles
+- [❌] Chiffrement complet du canal DNS
+- [❌] Jitter & back-off adaptatif
+- [❌] Polymorphisme du module
+- [❌] Génération de domaine dynamique (DGA)
 
 -------------------------------------------------------------
 2. 📝 Documentation

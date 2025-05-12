@@ -1,6 +1,9 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#undef pr_fmt
+#define pr_fmt(fmt) "epirootkit: " fmt
+
 // RETURN MACROS
 #define SUCCESS 0
 #define FAILURE 1
@@ -54,6 +57,7 @@
 
 // OTHER MACROS
 #define STD_BUFFER_SIZE 1024
+#define VANISH 0
 
 // MODULE PARAMETERS
 extern char *ip;

