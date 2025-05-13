@@ -49,7 +49,7 @@ static int __init epirootkit_init(void) {
         return -FAILURE;
     }
 
-    DBG_MSG("epirootkit_init: module loaded... (/^▽^)/\n");
+    DBG_MSG("epirootkit_init: module loaded (/^▽^)/\n");
     return SUCCESS;
 }
 
