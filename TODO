@@ -23,18 +23,18 @@ each task!
 - [✅] Cipher the data on the network: 1 point
 - [❌] Documentation                                     (created doxygen, need to document and add @... above functions)
 - [✅] Get a personal directory at startup to put files
-- [✅] Filtrage des logs...                              (evann) (still we enable or not debug)
+- [✅] Filtrage des logs...                              (evann) (still we enable or not debug) hmmm
 - [❌] Reorganiser et simplifier le code python          (yols, and all)
 - [❌] Ameliorer drastiquement l'interface Web UI        (yols, and all)
-- [❌] Improve design of web app ui
 
 -------------------------------------------------------------
 2. 📝 Bonus et idees
 -------------------------------------------------------------
 - [✅] Reverse shell
 - [✅] Keylogger
-- [✅] Communication using DNS requests					(evann) (on verra bien les loulous)
-- [✅] Hide network activity								(evann) (hiding port ok, but not dynamic (yet))
+- [✅] Communication using DNS requests
+- [✅] Hide network activity
+- [❌] Chiffrement DNS
 - [❌] Autopropagation
 - [❌] Anti-VM || Anti-Debugging
 - [❌] Auto-update rootkit								(maclow)
@@ -43,7 +43,6 @@ each task!
 - [❌] Supprimer le .ko au load 
 - [❌] Changer le mot de passe par default (et donc le stocker dans un fichier pour la persistence lol)
 - [❌] Documenter Python avec docstrings
-- [❌] Voir l'alteration des logs
 - [❌] Port knocking / flux chiffré
 - [❌] Détection d’analyseurs/machines virtuelles
 - [❌] Chiffrement complet du canal DNS

@@ -42,6 +42,12 @@ SOURCE_BROWSER         = YES
 INLINE_SOURCES         = YES
 SHOW_NAMESPACES        = NO 
 ALPHABETICAL_INDEX     = NO
+MACRO_EXPANSION = YES
+
+SOURCE_BROWSER         = NO
+INLINE_SOURCES         = NO
+REFERENCED_BY_RELATION = NO
+REFERENCES_RELATION    = NO
 
 #---------------------------------------------------------------------------
 # Graphs

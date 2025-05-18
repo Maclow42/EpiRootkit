@@ -92,7 +92,7 @@ int rootkit_command(char *command, unsigned command_size) {
 
     if (!is_user_auth() && strncmp(command, "connect", 7) != 0 && strncmp(command, "help", 4) != 0) {
         send_to_server("You are not authentificated. See 'connect' command.\n");
-        ERR_MSG("rootkit_command: user not authentificated\n");
+        ERR_MSG("rootkit_command: user not authenticated\n");
         return -FAILURE;
     }
 
