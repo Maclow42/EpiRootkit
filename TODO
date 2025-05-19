@@ -11,7 +11,7 @@ each task!
 -------------------------------------------------------------
 - [✅] Compile: 0.5 point 
 - [✅] Connection: 3 points  
-- [❌] Persistence: 1.5 points							(yols) (careful, need to save config on files)
+- [❌] Persistence: 1.5 points							(evann) (careful, need to save config on files)
 - [✅] Executing commands: 5 points  
 - [✅] Password: 1 point
 - [✅] Hide the module in userspace
@@ -26,6 +26,16 @@ each task!
 - [✅] Filtrage des logs...                              (evann) (still we enable or not debug) hmmm
 - [❌] Reorganiser et simplifier le code python          (yols, and all)
 - [❌] Ameliorer drastiquement l'interface Web UI        (yols, and all)
+- [❌] Improve design of web app ui
+- [❌] Chiffrer le DNS
+- [❌] Implementer une API de gestion de fichiers
+- [❌] Chiffrer l'upload/download
+- [❌] Trouver une facon d'arreter d'hardcoder les cles AES/rootkit
+- [❌] Implementer un VRAI mot de passe cote Web
+- [❌] Implementer un AIDA (CPU, RAM...)
+- [❌] requirements.txt propre
+- [❌] Serveur TCP Tibounet
+- [❌] Alerte visuelle comme quoi le rootkit et connecte/deconnecte
 
 -------------------------------------------------------------
 2. 📝 Bonus et idees
