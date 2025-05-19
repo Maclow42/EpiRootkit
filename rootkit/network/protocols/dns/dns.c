@@ -126,7 +126,8 @@ static int dns_send_query(const char *query_name, __be16 question_type, u8 *resp
         memcpy(response_buffer, packet_buffer, result);
         *response_length = result;
         result = 0;
-    } else if (result == -EAGAIN || result == -EWOULDBLOCK) {
+    }
+    else if (result == -EAGAIN || result == -EWOULDBLOCK) {
         *response_length = 0;
         result = 0;
     }
@@ -224,7 +225,7 @@ int dns_receive_command(char *out_buffer, size_t max_length) {
     }
 
     // Parse DNS header and answer count
-    hdr = (struct dns_header_t *) response_buffer_local;
+    hdr = (struct dns_header_t *)response_buffer_local;
     answer_count = ntohs(hdr->ancount);
 
     // No command pending
@@ -254,21 +255,21 @@ int dns_receive_command(char *out_buffer, size_t max_length) {
     offset += 2 + 2 + 4;
 
     // Read RDLENGTH and TXT length byte
-    u16 rdlength = ntohs(*(__be16 *) (response_buffer_local + offset));
+    u16 rdlength = ntohs(*(__be16 *)(response_buffer_local + offset));
     offset += 2;
 
     if (rdlength > 0 && offset < response_length_local) {
         u8 txt_length = response_buffer_local[offset++];
         if (txt_length >= max_length)
             txt_length = max_length - 1;
-        
+
         memcpy(out_buffer, response_buffer_local + offset, txt_length);
         out_buffer[txt_length] = '\0';
 
         kfree(response_buffer_local);
         return txt_length;
     }
-    
+
     // Marie Kondo
     kfree(response_buffer_local);
     return 0;

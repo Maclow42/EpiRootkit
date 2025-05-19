@@ -1,11 +1,11 @@
 #include <linux/delay.h>
+#include <linux/fs.h>
 #include <linux/kernel.h>
 #include <linux/kmod.h>
 #include <linux/module.h>
-#include <linux/string.h>
-#include <linux/fs.h>
-#include <linux/uaccess.h>
 #include <linux/slab.h>
+#include <linux/string.h>
+#include <linux/uaccess.h>
 
 #include "crypto.h"
 #include "epirootkit.h"

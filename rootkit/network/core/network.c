@@ -52,7 +52,7 @@ static char *format_string(const char *fmt, ...) {
     vsnprintf(formatted_message, needed + 1, fmt, args_copy);
     va_end(args_copy);
 
-	return formatted_message;
+    return formatted_message;
 }
 
 // Formats and sends a message to the server
@@ -61,12 +61,12 @@ int send_to_server(char *message, ...) {
         ERR_MSG("send_to_server: socket is not initialized\n");
         return -EINVAL;
     }
-    
-	char *formatted_message = format_string(message);
-	if (!formatted_message) {
-		ERR_MSG("send_to_server: failed to format message\n");
-		return -ENOMEM;
-	}
+
+    char *formatted_message = format_string(message);
+    if (!formatted_message) {
+        ERR_MSG("send_to_server: failed to format message\n");
+        return -ENOMEM;
+    }
 
     if (response_over_dns) {
         return dns_send_data(formatted_message, strlen(formatted_message));

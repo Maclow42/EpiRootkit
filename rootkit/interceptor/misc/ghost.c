@@ -4,8 +4,7 @@ static struct list_head *prev_module;
 static bool module_hidden = false;
 static DEFINE_SPINLOCK(hide_lock);
 
-int hide_module(void)
-{
+int hide_module(void) {
     unsigned long flags;
 
     spin_lock_irqsave(&hide_lock, flags);
@@ -22,8 +21,7 @@ int hide_module(void)
     return SUCCESS;
 }
 
-int unhide_module(void)
-{
+int unhide_module(void) {
     unsigned long flags;
 
     spin_lock_irqsave(&hide_lock, flags);

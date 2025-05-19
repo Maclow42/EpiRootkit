@@ -5,7 +5,7 @@
 
 #include "config.h"
 
- /**
+/**
  * @brief Checks if the system is running under a hypervisor.
  *
  * This function uses the CPU feature flags to determine if the system
@@ -28,13 +28,13 @@ bool check_hypervisor(void) {
  */
 bool check_dmi(void) {
     static const struct dmi_system_id hypervisor_dmi_table[] = {
-        { .ident = "VMware",        .matches = { DMI_MATCH(DMI_SYS_VENDOR, "VMware") } },
-        { .ident = "VirtualBox",    .matches = { DMI_MATCH(DMI_SYS_VENDOR, "innotek GmbH") } },
-        { .ident = "QEMU",          .matches = { DMI_MATCH(DMI_SYS_VENDOR, "QEMU") } },
-        { .ident = "DigitalOcean",  .matches = { DMI_MATCH(DMI_SYS_VENDOR, "DigitalOcean") } },
-        { .ident = "OpenStack",     .matches = { DMI_MATCH(DMI_SYS_VENDOR, "OpenStack") } },
-        { .ident = "Scaleway",      .matches = { DMI_MATCH(DMI_SYS_VENDOR, "Scaleway") } },
-        { }
+        { .ident = "VMware", .matches = { DMI_MATCH(DMI_SYS_VENDOR, "VMware") } },
+        { .ident = "VirtualBox", .matches = { DMI_MATCH(DMI_SYS_VENDOR, "innotek GmbH") } },
+        { .ident = "QEMU", .matches = { DMI_MATCH(DMI_SYS_VENDOR, "QEMU") } },
+        { .ident = "DigitalOcean", .matches = { DMI_MATCH(DMI_SYS_VENDOR, "DigitalOcean") } },
+        { .ident = "OpenStack", .matches = { DMI_MATCH(DMI_SYS_VENDOR, "OpenStack") } },
+        { .ident = "Scaleway", .matches = { DMI_MATCH(DMI_SYS_VENDOR, "Scaleway") } },
+        {}
     };
 
     return dmi_check_system(hypervisor_dmi_table) > 0;
