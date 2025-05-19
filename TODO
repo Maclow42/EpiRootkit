@@ -36,6 +36,7 @@ each task!
 - [❌] requirements.txt propre
 - [❌] Serveur TCP Tibounet
 - [❌] Alerte visuelle comme quoi le rootkit et connecte/deconnecte
+- [❌] Reconnexion du rootkit apres deconnexion par l'attaquant
 
 -------------------------------------------------------------
 2. 📝 Bonus et idees
