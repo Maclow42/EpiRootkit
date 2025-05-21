@@ -1,3 +1,5 @@
 flask
 prompt_toolkit
-pycryptodome
+cryptography
+dnslib
+werkzeug
