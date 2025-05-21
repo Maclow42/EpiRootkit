@@ -77,6 +77,11 @@ fi
 ip link set "$BRIDGE_NAME" up
 echo "[DEBUG] Bridge $BRIDGE_NAME is up."
 
+# Some important iptables rules to allow traffic on host.
+iptables -A INPUT -i br0 -p tcp --dport 4242 -j ACCEPT
+iptables -A INPUT -i br0 -p tcp --dport 53 -j ACCEPT
+iptables -I INPUT  -p udp --dport 53 -j ACCEPT
+iptables -I OUTPUT -p udp --sport 53 -j ACCEPT
 
 # Create TAP interface tap0 for the attacker VM if it does not exist.
 if ip link show tap0 &>/dev/null; then

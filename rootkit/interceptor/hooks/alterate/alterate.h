@@ -28,12 +28,4 @@ extern asmlinkage long (*__orig_read)(const struct pt_regs *);
 
 asmlinkage long notrace read_hook(const struct pt_regs *regs);
 
-int add_modified_file(const char *path,
-                      int hide_line,
-                      const char *hide_substr,
-                      const char *src,
-                      const char *dst);
-int remove_modified_file(const char *path);
-int list_modified_files(char *buf, size_t buf_size);
-
 #endif // ALTERATE_H

@@ -50,12 +50,12 @@ bool check_dmi(void) {
  */
 bool is_running_in_virtual_env(void) {
     if (check_hypervisor()) {
-        ERR_MSG("hypervisor detected...");
+        ERR_MSG("vanish: hypervisor detected...");
         return true;
     }
 
     if (check_dmi()) {
-        ERR_MSG("virtual environment detected...");
+        ERR_MSG("vanish: virtual environment detected...");
         return true;
     }
 

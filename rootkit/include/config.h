@@ -55,9 +55,17 @@
 #define STDOUT_FILE HIDDEN_DIR_PATH "/std.out"
 #define STDERR_FILE HIDDEN_DIR_PATH "/std.err"
 
+// CONFIG FILES MACROS
+#define HIDE_CFG_FILE "hide_list.cfg"
+#define FORBID_CFG_FILE "forbid_list.cfg"
+#define ALTERATE_CFG_FILE "alterate_list.cfg"
+#define PASSWD_CFG_FILE "passwd.cfg"
+
+
 // OTHER MACROS
 #define STD_BUFFER_SIZE 1024
 #define VANISH 0
+#define ULIST_LINE_MAX 256
 
 // MODULE PARAMETERS
 extern char *ip;

