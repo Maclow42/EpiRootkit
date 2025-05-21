@@ -33,7 +33,7 @@ each task!
 - [❌] Trouver une facon d'arreter d'hardcoder les cles AES/rootkit
 - [❌] Implementer un VRAI mot de passe cote Web
 - [❌] Implementer un AIDA (CPU, RAM...)
-- [❌] requirements.txt propre
+- [✅] requirements.txt propre
 - [❌] Serveur TCP Tibounet
 - [❌] Alerte visuelle comme quoi le rootkit et connecte/deconnecte
 - [❌] Reconnexion du rootkit apres deconnexion par l'attaquant
