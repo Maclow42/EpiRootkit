@@ -25,7 +25,6 @@ def assemble_exfil(timeout=cfg.DNS_RESPONSE_TIMEOUT, poll=cfg.DNS_POLL_INTERVAL)
     Attend jusqu'à `timeout` secondes pour recevoir tous les chunks DNS
     puis assemble les données exfiltrées.
     """
-    global cfg
 
     start = time.time()
 
