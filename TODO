@@ -38,6 +38,7 @@ each task!
 - [❌] Alerte visuelle comme quoi le rootkit et connecte/deconnecte
 - [❌] Reconnexion du rootkit apres deconnexion par l'attaquant
 - [❌] Merge file_ops.c et io.c
+- [❌] Ajout cacher ports dynamiquement !!!
 
 -------------------------------------------------------------
 2. 📝 Bonus et idees
