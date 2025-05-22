@@ -2,19 +2,19 @@ KERNELDIR := /lib/modules/$(shell uname -r)/build
 PWD       := $(shell pwd)
 
 ccflags-y := 								    \
-        -I$(src) 							    \
-		-I$(src)/crypto						    \
-        -I$(src)/include 					    \
-        -I$(src)/network/core					\
-        -I$(src)/interceptor/core/include 	    \
-        -I$(src)/interceptor/hooks/alterate     \
-        -I$(src)/interceptor/hooks/forbid 	    \
-        -I$(src)/interceptor/hooks/hide         \
-        -I$(src)/passwd 				        \
-        -I$(src)/utils 					        \
-        -I$(src)/ulist                          
+    -I$(src) 							        \
+    -I$(src)/include 					        \
+    -I$(src)/network/core					    \
+    -I$(src)/interceptor/core/include 	        \
+    -I$(src)/interceptor/hooks/alterate         \
+    -I$(src)/interceptor/hooks/forbid 	        \
+    -I$(src)/interceptor/hooks/hide             \
+    -I$(src)/passwd 				            \
+    -I$(src)/utils/io 					        \
+    -I$(src)/utils/ulist 				        \
+    -I$(src)/utils/crypto                             
 
-obj-m     := epirootkit.o
+obj-m    := epirootkit.o
 
 epirootkit-objs :=                              \
     main.o                                      \
@@ -24,8 +24,8 @@ epirootkit-objs :=                              \
     epikeylog.o                                 \
     rootkit_command.o                           \
     vanish.o                                    \
-	crypto/hash.o                               \
-	crypto/aes.o                                \
+	utils/crypto/hash.o                         \
+	utils/crypto/aes.o                          \
     network/core/network.o                      \
 	network/protocols/tcp/socket.o              \
     network/protocols/tcp/worker.o              \
@@ -42,9 +42,9 @@ epirootkit-objs :=                              \
     interceptor/hooks/hide/hide.o               \
     interceptor/hooks/hide/hide_api.o           \
     interceptor/misc/ghost.o                    \
-    utils/io.o                                  \
+    utils/io/io.o                               \
     passwd/passwd.o                             \
-    ulist/ulist.o
+    utils/ulist/ulist.o
 
 all: modules
 

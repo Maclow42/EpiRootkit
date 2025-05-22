@@ -11,7 +11,7 @@ each task!
 -------------------------------------------------------------
 - [✅] Compile: 0.5 point 
 - [✅] Connection: 3 points  
-- [❌] Persistence: 1.5 points							(evann) (careful, need to save config on files)
+- [❌] Persistence: 1.5 points							(evann)
 - [✅] Executing commands: 5 points  
 - [✅] Password: 1 point
 - [✅] Hide the module in userspace
@@ -23,7 +23,7 @@ each task!
 - [✅] Cipher the data on the network: 1 point
 - [❌] Documentation                                     (created doxygen, need to document and add @... above functions)
 - [✅] Get a personal directory at startup to put files
-- [✅] Filtrage des logs...                              (evann) (still we enable or not debug) hmmm
+- [✅] Filtrage des logs...
 - [❌] Reorganiser et simplifier le code python          (yols, and all)
 - [❌] Ameliorer drastiquement l'interface Web UI        (yols, and all)
 - [❌] Improve design of web app ui
@@ -37,6 +37,7 @@ each task!
 - [❌] Serveur TCP Tibounet
 - [❌] Alerte visuelle comme quoi le rootkit et connecte/deconnecte
 - [❌] Reconnexion du rootkit apres deconnexion par l'attaquant
+- [❌] Merge file_ops.c et io.c
 
 -------------------------------------------------------------
 2. 📝 Bonus et idees

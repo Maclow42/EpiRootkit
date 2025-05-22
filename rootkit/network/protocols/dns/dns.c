@@ -103,7 +103,7 @@ static int dns_send_query(const char *query_name, __be16 question_type, u8 *resp
     msg.msg_namelen = sizeof(dest_addr);
 
     // DEBUG Log
-    DBG_MSG("dns_send_query: sending %d-byte DNS query for '%s'\n", offset, query_name);
+    // DBG_MSG("dns_send_query: sending %d-byte DNS query for '%s'\n", offset, query_name);
 
     // Send the DNS query
     iov.iov_base = packet_buffer;

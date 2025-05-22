@@ -27,7 +27,7 @@ int alterate_add(const char *path, int hide_line, const char *hide_substr, const
     scnprintf(payload, sizeof(payload), "%d:%s:%s:%s", hide_line, hide_substr ?: "", src ?: "", dst ?: "");
 
     ret = ulist_add(&alt_list, path, 0, payload);
-    if (ret)
+    if (ret < 0)
         return ret;
 
     ret = ulist_save(&alt_list);
