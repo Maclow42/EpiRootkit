@@ -18,12 +18,13 @@ each task!
 - [❌] Upload: 1.5 points  								(yols)
 - [❌] Download: 1.5 points 								(yols)
 - [✅] Hide the rootkit from the module list: 1 point  
-- [✅] Hide a line from a file in userland: 2 points 	(evann) (done but need to improve ergonomy lol)
+- [✅] Hide a line from a file in userland: 2 points 	(done but need to improve ergonomy lol)
 - [✅] Hide a directory / files from userland: 2 points
 - [✅] Cipher the data on the network: 1 point
 - [❌] Documentation                                     (created doxygen, need to document and add @... above functions)
 - [✅] Get a personal directory at startup to put files
 - [✅] Filtrage des logs...
+- [❌] Auto-update rootkit								(maclow)
 - [❌] Reorganiser et simplifier le code python          (yols, and all)
 - [❌] Ameliorer drastiquement l'interface Web UI        (yols, and all)
 - [❌] Improve design of web app ui
@@ -39,6 +40,7 @@ each task!
 - [❌] Reconnexion du rootkit apres deconnexion par l'attaquant
 - [❌] Merge file_ops.c et io.c
 - [❌] Ajout cacher ports dynamiquement !!!
+- [❌] Rene Bojolais
 
 -------------------------------------------------------------
 2. 📝 Bonus et idees
@@ -46,34 +48,28 @@ each task!
 - [✅] Reverse shell
 - [✅] Keylogger
 - [✅] Communication using DNS requests
-- [✅] Hide network activity
-- [❌] Chiffrement DNS
-- [❌] Autopropagation
-- [❌] Anti-VM || Anti-Debugging
-- [❌] Auto-update rootkit								(maclow)
+- [✅] Hide network activity                               (MAKE IT DYNAMIC, AND NEED OTHER TECHNIQUES)
+- [❌] Autopropagation...
+- [✅] Anti-VM
 - [❌] Brute-force password
 - [❌] Chiffrement du filesystem personnel du rooktit
 - [❌] Supprimer le .ko au load 
-- [❌] Changer le mot de passe par default (et donc le stocker dans un fichier pour la persistence lol)
-- [❌] Documenter Python avec docstrings
-- [❌] Port knocking / flux chiffré
-- [❌] Détection d’analyseurs/machines virtuelles
-- [❌] Chiffrement complet du canal DNS
+- [❌] Port knocking / flux chiffré... un peu chiant
 - [❌] Jitter & back-off adaptatif
 - [❌] Polymorphisme du module
 - [❌] Génération de domaine dynamique (DGA)
+- [❌] Hook modprob ?
+- [❌] Aneantir le capitalisme et les rapports marchands    (need documentation)
 
 -------------------------------------------------------------
 2. 📝 Documentation
 -------------------------------------------------------------
 
-- [❌] Presentation
-- [❌] Architecture
-- [❌] Mise en place et installation
+- [❌] Presentation, Architecture, Mise en place et installation
 - [❌] Usage
 - [❌] Ameliorations
 - [❌] Purge de l'inutile de Doxygen
-- [❌] ...
+- [❌] Documenter Python avec docstrings
 
 =============================================================
                          END OF TODO
