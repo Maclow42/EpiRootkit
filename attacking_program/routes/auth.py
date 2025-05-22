@@ -1,14 +1,16 @@
 from app import app
-from flask import request, redirect, url_for, flash
+from flask import request, redirect, url_for, flash, session
 import config as cfg
 
 # --------------------------------- WEB AUTH --------------------------------- #
 
 @app.route('/auth', methods=['POST'])
 def auth():
-    global authenticated
     if request.form.get('password') == cfg.PASSWORD:
-        authenticated = True
+        # ✅ Enregistre l'utilisateur comme authentifié dans la session
+        session['authenticated'] = True
         return redirect(url_for('dashboard'))
+
+    # ❌ Mot de passe incorrect
     flash("❌ Mot de passe incorrect.")
     return redirect(url_for('login'))

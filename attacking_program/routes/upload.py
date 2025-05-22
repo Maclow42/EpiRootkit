@@ -1,6 +1,6 @@
 from app import app
 import config as cfg
-from flask import flash, render_template, redirect, url_for, request
+from flask import flash, render_template, redirect, url_for, request, session
 from utils.aes import aes_encrypt
 import os
 from utils.socket import send_to_server
@@ -10,7 +10,7 @@ from werkzeug.utils import secure_filename
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
-    if not cfg.authenticated:
+    if not session.get('authenticated'):
         return redirect(url_for('login'))
 
     if request.method == 'POST':
