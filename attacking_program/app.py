@@ -5,7 +5,7 @@ import config as cfg
 # ------------------------------ FLASK SETUP -------------------------------- #
 
 app = Flask(__name__)
-app.secret_key = "epirootkit_secret"  # nécessaire pour utiliser session
+app.secret_key = "epirootkit_secret"
 app.config['UPLOAD_FOLDER'] = cfg.UPLOAD_FOLDER
 
 # Crée les dossiers si absents
@@ -16,10 +16,9 @@ os.makedirs(cfg.DOWNLOAD_FOLDER, exist_ok=True)
 
 @app.route('/')
 def login():
-    # ✅ vérifie si l'utilisateur est déjà authentifié via la session
     if session.get('authenticated'):
         return redirect(url_for('dashboard'))
-    return render_template("login.html")  # page de login classique
+    return render_template("login.html")
 
 # --------------------------- IMPORT DES ROUTES --------------------------- #
 

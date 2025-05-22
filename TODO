@@ -9,10 +9,10 @@ each task!
 -------------------------------------------------------------
 1. 📝 General Tasks
 -------------------------------------------------------------
-- [✅] Compile: 0.5 point 
-- [✅] Connection: 3 points  
+- [✅] Compile: 0.5 point
+- [✅] Connection: 3 points
 - [❌] Persistence: 1.5 points							(evann)
-- [✅] Executing commands: 5 points  
+- [✅] Executing commands: 5 points
 - [✅] Password: 1 point
 - [✅] Hide the module in userspace
 - [❌] Upload: 1.5 points  								(yols)
@@ -25,7 +25,7 @@ each task!
 - [✅] Get a personal directory at startup to put files
 - [✅] Filtrage des logs...
 - [❌] Auto-update rootkit								(maclow)
-- [❌] Reorganiser et simplifier le code python          (yols, and all)
+- [✅] Reorganiser et simplifier le code python          (yols, and all)
 - [❌] Ameliorer drastiquement l'interface Web UI        (yols, and all)
 - [❌] Improve design of web app ui
 - [❌] Chiffrer le DNS

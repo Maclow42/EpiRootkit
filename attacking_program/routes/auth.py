@@ -11,6 +11,5 @@ def auth():
         session['authenticated'] = True
         return redirect(url_for('dashboard'))
 
-    # ❌ Mot de passe incorrect
     flash("❌ Mot de passe incorrect.")
     return redirect(url_for('login'))
