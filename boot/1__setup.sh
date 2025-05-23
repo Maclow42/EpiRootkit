@@ -49,9 +49,9 @@ unzip -o "$BASE_DIR/attacker_disk.zip" -d "$BASE_DIR" || { echo "[ERROR] Error u
 rm -f "$BASE_DIR/victim_disk.zip" "$BASE_DIR/attacker_disk.zip"
 
 # Fix permissions so non-root user can access the disk images.
-# chown "$NON_ROOT_USER":"$NON_ROOT_USER" "$ATTACKER_DISK" "$VICTIM_DISK"
-# chmod 664 "$ATTACKER_DISK" "$VICTIM_DISK"
-# echo "[DEBUG] Disk images ownership set to $NON_ROOT_USER."
+chown "$NON_ROOT_USER":"$NON_ROOT_USER" "$ATTACKER_DISK" "$VICTIM_DISK"
+chmod 664 "$ATTACKER_DISK" "$VICTIM_DISK"
+echo "[DEBUG] Disk images ownership set to $NON_ROOT_USER."
 
 # 3. Create and configure the bridge (br0).
 if ip link show "$BRIDGE_NAME" &>/dev/null; then
