@@ -17,8 +17,8 @@ IMAGE_PATH             = img
 INPUT                  = ../rootkit                                        \
                          ../attacking_program                              \
                          pages/01_main.md                                  \
-                         pages/02_archi.md                                 \
-                         pages/03_install.md                               \
+                         pages/02_install.md                                 \
+                         pages/03_archi.md                               \
                          pages/04_usage.md                                 
 
 #---------------------------------------------------------------------------

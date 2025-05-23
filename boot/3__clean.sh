@@ -1,9 +1,4 @@
 #!/bin/bash
-# This script removes the TAP interfaces (tap0 and tap1), the bridge (br0),
-# and optionally the project directory (rootkit_project) that were created during setup.
-#
-# Usage (as root):
-#   sudo ./3__clean.sh
 
 # Check for root privileges.
 if [ "$(id -u)" -ne 0 ]; then
@@ -11,9 +6,9 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-echo "============================================="
-echo "            Starting Host Cleanup            "
-echo "============================================="
+echo "================================================="
+echo "              Starting Host Cleanup              "
+echo "================================================="
 
 # Remove TAP interfaces tap0 and tap1.
 for tap in tap0 tap1; do
@@ -38,13 +33,16 @@ else
     echo "[DEBUG] Bridge $BRIDGE not found."
 fi
 
-# Ask if the user also wants to remove the project directory.
-PROJECT_DIR="$(pwd)/rootkit_project"
-if [ -d "$PROJECT_DIR" ]; then
-    read -p "Do you also want to remove the project directory ($PROJECT_DIR)? [y/N] " answer
+echo "[DEBUG] Killing vms..."
+kill $PID_VICTIM $PID_ATTACKER || true
+
+# Ask if the user wants to remove project directory.
+BASE_DIR="./vms"
+if [ -d "$BASE_DIR" ]; then
+    read -p "Do you also want to remove the project directory ($BASE_DIR)? [y/N] " answer
     if [[ "$answer" =~ ^[Yy]$ ]]; then
-        echo "[DEBUG] Removing project directory $PROJECT_DIR..."
-        rm -rf "$PROJECT_DIR"
+        echo "[DEBUG] Removing project directory $BASE_DIR..."
+        rm -rf "$BASE_DIR"
         echo "[DEBUG] Project directory removed."
     else
         echo "[DEBUG] Project directory preserved."
@@ -52,7 +50,6 @@ if [ -d "$PROJECT_DIR" ]; then
 else
     echo "[DEBUG] Project directory not found."
 fi
-
-echo "============================================="
-echo "              Cleanup Completed              "
-echo "============================================="
+echo "================================================="
+echo "                Cleanup Completed                "
+echo "================================================="

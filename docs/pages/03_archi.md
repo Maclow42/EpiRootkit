@@ -33,9 +33,19 @@
     └── scripts
 ```
 
+<img 
+  src="../img/logo_no_text.png" 
+  style="
+    display: block;
+    margin: 100px auto;
+    width: 30%;
+    overflow: hidden;
+  "
+/>
+
 <div class="section_buttons">
 
 | Previous                          | Next                               |
 |:----------------------------------|-----------------------------------:|
-| [Overview](01_main.md)               | [Installation](03_install.md)            |
+| [Mise en place](02_install.md)    | [Utilisation](04_usage.md)         |
 </div>
