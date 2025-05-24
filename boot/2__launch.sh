@@ -6,7 +6,7 @@ VICTIM_DISK="$BASE_DIR/victim_disk.qcow2"
 bridge_info="bridge: br0, ip: 192.168.100.1/24"
 
 echo "================================================="
-echo "                   Launching VMs                 "
+echo "                  Launching VMs                  "
 echo "================================================="
 
 # Verify the TAP interface exists.

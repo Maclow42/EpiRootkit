@@ -84,7 +84,7 @@ int ulist_load(struct ulist *ul) {
             continue;
         }
 
-        // clamp overly long lines
+        // Clamp overly long lines
         if (len >= ULIST_LINE_MAX) {
             ERR_MSG("ulist_load: skipping too-long line\n");
             if (!newline)
@@ -102,7 +102,7 @@ int ulist_load(struct ulist *ul) {
         fields[1] = strsep(&cursor, "|");
         fields[2] = cursor;
 
-        // field[0] (value) must be non-empty
+        // The field[0] must be non-empty eheh
         if (!fields[0] || !*fields[0]) {
             ERR_MSG("ulist_load: missing value, skipping line\n");
             if (!newline)
