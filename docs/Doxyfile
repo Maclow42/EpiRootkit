@@ -17,14 +17,15 @@ IMAGE_PATH             = img
 INPUT                  = ../rootkit                                        \
                          ../attacking_program                              \
                          pages/01_main.md                                  \
-                         pages/02_install.md                                 \
-                         pages/03_archi.md                               \
-                         pages/04_usage.md                                 
+                         pages/02_install.md                               \
+                         pages/03_archi.md                                 \
+                         pages/04_usage.md                                 \                             
+                         pages/05_env.md                               
 
 #---------------------------------------------------------------------------
 # Build configuration
 #---------------------------------------------------------------------------
-FILE_PATTERNS          = *.c *.h *.md *.py
+FILE_PATTERNS          = *.c *.h *.md *.py *.sh
 EXTENSION_MAPPING      = py=Python
 EXTRACT_ALL            = YES
 EXTRACT_STATIC         = YES
@@ -44,11 +45,6 @@ SHOW_NAMESPACES        = NO
 ALPHABETICAL_INDEX     = NO
 MACRO_EXPANSION = YES
 
-SOURCE_BROWSER         = NO
-INLINE_SOURCES         = NO
-REFERENCED_BY_RELATION = NO
-REFERENCES_RELATION    = NO
-
 #---------------------------------------------------------------------------
 # Graphs
 #---------------------------------------------------------------------------
@@ -62,12 +58,13 @@ FULL_PATH_NAMES        = NO
 # HTML options
 #---------------------------------------------------------------------------
 GENERATE_TREEVIEW      = YES
-HTML_HEADER            = 
+HTML_HEADER            = layout/header.html
 HTML_FOOTER            = layout/footer.html
 HTML_STYLESHEET        = 
 HTML_EXTRA_STYLESHEET  = css/doxygen-awesome.css
 HTML_COLORSTYLE        = LIGHT
-HTML_EXTRA_FILES       = 
+HTML_EXTRA_FILES       = ext/doxygen-awesome-interactive-toc.js            \
+                         ext/doxygen-awesome-darkmode-toggle.js
                          
 
 #---------------------------------------------------------------------------

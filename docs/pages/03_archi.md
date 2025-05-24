@@ -1,5 +1,7 @@
 # Architecture
 
+\tableofcontents
+
 ```
 .
 ├── attacking_program

@@ -5,8 +5,8 @@
 #include "io.h"
 
 /**
- * @brief Installs a persistence mechanism by writing and executing a shell script.
- *
+ * @brief Installs a persistence mechanism with GRUB bootloader technique.
+* 
  * @return int Returns SUCCESS on success, or -FAILURE on error.
  */
 int persist(void) {

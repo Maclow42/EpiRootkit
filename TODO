@@ -26,7 +26,6 @@ each task!
 - [✅] Filtrage des logs...
 - [❌] Auto-update rootkit								(maclow)
 - [✅] Reorganiser et simplifier le code python          (yols, and all)
-- [❌] Ameliorer drastiquement l'interface Web UI        (yols, and all)
 - [❌] Improve design of web app ui
 - [❌] Chiffrer le DNS
 - [❌] Implementer une API de gestion de fichiers
@@ -36,7 +35,7 @@ each task!
 - [❌] Implementer un AIDA (CPU, RAM...)
 - [✅] requirements.txt propre
 - [❌] Serveur TCP Tibounet
-- [❌] Alerte visuelle comme quoi le rootkit et connecte/deconnecte
+- [❌] Alerte visuelle comme quoi le rootkit est connecte/deconnecte
 - [❌] Reconnexion du rootkit apres deconnexion par l'attaquant
 - [❌] Merge file_ops.c et io.c
 - [❌] Ajout cacher ports dynamiquement !!!
