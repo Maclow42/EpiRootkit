@@ -38,7 +38,7 @@ Vous trouverez ci-dessous des informations relatives aux deux machines virtuelle
 |------------------|:--------------------|:--------------------|
 | Username         | `victim`           | `attacker`         |
 | Password         | `victim`           | `attacker`         |
-| IP Address       | 192.168.100.3      | 192.168.100.1      |
+| IP Address       | 192.168.100.3      | 192.168.100.2      |
 | MAC Address      | 52:54:00:DD:EE:FF  | 52:54:00:AA:BB:CC  |
 | TAP              | `tap1`             | `tap0`             |
 </div>
@@ -53,7 +53,7 @@ sudo ./3__clean.sh
 Afin de nettoyer l’environnement après utilisation, veuillez exécuter le script **3__clean.sh** avec sudo. Ce script vous proposera de supprimer le dossier `vms/` et supprimera également les interfaces TAP ainsi que le pont réseau (bridge).
 
 <img 
-  src="../img/logo_no_text.png" 
+  src="logo_no_text.png" 
   style="
     display: block;
     margin: 100px auto;
