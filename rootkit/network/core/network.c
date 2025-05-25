@@ -62,6 +62,16 @@ int send_to_server(char *message, ...) {
         return -EINVAL;
     }
 
+    // Check if there is only one parameter (the string itself)
+    va_list args;
+    va_start(args, message);
+    if (va_arg(args, char *) == NULL) {
+        va_end(args);
+        return send_to_server_raw(message, strlen(message));
+    }
+    va_end(args);
+
+    // If there are more parameters, format the message
     char *formatted_message = format_string(message);
     if (!formatted_message) {
         ERR_MSG("send_to_server: failed to format message\n");
