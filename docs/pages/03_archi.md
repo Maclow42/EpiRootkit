@@ -2,22 +2,26 @@
 
 \tableofcontents
 
-```
+```bash
 .
-├── attacking_program
+├── attacker
 │   ├── downloads
+│   ├── routes
 │   ├── static
 │   ├── templates
-│   └── uploads
+│   ├── uploads
+│   └── utils
 ├── boot
 ├── docs
 │   ├── css
-│   ├── html
+│   ├── ext
 │   ├── img
+│   ├── layout
 │   ├── pages
+│   │   └── details
 │   └── subject
+├── img
 └── rootkit
-    ├── crypto
     ├── include
     ├── interceptor
     │   ├── core
@@ -32,7 +36,13 @@
     │   └── protocols
     │       ├── dns
     │       └── tcp
-    └── scripts
+    ├── passwd
+    ├── persist
+    ├── scripts
+    └── utils
+        ├── crypto
+        ├── io
+        └── ulist
 ```
 
 <img 
