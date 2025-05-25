@@ -55,7 +55,6 @@ each task!
 - [❌] Supprimer le .ko au load 
 - [❌] Port knocking / flux chiffré... un peu chiant
 - [❌] Jitter & back-off adaptatif
-- [❌] Polymorphisme du module
 - [❌] Génération de domaine dynamique (DGA)
 - [❌] Hook modprob ?
 - [❌] Aneantir le capitalisme et les rapports marchands    (need documentation)

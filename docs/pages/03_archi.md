@@ -112,11 +112,11 @@ rootkit
 ├── exec_cmd.c
 ├── file_ops.c
 ├── main.c
-├── Makefile
 ├── rootkit_command.c
 ├── socat
 ├── socat.c
-└── vanish.c
+├── vanish.c
+└── Makefile
 ```
 
 ## 4. ⚙️ Boot
