@@ -69,12 +69,12 @@ else
     echo "[DEBUG] Attacker disk image already unzipped."
 fi
 
-# Fix permissions so non-root user can access the disk images.
+# 4. Fix permissions so non-root user can access the disk images.
 chown "$NON_ROOT_USER":"$NON_ROOT_USER" "$ATTACKER_DISK" "$VICTIM_DISK"
 chmod 664 "$ATTACKER_DISK" "$VICTIM_DISK"
 echo "[DEBUG] Disk images ownership set to $NON_ROOT_USER."
 
-# 3. Create and configure the bridge (br0).
+# 5. Create and configure the bridge (br0).
 if ip link show "$BRIDGE_NAME" &>/dev/null; then
     echo "[DEBUG] Bridge $BRIDGE_NAME already exists."
 else
@@ -86,13 +86,13 @@ fi
 ip link set "$BRIDGE_NAME" up
 echo "[DEBUG] Bridge $BRIDGE_NAME is up."
 
-# 4. Set up iptables rules to allow traffic on the bridge.
+# 6. Set up iptables rules to allow traffic on the bridge.
 echo "[DEBUG] Setting up iptables rules..."
 iptables -A INPUT -i br0 -p tcp --dport 4242 -j ACCEPT
 iptables -I INPUT  -p udp --dport 53 -j ACCEPT
 iptables -I OUTPUT -p udp --sport 53 -j ACCEPT
 
-# 5. Create TAP interface tap0 for the attacker VM if it does not exist.
+# 7. Create TAP interface tap0 for the attacker VM if it does not exist.
 if ip link show tap0 &>/dev/null; then
     echo "[DEBUG] TAP interface tap0 already exists."
 else
@@ -100,7 +100,7 @@ else
     ip tuntap add dev tap0 mode tap user "$NON_ROOT_USER" || { echo "[ERROR] Error creating TAP interface tap0."; exit 1; }
 fi
 
-# 6. Create TAP interface tap1 for the victim VM if it does not exist.
+# 8. Create TAP interface tap1 for the victim VM if it does not exist.
 if ip link show tap1 &>/dev/null; then
     echo "[DEBUG] TAP interface tap1 already exists."
 else
@@ -108,12 +108,12 @@ else
     ip tuntap add dev tap1 mode tap user "$NON_ROOT_USER" || { echo "[ERROR] Error creating TAP interface tap1."; exit 1; }
 fi
 
-# 7. Attach both TAP interfaces to the bridge.
+# 9. Attach both TAP interfaces to the bridge.
 echo "[DEBUG] Attaching tap0/1 to bridge $BRIDGE_NAME..."
 ip link set tap0 master "$BRIDGE_NAME"
 ip link set tap1 master "$BRIDGE_NAME"
 
-# 8. Bring up the TAP interfaces.
+# 10. Bring up the TAP interfaces.
 ip link set tap0 up
 ip link set tap1 up
 

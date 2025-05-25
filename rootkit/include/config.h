@@ -1,9 +1,6 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#undef pr_fmt
-#define pr_fmt(fmt) "epirootkit: " fmt
-
 // RETURN MACROS
 #define SUCCESS 0
 #define FAILURE 1
@@ -13,14 +10,14 @@
 #define DBG_MSG(fmt, args...) 								\
 	do { 													\
 		if (DEBUG) { 										\
-			pr_info(fmt, ##args); 							\
+			pr_info("epirootkit: " fmt, ##args); 		    \
 		} 													\
 	} while (0)
 
 #define ERR_MSG(fmt, args...) 								\
 	do { 													\
 		if (DEBUG) { 										\
-			pr_err(fmt, ##args); 							\
+			pr_err("epirootkit: " fmt, ##args); 		    \
 		} 													\
 	} while (0)
 
