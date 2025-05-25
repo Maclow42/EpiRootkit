@@ -16,11 +16,7 @@ RECURSIVE              = YES
 IMAGE_PATH             = img
 INPUT                  = ../rootkit                                        \
                          ../attacking_program                              \
-                         pages/01_main.md                                  \
-                         pages/02_install.md                               \
-                         pages/03_archi.md                                 \
-                         pages/04_usage.md                                 \                             
-                         pages/05_env.md                               
+                         pages
 
 #---------------------------------------------------------------------------
 # Build configuration
@@ -30,6 +26,7 @@ EXTENSION_MAPPING      = py=Python
 EXTRACT_ALL            = YES
 EXTRACT_STATIC         = YES
 EXTRACT_PRIVATE        = YES
+HIDE_SCOPE_NAMES       = YES
 EXTRACT_LOCAL_METHODS  = YES
 HIDE_UNDOC_MEMBERS     = NO
 HIDE_UNDOC_CLASSES     = YES

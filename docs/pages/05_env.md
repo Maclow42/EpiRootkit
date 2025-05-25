@@ -37,5 +37,5 @@ Grâce à ce montage, les deux machines virtuelles communiquent entre elles en �
 
 | Previous                          | Next                               |
 |:----------------------------------|-----------------------------------:|
-| [Utilisation](04_usage.md)        |                                    |
+| [Utilisation](04_usage.md)        | [Réseau](d5/dc4/network.html)      |
 </div>

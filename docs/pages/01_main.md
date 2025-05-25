@@ -36,6 +36,8 @@ Bienvenue dans le projet **EpiRootkit**, un rootkit pédagogique développé dan
 - 🗑️ Filtrage des logs  
 - 🔄 Persistance au reboot  
 
+## 🏢 Organisation
+
 <div class="section_buttons">
 
 | Previous                          | Next                               |
