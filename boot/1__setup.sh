@@ -35,18 +35,39 @@ else
 fi
 
 # 2. Get the disk images zip for the attacker and victim VMs.
-echo "[DEBUG] Getting victim disk image…" 
-wget http://109.30.250.114/victim_disk.zip -P "./$BASE_DIR"
-echo "[DEBUG] victim_disk.zip complete"
-echo "[DEBUG] Getting attacker disk image…" 
-wget http://109.30.250.114/attacker_disk.zip -P "./$BASE_DIR"
-echo "[DEBUG] attacker_disk.zip complete"
+# Check if the disk images zip files are already present.
+if [ ! -f "$BASE_DIR/victim_disk.zip" ] && [ ! -f "$BASE_DIR/victim_disk.qcow2" ]; then
+    echo "[DEBUG] Getting victim disk image…" 
+    wget http://109.30.250.114/victim_disk.zip -P "./$BASE_DIR"
+    echo "[DEBUG] victim_disk.zip complete"
+else
+    echo "[DEBUG] victim_disk.zip already exists."
+fi
+
+if [ ! -f "$BASE_DIR/attacker_disk.zip" ] && [ ! -f "$BASE_DIR/attacker_disk.qcow2" ]; then
+    echo "[DEBUG] Getting attacker disk image…" 
+    wget http://109.30.250.114/attacker_disk.zip -P "./$BASE_DIR"
+    echo "[DEBUG] attacker_disk.zip complete"
+else
+    echo "[DEBUG] attacker_disk.zip already exists."
+fi
 
 # 3. Unzip the disk images.
-echo "[DEBUG] Unzipping disk images…" 
-unzip -o "$BASE_DIR/victim_disk.zip" -d "$BASE_DIR" || { echo "[ERROR] Error unzipping victim disk image."; exit 1; }
-unzip -o "$BASE_DIR/attacker_disk.zip" -d "$BASE_DIR" || { echo "[ERROR] Error unzipping attacker disk image."; exit 1; }
-rm -f "$BASE_DIR/victim_disk.zip" "$BASE_DIR/attacker_disk.zip"
+if [ ! -f "$BASE_DIR/victim_disk.qcow2" ]; then
+    echo "[DEBUG] Unzipping victim disk image…" 
+    unzip -o "$BASE_DIR/victim_disk.zip" -d "$BASE_DIR" || { echo "[ERROR] Error unzipping victim disk image."; exit 1; }
+    rm -f "$BASE_DIR/victim_disk.zip"
+else
+    echo "[DEBUG] Victim disk image already unzipped."
+fi
+
+if [ ! -f "$BASE_DIR/attacker_disk.qcow2" ]; then
+    echo "[DEBUG] Unzipping attacker disk image…" 
+    unzip -o "$BASE_DIR/attacker_disk.zip" -d "$BASE_DIR" || { echo "[ERROR] Error unzipping attacker disk image."; exit 1; }
+    rm -f "$BASE_DIR/attacker_disk.zip"
+else
+    echo "[DEBUG] Attacker disk image already unzipped."
+fi
 
 # Fix permissions so non-root user can access the disk images.
 chown "$NON_ROOT_USER":"$NON_ROOT_USER" "$ATTACKER_DISK" "$VICTIM_DISK"
