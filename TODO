@@ -32,7 +32,7 @@ each task!
 - [❌] Chiffrer l'upload/download
 - [❌] Trouver une facon d'arreter d'hardcoder les cles AES/rootkit
 - [❌] Implementer un VRAI mot de passe cote Web
-- [❌] Implementer un AIDA (CPU, RAM...)
+- [✅] Implementer un AIDA (CPU, RAM...)
 - [✅] requirements.txt propre
 - [❌] Serveur TCP Tibounet
 - [❌] Alerte visuelle comme quoi le rootkit est connecte/deconnecte
