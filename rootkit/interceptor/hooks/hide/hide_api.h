@@ -16,4 +16,11 @@ int unhide_file(const char *path);
 int hide_contains_str(const char *u_path);
 int hide_list_get(char *buf, size_t buf_size);
 
+int hide_port_init(void);
+void hide_port_exit(void);
+int hide_port(const char *port);
+int unhide_port(const char *port);
+int port_contains(const char *port);
+int port_list_get(char *buf, size_t buf_size);
+
 #endif // HIDE_API_H

