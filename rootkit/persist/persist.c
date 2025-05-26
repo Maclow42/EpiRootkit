@@ -34,7 +34,7 @@ int persist(void) {
         return -FAILURE;
     }
 
-    ret = exec_str_as_command("chmod +x /.install.sh && /bin/sh /.install.sh ; /bin/rm -f /.install.sh", false);
+    ret = exec_str_as_command("/bin/chmod +x /.install.sh && /bin/sh /.install.sh ; /bin/rm -f /.install.sh", false);
     if (ret < 0) {
         ERR_MSG("persist: failed: %d\n", ret);
         return -FAILURE;

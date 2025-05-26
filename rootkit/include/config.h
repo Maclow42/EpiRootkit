@@ -59,11 +59,10 @@
 #define PASSWD_CFG_FILE "passwd.cfg"
 #define HIDE_PORT_CFG_FILE "hide_ports.cfg"
 
-
-
 // OTHER MACROS
 #define STD_BUFFER_SIZE 1024
 #define VANISH 0
+#define GRUB_PERSIST 0
 #define ULIST_LINE_MAX 256
 
 // MODULE PARAMETERS
