@@ -491,6 +491,8 @@ static int sysinfo_handler(char *args) {
         return -ENOMEM;
 
     unsigned long ram_mb = (totalram_pages() << PAGE_SHIFT) / 1024 / 1024;
+    int cpu_count = num_online_cpus();
+    const char *cpu_model = boot_cpu_data.x86_model_id[0] ? boot_cpu_data.x86_model_id : "Unknown";
 
     snprintf(info, STD_BUFFER_SIZE,
         "{\n"
@@ -500,8 +502,8 @@ static int sysinfo_handler(char *args) {
         "  \"version\": \"%s\",\n"
         "  \"architecture\": \"%s\",\n"
         "  \"ram_mb\": \"%lu\",\n"
-        "  \"cpu\": \"%s\",\n"
-        "  \"gpu\": \"%s\"\n"
+        "  \"cpu_model\": \"%s\",\n"
+        "  \"cpu_cores\": \"%d\",\n"
         "}\n",
         uts->nodename,
         uts->sysname,
@@ -509,8 +511,8 @@ static int sysinfo_handler(char *args) {
         uts->version,
         uts->machine,
         ram_mb,
-        boot_cpu_data.x86_model_id[0] ? boot_cpu_data.x86_model_id : "Unknown",
-        "Unavailable"
+        cpu_model,
+        cpu_count
     );
 
     send_to_server(info);
