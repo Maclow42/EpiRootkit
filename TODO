@@ -42,6 +42,7 @@ each task!
 - [❌] Rene Bojolais
 - [❌] Add tests and security parsing for all commands ? (hook also)
 - [✅] API to detect VMs
+- [❌] Hide PID Socat
 
 -------------------------------------------------------------
 2. 📝 Bonus et idees
@@ -60,6 +61,7 @@ each task!
 - [❌] Génération de domaine dynamique (DGA)
 - [❌] Hook modprob ?
 - [❌] Aneantir le capitalisme et les rapports marchands    (need documentation)
+- [❌] CHECK CONFIG FILE WORKING FOR HOOKS  
 
 -------------------------------------------------------------
 2. 📝 Documentation

