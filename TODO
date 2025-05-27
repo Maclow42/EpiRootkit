@@ -34,14 +34,14 @@ each task!
 - [❌] Implementer un VRAI mot de passe cote Web
 - [✅] Implementer un AIDA (CPU, RAM...)
 - [✅] requirements.txt propre
-- [❌] Serveur TCP Tibounet
-- [❌] Alerte visuelle comme quoi le rootkit est connecte/deconnecte
-- [❌] Reconnexion du rootkit apres deconnexion par l'attaquant
+- [✅] Serveur TCP Tibounet
+- [✅] Alerte visuelle comme quoi le rootkit est connecte/deconnecte
+- [✅] Reconnexion du rootkit apres deconnexion par l'attaquant
 - [❌] Merge file_ops.c et io.c
 - [✅] Ajout cacher ports dynamiquement !!!
 - [❌] Rene Bojolais
 - [❌] Add tests and security parsing for all commands ? (hook also)
-- [❌] API to detect VMs
+- [✅] API to detect VMs
 
 -------------------------------------------------------------
 2. 📝 Bonus et idees
