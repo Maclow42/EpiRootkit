@@ -1,5 +1,0 @@
-flask
-prompt_toolkit
-cryptography
-dnslib
-werkzeug
