@@ -57,38 +57,46 @@
             const ifAuthElements = document.querySelectorAll('.if_auth');
             ifAuthElements.forEach(el => el.classList.add('hidden'));
         };
+        const showAuthRequiredElements = () => {
+            const ifAuthElements = document.querySelectorAll('.if_auth');
+            ifAuthElements.forEach(el => el.classList.remove('hidden'));
+        };
+
+        const isAuthREquiredElementsDisplayed = () => {
+            const ifAuthElements = document.querySelectorAll('.if_auth');
+            return Array.from(ifAuthElements).some(el => el.style.display !== 'none');
+        };
 
         let clientInfoCache = null;
 
         function checkAuthentication() {
-            fetch('/client-info')
+            fetch("{{ url_for('clientInfo') }}")
                 .then(response => response.json())
                 .then(data => {
-                    clientInfoCache = data;
                     const isauthenticated = data.authenticated;
                     const isDashboard = window.location.pathname === '/dashboard';
 
+                    // if not authenticated and not on dashboard, redirect to dashboard
                     if (!isauthenticated) {
-                        if (isDashboard) {
-                            showMainContent();
-                            hideAuthRequiredElements();
-                        } else {
-                            redirectToDashboard();
+                        if (!isDashboard || clientInfoCache && isAuthREquiredElementsDisplayed()) {
+                            return redirectToDashboard();
                         }
+                        hideAuthRequiredElements();
                     } else {
-                        showMainContent(); // content is hidden by default
+                        showAuthRequiredElements();
                     }
+
+                    showMainContent();
+
+                    clientInfoCache = data;
                 })
                 .catch(error => {
                     console.error('Erreur lors du fetch client-info:', error);
                 });
         }
 
-
-
+        checkAuthentication();
         document.addEventListener('DOMContentLoaded', () => {
-            checkAuthentication();
-
             setInterval(checkAuthentication, 1000);
         });
     </script>
