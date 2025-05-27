@@ -19,7 +19,7 @@ obj-m    := epirootkit.o
 
 epirootkit-objs :=                              \
     main.o                                      \
-    exec.o                                  \
+    exec.o                                      \
     socat.o                                     \
     file_ops.o                                  \
     epikeylog.o                                 \
