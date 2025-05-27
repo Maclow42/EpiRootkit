@@ -15,7 +15,7 @@ USE_MDFILE_AS_MAINPAGE = pages/01_main.md
 RECURSIVE              = YES
 IMAGE_PATH             = img
 INPUT                  = ../rootkit                                        \
-                         ../attacking_program                              \
+                         ../attacker                                       \
                          pages
 
 #---------------------------------------------------------------------------

