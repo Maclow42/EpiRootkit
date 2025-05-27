@@ -26,7 +26,6 @@
 
 <script>
     // API Endpoints
-    const URL_CLIENT_INFO = "{{ url_for('clientInfo') }}";
     const URL_CONNECT = "{{ url_for('connect_command') }}";
     const URL_KILLCOM = "{{ url_for('killcom_command') }}";
 
@@ -106,8 +105,9 @@
 
     function updateDashboard(firstLoad = false) {
         try {
-            if (!clientInfoCache)
+            if (!clientInfoCache) {
                 return;
+            }
             const is_authenticated = clientInfoCache.authenticated;
             const rootkitAddress = clientInfoCache.rootkit_address;
             const lastCommand = clientInfoCache.last_command || 'None';
@@ -163,8 +163,8 @@
             console.error('Error updating dashboard:', error);
             const statusCard = document.querySelector('.status-card');
             statusCard.innerHTML = `
-                <p><strong>Status:</strong> ❌ Error</p>
-                <p>Unable to load dashboard data. Please try again later.</p>
+                <p><strong>Status:</strong> 🔴 Disconnected</p>
+                <p>🟥 No rootkit connected.</p>
             `;
             statusCard.classList.remove('hidden-until-loaded');
         }
