@@ -41,25 +41,55 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+
+        const redirectToDashboard = () => {
+            window.location.replace('/dashboard');
+        };
+        const showMainContent = () => {
+            document.querySelector('.main-content').classList.remove('hidden');
+            document.querySelector('.sidebar').classList.remove('hidden');
+        };
+        const hideMainContent = () => {
+            document.querySelector('.main-content').classList.add('hidden');
+            document.querySelector('.sidebar').classList.add('hidden');
+        };
+        const hideAuthRequiredElements = () => {
+            const ifAuthElements = document.querySelectorAll('.if_auth');
+            ifAuthElements.forEach(el => el.classList.add('hidden'));
+        };
+
+        let clientInfoCache = null;
+
+        function checkAuthentication() {
             fetch('/client-info')
                 .then(response => response.json())
                 .then(data => {
+                    clientInfoCache = data;
                     const isauthenticated = data.authenticated;
                     const isDashboard = window.location.pathname === '/dashboard';
 
-                    if (!isauthenticated && !isDashboard) {
-                        window.location.replace('/dashboard');
+                    if (!isauthenticated) {
+                        if (isDashboard) {
+                            showMainContent();
+                            hideAuthRequiredElements();
+                        } else {
+                            redirectToDashboard();
+                        }
                     } else {
-                        document.querySelector('.main-content').classList.remove('hidden');
-                        document.querySelector('.sidebar').classList.remove('hidden');
+                        showMainContent(); // content is hidden by default
                     }
                 })
                 .catch(error => {
                     console.error('Erreur lors du fetch client-info:', error);
-                    document.querySelector('.main-content').classList.remove('hidden');
-                    document.querySelector('.sidebar').classList.remove('hidden');
                 });
+        }
+
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuthentication();
+
+            setInterval(checkAuthentication, 1000);
         });
     </script>
 </body>

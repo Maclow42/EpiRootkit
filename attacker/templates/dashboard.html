@@ -105,63 +105,69 @@
     // === Dashboard Update ===
 
     function updateDashboard(firstLoad = false) {
-        fetch(URL_CLIENT_INFO)
-            .then(response => response.json())
-            .then(data => {
-                const is_authenticated = data.authenticated;
-                const rootkitAddress = data.rootkit_address;
-                const lastCommand = data.last_command || 'None';
-                const statusCard = document.querySelector('.status-card');
+        try {
+            if (!clientInfoCache)
+                return;
+            const is_authenticated = clientInfoCache.authenticated;
+            const rootkitAddress = clientInfoCache.rootkit_address;
+            const lastCommand = clientInfoCache.last_command || 'None';
+            const statusCard = document.querySelector('.status-card');
 
-                let html = "";
+            let html = "";
 
-                // Hide authenticated-only elements by default
-                document.querySelectorAll('.if_auth').forEach(el => el.style.display = 'none');
+            // Hide authenticated-only elements by default
+            document.querySelectorAll('.if_auth').forEach(el => el.style.display = 'none');
 
-                if (!rootkitAddress || rootkitAddress.length === 0) {
-                    // No rootkit connected
-                    html = `
-                        <p><strong>Status:</strong> 🔴 Disconnected</p>
-                        <p>🟥 No rootkit connected.</p>
-                    `;
-                } else if (!is_authenticated) {
-                    // Rootkit connected but not authenticated
-                    html = `
-                        <p><strong>Status:</strong> 🟡 Connected (Not authenticated)</p>
-                        <table class="info-table">
-                            <tr><th>📍 IP</th><td>${rootkitAddress[0]}</td></tr>
-                            <tr><th>🔌 Port</th><td>${rootkitAddress[1]}</td></tr>
-                            <tr><th>🕒 Time</th><td>${new Date().toLocaleTimeString()}</td></tr>
-                        </table>
-                        <button onclick="openConnectModal()">🔐 Authentifier</button>
-                    `;
-                } else {
-                    // Rootkit connected and authenticated
-                    html = `
-                        <p><strong>Status:</strong> ✅ Connected</p>
-                        <table class="info-table">
-                            <tr><th>📍 IP</th><td>${rootkitAddress[0]}</td></tr>
-                            <tr><th>🔌 Port</th><td>${rootkitAddress[1]}</td></tr>
-                            <tr><th>🕒 Time</th><td>${new Date().toLocaleTimeString()}</td></tr>
-                            <tr><th>📜 Last Command</th><td>${lastCommand}</td></tr>
-                        </table>
-                        <button class="danger-btn" onclick="sendCommand(URL_KILLCOM)">💀 Kill rootkit</button>
-                    `;
+            if (!rootkitAddress || rootkitAddress.length === 0) {
+                // No rootkit connected
+                html = `
+                    <p><strong>Status:</strong> 🔴 Disconnected</p>
+                    <p>🟥 No rootkit connected.</p>
+                `;
+            } else if (!is_authenticated) {
+                // Rootkit connected but not authenticated
+                html = `
+                    <p><strong>Status:</strong> 🟡 Connected (Not authenticated)</p>
+                    <table class="info-table">
+                        <tr><th>📍 IP</th><td>${rootkitAddress[0]}</td></tr>
+                        <tr><th>🔌 Port</th><td>${rootkitAddress[1]}</td></tr>
+                        <tr><th>🕒 Time</th><td>${new Date().toLocaleTimeString()}</td></tr>
+                    </table>
+                    <button onclick="openConnectModal()">🔐 Authentifier</button>
+                `;
+            } else {
+                // Rootkit connected and authenticated
+                html = `
+                    <p><strong>Status:</strong> ✅ Connected</p>
+                    <table class="info-table">
+                        <tr><th>📍 IP</th><td>${rootkitAddress[0]}</td></tr>
+                        <tr><th>🔌 Port</th><td>${rootkitAddress[1]}</td></tr>
+                        <tr><th>🕒 Time</th><td>${new Date().toLocaleTimeString()}</td></tr>
+                        <tr><th>📜 Last Command</th><td>${lastCommand}</td></tr>
+                    </table>
+                    <button class="danger-btn" onclick="sendCommand(URL_KILLCOM)">💀 Kill rootkit</button>
+                `;
 
-                    document.querySelectorAll('.if_auth').forEach(element => {
-                        element.style.display = 'block';
-                    });
-                }
+                document.querySelectorAll('.if_auth').forEach(element => {
+                    element.style.display = 'block';
+                });
+            }
 
-                statusCard.innerHTML = html;
+            statusCard.innerHTML = html;
 
-                if (firstLoad) {
-                    statusCard.classList.remove('hidden-until-loaded');
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching client info:', error);
-            });
+            if (firstLoad) {
+                statusCard.classList.remove('hidden-until-loaded');
+            }
+        }
+        catch (error) {
+            console.error('Error updating dashboard:', error);
+            const statusCard = document.querySelector('.status-card');
+            statusCard.innerHTML = `
+                <p><strong>Status:</strong> ❌ Error</p>
+                <p>Unable to load dashboard data. Please try again later.</p>
+            `;
+            statusCard.classList.remove('hidden-until-loaded');
+        }
     }
 
     // === Initial Load & Auto Refresh ===

