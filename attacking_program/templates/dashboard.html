@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block content %}
+<h3>📊 Dashboard</h3>
+
+<!-- Status display card (connection and authentication state) -->
+<div class="status-card hidden-until-loaded"></div>
+
+<!-- Modal for connecting/authenticating with the rootkit -->
+<div id="connect-modal" class="modal hidden">
+    <div class="modal-content">
+        <span class="close" onclick="closeConnectModal()">&times;</span>
+        <h3>Connect to Rootkit</h3>
+        <p class="error-message hidden"></p>
+        <span class="modal-main-span">
+            <input
+                type="text"
+                id="connect-input"
+                placeholder="Enter connection details..."
+                autofocus
+                onkeypress="if(event.key === 'Enter') connectToRootkit()"
+            >
+            <button onclick="connectToRootkit()">Connect</button>
+        </span>
+    </div>
+</div>
+
+<script>
+    // API Endpoints
+    const URL_CLIENT_INFO = "{{ url_for('clientInfo') }}";
+    const URL_CONNECT = "{{ url_for('connect_command') }}";
+    const URL_KILLCOM = "{{ url_for('killcom_command') }}";
+
+    // === Modal Management ===
+
+    function openConnectModal() {
+        const modal = document.getElementById('connect-modal');
+        modal.classList.remove('hidden');
+        modal.style.display = 'block';
+
+        // Auto-focus the input field after slight delay
+        setTimeout(() => {
+            document.getElementById('connect-input').focus();
+        }, 100);
+    }
+
+    function closeConnectModal() {
+        const modal = document.getElementById('connect-modal');
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    }
+
+    // === Connection Logic ===
+
+    async function connectToRootkit() {
+        const details = document.getElementById('connect-input').value;
+        const response = await sendCommand(URL_CONNECT, details);
+        const errorMessage = document.querySelector('.error-message');
+
+        if (response.status === 200) {
+            errorMessage.textContent = '';
+            errorMessage.classList.add('hidden');
+            closeConnectModal();
+            updateDashboard();
+        } else {
+            const errorText =
+                response.status === 403
+                    ? 'Authentication failed.'
+                    : response.data?.error
+                        ? 'Error: ' + response.data.error
+                        : 'Connection failed (code ' + response.status + ')';
+
+            errorMessage.textContent = errorText;
+            errorMessage.classList.remove('hidden');
+        }
+    }
+
+    // === Command Sender ===
+
+    async function sendCommand(url, command, channel = 'tcp') {
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command, channel, use_history: false })
+            });
+
+            let data = {};
+            try {
+                // Try parsing JSON response
+                data = await response.json();
+            } catch (e) {
+                console.warn('Server returned non-JSON response');
+            }
+
+            return { data, status: response.status };
+        } catch (error) {
+            console.error('Error sending command:', error);
+            return {
+                data: { error: 'Network or server error' },
+                status: 500
+            };
+        }
+    }
+
+    // === Dashboard Update ===
+
+    function updateDashboard(firstLoad = false) {
+        fetch(URL_CLIENT_INFO)
+            .then(response => response.json())
+            .then(data => {
+                const is_authenticated = data.authenticated;
+                const rootkitAddress = data.rootkit_address;
+                const lastCommand = data.last_command || 'None';
+                const statusCard = document.querySelector('.status-card');
+
+                let html = "";
+
+                // Hide authenticated-only elements by default
+                document.querySelectorAll('.if_auth').forEach(el => el.style.display = 'none');
+
+                if (!rootkitAddress || rootkitAddress.length === 0) {
+                    // No rootkit connected
+                    html = `
+                        <p><strong>Status:</strong> 🔴 Disconnected</p>
+                        <p>🟥 No rootkit connected.</p>
+                    `;
+                } else if (!is_authenticated) {
+                    // Rootkit connected but not authenticated
+                    html = `
+                        <p><strong>Status:</strong> 🟡 Connected (Not authenticated)</p>
+                        <table class="info-table">
+                            <tr><th>📍 IP</th><td>${rootkitAddress[0]}</td></tr>
+                            <tr><th>🔌 Port</th><td>${rootkitAddress[1]}</td></tr>
+                            <tr><th>🕒 Time</th><td>${new Date().toLocaleTimeString()}</td></tr>
+                        </table>
+                        <button onclick="openConnectModal()">🔐 Authentifier</button>
+                    `;
+                } else {
+                    // Rootkit connected and authenticated
+                    html = `
+                        <p><strong>Status:</strong> ✅ Connected</p>
+                        <table class="info-table">
+                            <tr><th>📍 IP</th><td>${rootkitAddress[0]}</td></tr>
+                            <tr><th>🔌 Port</th><td>${rootkitAddress[1]}</td></tr>
+                            <tr><th>🕒 Time</th><td>${new Date().toLocaleTimeString()}</td></tr>
+                            <tr><th>📜 Last Command</th><td>${lastCommand}</td></tr>
+                        </table>
+                        <button class="danger-btn" onclick="sendCommand(URL_KILLCOM)">💀 Kill rootkit</button>
+                    `;
+
+                    document.querySelectorAll('.if_auth').forEach(element => {
+                        element.style.display = 'block';
+                    });
+                }
+
+                statusCard.innerHTML = html;
+
+                if (firstLoad) {
+                    statusCard.classList.remove('hidden-until-loaded');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching client info:', error);
+            });
+    }
+
+    // === Initial Load & Auto Refresh ===
+
+    updateDashboard(true); // First dashboard load
+    setInterval(updateDashboard, 1000); // Refresh every second
+</script>
+{% endblock %}

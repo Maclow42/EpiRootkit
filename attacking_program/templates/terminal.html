@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>🧠 Terminal</h2>
+
+<!-- Formulaire pour entrer la commande -->
+<div class="command-form">
+    <input type="text" id="commandInput" placeholder="Entrez une commande..." autofocus 
+        onkeypress="if(event.key === 'Enter') handleSend()">
+    <label>
+        <input type="radio" name="channel" value="tcp" id="tcpChannel"
+               {% if last_channel == 'tcp' %}checked{% endif %}> TCP
+    </label>
+    <label>
+        <input type="radio" name="channel" value="dns" id="dnsChannel"
+               {% if last_channel == 'dns' %}checked{% endif %}> DNS
+    </label>
+    <button type="button" onclick="handleSend()">Envoyer</button>
+</div>
+
+<!-- Afficher le résultat de la dernière commande exécutée -->
+<h3 id="last-result-title">📩​ Résultat de la dernière commande</h3>
+<div id="stds-code-block" class="terminal-response-row">
+    <!-- Bloc pour stdout -->
+    <div class="stdout-block">
+        <h4>🟢 stdout</h4>
+        <pre id="last-stdout">{{ history[-1].stdout if history else "" }}</pre>
+    </div>
+
+    <!-- Bloc pour stderr -->
+    <div class="stderr-block">
+        <h4>🔴 stderr</h4>
+        <pre id="last-stderr">{{ history[-1].stderr if history else "" }}</pre>
+    </div>
+</div>
+<div class="return-code-block">
+    <pre id="last-return-code">➡️ Terminated with code: {{ history[-1].termination_code if history else "" }}</pre>
+</div>
+
+<!-- Afficher les stdout / stderr passés (historique de commandes) -->
+<h3>📜 Historique des Commandes</h3>
+<ul class="history-list">
+{% if history %}
+{% for cmd in history[::-1] %}
+    <li>
+        <details>
+            <summary>
+                <code>{{ cmd.command }}</code>  <!-- Texte cliquable -->
+            </summary>
+
+            <!-- Contenu à afficher/masquer lorsque l'élément <details> est déplié -->
+            <div class="command-details">
+                <div class="stdsdiv">
+                    <div class="stdout">
+                        <h5>📤 stdout:</h5>
+                        <pre>{{ cmd.stdout }}</pre>
+                    </div>
+                    <div class="stderr">
+                        <h5>📥 stderr:</h5>
+                        <pre>{{ cmd.stderr }}</pre>
+                    </div>
+                </div>
+                {% if cmd.termination_code %}
+                    <pre>➡️ Terminated with code: {{ cmd.termination_code }}</pre>
+                {% endif %}
+            </div>
+        </details>
+    </li>
+{% endfor %}
+{% else %}
+    <p>Aucune commande envoyée pour l’instant.</p>
+{% endif %}
+</ul>
+
+<script>
+    const URL_EXEC = "{{ url_for('send') }}";
+    const URL_HISTORY = "{{ url_for('get_history') }}";
+
+    function handleSend() {
+        const command = document.getElementById('commandInput').value;
+        const channel = document.querySelector('input[name=channel]:checked').value;
+
+        if (!command.trim()) {
+            return;
+        }
+
+        fetch(URL_EXEC, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command, channel, use_history: true })
+        }).then(() => {
+            retrieve_history();
+        });
+    }
+
+    function retrieve_history() {
+        fetch(URL_HISTORY, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to retrieve history');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Mettre à jour l'historique dans le DOM
+                const historyList = document.querySelector('.history-list');
+                historyList.innerHTML = '';  // Vider la liste existante
+
+                data = data.reverse();
+                data.forEach(cmd => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <details>
+                            <summary><code>${cmd.command}</code></summary>
+                            <div class="command-details">
+                                <div class="stdsdiv">
+                                    <div class="stdout">
+                                        <h5>📤 stdout:</h5>
+                                        <pre>${cmd.stdout}</pre>
+                                    </div>
+                                    <div class="stderr">
+                                        <h5>📥 stderr:</h5>
+                                        <pre>${cmd.stderr}</pre>
+                                    </div>
+                                </div>
+                                ${cmd.termination_code ? `<pre>➡️ Terminated with code: ${cmd.termination_code}</pre>` : ''}
+                            </div>
+                        </details>`;
+                    historyList.appendChild(li);
+                });
+
+                // Mettre à jour le résultat de la dernière commande
+                if (data.length > 0) {
+                    const lastCmd = data[0];
+                    document.getElementById('last-stdout').textContent = lastCmd.stdout;
+                    document.getElementById('last-stderr').textContent = lastCmd.stderr;
+                    document.getElementById('last-return-code').textContent = `➡️ Terminated with code: ${lastCmd.termination_code}`;
+                } else {
+                    document.getElementById('last-stdout').textContent = '';
+                    document.getElementById('last-stderr').textContent = '';
+                    document.getElementById('last-return-code').textContent = '';
+                }
+
+                toggle_last_command_display();
+
+                // Empty the command input field
+                document.getElementById('commandInput').value = '';
+            })
+            .catch(error => {
+                console.error('Error fetching history:', error);
+            });
+    }
+
+    function toggle_last_command_display() {
+        // Toggle visibility of the last command result based on content
+        // If stdout and stderr are both empty, hide the result section
+        // It will show the title, stds block, and return code block only if there is content
+        // ie if a command was executed before
+        const title = document.getElementById('last-result-title');
+        const stdsBlock = document.getElementById('stds-code-block');
+        const returnCodeBlock = document.querySelector('.return-code-block');
+
+        const stdoutPre = document.getElementById('last-stdout');
+        const stderrPre = document.getElementById('last-stderr');
+
+        // Check if all blocks are empty
+        const isStdoutEmpty = stdoutPre.textContent.trim() === '';
+        const isStderrEmpty = stderrPre.textContent.trim() === '';
+
+        // Toggle visibility based on content
+        if (isStdoutEmpty && isStderrEmpty) {
+            title.style.display = 'none';
+            stdsBlock.style.display = 'none';
+            returnCodeBlock.style.display = 'none';
+        } else {
+            title.style.display = 'block';
+            stdsBlock.style.display = 'flex';
+            returnCodeBlock.style.display = 'block';
+        }
+    }
+
+    toggle_last_command_display();
+
+</script>
+
+{% endblock %}

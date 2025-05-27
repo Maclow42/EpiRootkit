@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>EpiRootkit Web Panel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            background-color: #1e1e1e;
+        }
+
+        .hidden {
+            visibility: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar hidden">
+        <h2>EpiRootkit</h2>
+        <ul>
+            {% set menu_items = [
+                ('dashboard', '📊 Dashboard'),
+                ('terminal', '🧠 Terminal'),
+                ('shell_remote', '🛰️ Shell Distant'),
+                ('upload', '📤 Upload'),
+                ('download', '📥 Download'),
+                ('keylogger', '⌨️ Keylogger'),
+                ('webcam', '📷 Webcam')
+            ] %}
+            {% for endpoint, label in menu_items %}
+                <li class="{% if request.path == url_for(endpoint) %}active{% endif %} {% if endpoint != 'dashboard' %}if_auth{% endif %}">
+                    <a href="{{ url_for(endpoint) }}">{{ label }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="main-content hidden">
+        <p>Epirootkit{{ request.path }}</p>
+        {% block content %}{% endblock %}
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('/client-info')
+                .then(response => response.json())
+                .then(data => {
+                    const isauthenticated = data.authenticated;
+                    const isDashboard = window.location.pathname === '/dashboard';
+
+                    if (!isauthenticated && !isDashboard) {
+                        window.location.replace('/dashboard');
+                    } else {
+                        document.querySelector('.main-content').classList.remove('hidden');
+                        document.querySelector('.sidebar').classList.remove('hidden');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur lors du fetch client-info:', error);
+                    document.querySelector('.main-content').classList.remove('hidden');
+                    document.querySelector('.sidebar').classList.remove('hidden');
+                });
+        });
+    </script>
+</body>
+</html>
