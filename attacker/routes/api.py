@@ -2,20 +2,28 @@ from app import app
 import config as cfg
 from flask import jsonify, request
 
-@app.route('/client-info', methods=['GET'])
-def clientInfo():
-    info = {}
-    if cfg.rootkit_connexion:
-        ip = cfg.rootkit_connexion.get_client_ip()
-        port = cfg.rootkit_connexion.get_listening_port()
-        history = cfg.rootkit_connexion.get_command_history()
-        last_command = history[-1]['command'] if history else None
-        info = {
-            "authenticated": cfg.rootkit_connexion.is_authenticated(),
-            "rootkit_address": [ip, port] if ip and port else None,
-            "last_command": last_command,
+def getClientInfos():
+    if not cfg.rootkit_connexion:
+        return {
+            "authenticated": False,
+            "rootkit_address": None,
+            "last_command": None,
         }
 
+    ip = cfg.rootkit_connexion.get_client_ip()
+    port = cfg.rootkit_connexion.get_listening_port()
+    history = cfg.rootkit_connexion.get_command_history()
+    last_command = history[-1]['command'] if history else None
+
+    return {
+        "authenticated": cfg.rootkit_connexion.is_authenticated(),
+        "rootkit_address": [ip, port] if ip and port else None,
+        "last_command": last_command,
+    }
+
+@app.route('/client-info', methods=['GET'])
+def clientInfo():
+    info = getClientInfos()
     return jsonify(info), 200
 
 @app.route('/get-history', methods=['GET'])
