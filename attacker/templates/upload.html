@@ -13,7 +13,18 @@
 {% endwith %}
 
 <form method="POST" enctype="multipart/form-data">
-    <input type="file" name="file" required>
-    <button type="submit">Envoyer</button>
+    <div>
+        <label for="file">Fichier :</label><br>
+        <input type="file" name="file" required>
+    </div>
+
+    <div style="margin-top: 1em;">
+        <label for="remote_path">Chemin distant (ex: /tmp/fichier.txt) :</label><br>
+        <input type="text" name="remote_path" required>
+    </div>
+
+    <div style="margin-top: 1em;">
+        <button type="submit">Envoyer</button>
+    </div>
 </form>
 {% endblock %}

