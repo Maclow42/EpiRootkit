@@ -124,12 +124,12 @@
 
     function updateDashboard(firstLoad = false) {
         try {
-            if (!clientInfoCache) {
-                return;
-            }
-            const is_authenticated = clientInfoCache.authenticated;
-            const rootkitAddress = clientInfoCache.rootkit_address;
-            const lastCommand = clientInfoCache.last_command || 'None';
+            let cachedClientInfo = typeof clientInfoCache !== 'undefined' ? clientInfoCache : {};
+            let params = {{ clientInfos | tojson }};
+            console.log('Client Info Params:', params);
+            const is_authenticated = cachedClientInfo.authenticated || params.authenticated || false;
+            const rootkitAddress = cachedClientInfo.rootkit_address || params.rootkit_address || [];
+            const lastCommand = cachedClientInfo.last_command || params.last_command || 'None';
             const statusCard = document.querySelector('.status-card');
 
             let html = "";
