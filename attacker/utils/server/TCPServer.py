@@ -4,6 +4,7 @@ import socket
 import threading
 import queue
 import errno
+import json
 from typing import Optional
 
 class Request:
@@ -26,6 +27,7 @@ class TCPServer:
         self._server_socket: Optional[socket.socket] = None
         self._client_socket: Optional[socket.socket] = None
         self._client_ip: Optional[str] = None
+        self._client_sysinfo: Optional[dict] = {}
 
         self._ip_lock = threading.Lock()
         self._running = False
@@ -87,6 +89,10 @@ class TCPServer:
     def get_command_history(self) -> list:
         return self._command_history
 
+    def get_client_sysinfo(self) -> Optional[dict]:
+        with self._ip_lock:
+            return self._client_sysinfo if self._client_sysinfo else None
+
     def is_authenticated(self) -> bool:
         return self._authenticated
 
@@ -121,8 +127,15 @@ class TCPServer:
                     self._client_ip = client_addr[0]
                 print(f"[CONNECTED] Client IP: {self._client_ip}")
 
-                welcome_message = self._network_handler.receive(self._client_socket)
-                print(welcome_message)
+                # When connected, client send its sysinfo
+                get_sysinfo = self._network_handler.receive(self._client_socket)
+                parsed_sysinfo = json.loads(get_sysinfo)
+                self._client_sysinfo = parsed_sysinfo
+                # search for key "virtual_env" and transform it to a boolean
+                if "virtual_env" in self._client_sysinfo:
+                    self._client_sysinfo["virtual_env"] = bool(self._client_sysinfo["virtual_env"])
+
+                print(f"[SYSINFO] Client sysinfo: {self._client_sysinfo}")
 
                 self._handle_client()
 
