@@ -1,7 +1,5 @@
 // === Cache and DOM Elements ===
 const dom = {
-    portInput: document.getElementById('port'),
-    shellOutput: document.getElementById('shell-output'),
     diskUsageOutput: document.getElementById('diskusage-output'),
     sysInfoList: document.getElementById('sysinfo-list'),
     statusCard: document.getElementById('main-card'),
