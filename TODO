@@ -11,7 +11,7 @@ each task!
 -------------------------------------------------------------
 - [✅] Compile: 0.5 point
 - [✅] Connection: 3 points
-- [✅] Persistence: 1.5 points                           (ok, but need to add other techniques)
+- [✅] Persistence: 1.5 points
 - [✅] Executing commands: 5 points
 - [✅] Password: 1 point
 - [✅] Hide the module in userspace
