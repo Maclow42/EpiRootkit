@@ -90,12 +90,12 @@ h4 {
 .sidebar {
     width: 230px;
     background-color: var(--very-dark-grey);
-    padding: 20px 0 0 20px;
+    padding: 20px 20px 20px 20px;
     box-shadow: 2px 0 5px var(--shadow-color);
-    height: 100vh;
+    height: calc(100% - 40px);
     position: fixed;
-    top: 0;
-    left: 0;
+    margin: 20px 20px 20px 20px;
+    border-radius: 12px;
 }
 
 .sidebar .active {
