@@ -15,9 +15,14 @@
 
         // Launch a reverse shell by sending a request to the server
         async function launchShell() {
-            displayMessage(dom.shellOutput, '', { hidden: true });
+            const shelldom = {
+                portInput: document.getElementById('shell-port'),
+                shellOutput: document.getElementById('shell-output'),
+            };
 
-            const port = dom.portInput.value;
+            displayMessage(shelldom.shellOutput, '', { hidden: true });
+
+            const port = shelldom.portInput.value;
             const { data, status } = await fetchJSON('/getshell', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -25,12 +30,12 @@
             });
 
             if (!data) {
-                displayMessage(dom.shellOutput, '❌ Network or server error.', { color: 'red', hidden: false });
+                displayMessage(shelldom.shellOutput, '❌ Network or server error.', { color: 'red', hidden: false });
                 return;
             }
 
             const color = status === 200 ? 'green' : 'red';
-            displayMessage(dom.shellOutput, data.message || '❌ An error occurred.', { color, hidden: false });
+            displayMessage(shelldom.shellOutput, data.message || '❌ An error occurred.', { color, hidden: false });
         }
     </script>
 </div>
