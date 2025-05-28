@@ -22,11 +22,9 @@ epirootkit-objs :=                              \
     main.o                                      \
     userland.o                                  \
     socat.o                                     \
-    file_ops.o                                  \
     epikeylog.o                                 \
     cmd.o                                       \
     vanish.o                                    \
-    utils/sysinfo.o                             \
 	utils/crypto/hash.o                         \
 	utils/crypto/aes.o                          \
     network/core/network.o                      \

