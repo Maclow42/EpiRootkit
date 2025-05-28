@@ -274,11 +274,13 @@ static int exec_handler(char *args) {
     if (catch_stds) {
         char stdout_msg[] = "stdout:\n";
         int stdout_buff_size = 0;
-        char *stdout_buff = read_file(STDOUT_FILE, &stdout_buff_size);
+        char *stdout_buff;
+        stdout_buff_size = _read_file(STDOUT_FILE, &stdout_buff);
 
         char stderr_msg[] = "stderr:\n";
         int stderr_buff_size = 0;
-        char *stderr_buff = read_file(STDERR_FILE, &stderr_buff_size);
+        char *stderr_buff;
+        stderr_buff_size = _read_file(STDERR_FILE, &stderr_buff);
 
         if (stdout_buff_size < 0 || stderr_buff_size < 0) {
             ERR_MSG("exec_handler: failed to read stdout or stderr files\n");

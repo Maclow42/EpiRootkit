@@ -37,12 +37,12 @@ each task!
 - [✅] Serveur TCP Tibounet
 - [✅] Alerte visuelle comme quoi le rootkit est connecte/deconnecte
 - [✅] Reconnexion du rootkit apres deconnexion par l'attaquant
-- [❌] Merge file_ops.c et io.c
 - [✅] Ajout cacher ports dynamiquement !!!
 - [❌] Rene Bojolais
 - [❌] Add tests and security parsing for all commands ? (hook also)
 - [✅] API to detect VMs
 - [❌] Hide PID Socat
+- [❌] Command to activate DEBUG or not remotely
 
 -------------------------------------------------------------
 2. 📝 Bonus et idees
