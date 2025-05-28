@@ -25,7 +25,6 @@ each task!
 - [✅] Get a personal directory at startup to put files
 - [✅] Filtrage des logs...
 - [❌] Auto-update rootkit								(maclow)
-- [✅] Reorganiser et simplifier le code python          (yols, and all)
 - [❌] Improve design of web app ui
 - [❌] Chiffrer le DNS
 - [❌] Implementer une API de gestion de fichiers
