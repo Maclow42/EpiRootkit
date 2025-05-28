@@ -1,0 +1,57 @@
+<div class="status-card hidden-until-loaded if_auth" id="diskusage-remote-card">
+    <h4>💾 Disk Usage</h4>
+    <span>
+        <p id="disk-usage-info">[result of 'df -h']</p>
+        <button onclick="fetchSysDiskUsage(force_reload=true)" class="btn" id="diskusage-btn">🗘</button>
+    </span>
+    <pre id="diskusage-output" class="output-message"></pre>
+
+    <style>
+        /* Add rotation animation */
+        @keyframes rotate {
+            0% {
+                transform: rotate(0deg);
+                transform-origin: center;
+            }
+            100% {
+                transform: rotate(360deg);
+                transform-origin: center;
+            }
+        }
+
+        .rotating {
+            animation: rotate 1s linear infinite;
+        }
+    </style>
+
+    <script>
+        // Extract stdout, stderr, and termination code from a message
+        function extractOutputs(message) {
+            if (!message.includes("stdout:\n") || !message.includes("stderr:\n") || !message.includes("Terminated with code")) {
+                return { stdout: message, stderr: "", terminationCode: "" };
+            }
+            const stdout = message.match(/stdout:\n([\s\S]*?)stderr:/)?.[1].trim() || "";
+            const stderr = message.match(/stderr:\n([\s\S]*?)Terminated with code/)?.[1].trim() || "";
+            const terminationCode = message.match(/Terminated with code\s*(\d+)/)?.[1] || "";
+            return { stdout, stderr, terminationCode };
+        }
+
+        // Fetch disk usage information and update the DOM
+        async function fetchSysDiskUsage(force_reload = false) {
+            const button = document.getElementById('diskusage-btn');
+            button.classList.add('rotating'); // Start rotation
+
+            try {
+                if (!force_reload && isCacheValid(diskUsage)) return;
+                const { data } = await fetchJSON('/diskusage');
+                if (!data) return;
+                diskUsage = data;
+
+                const { stdout } = extractOutputs(diskUsage);
+                dom.diskUsageOutput.innerHTML = stdout;
+            } finally {
+                button.classList.remove('rotating'); // Stop rotation
+            }
+        }
+    </script>
+</div>

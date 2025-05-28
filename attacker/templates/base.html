@@ -15,13 +15,13 @@
     </style>
 </head>
 <body>
+    <!-- SIDEBAR -->
     <div class="sidebar hidden">
         <h2>EpiRootkit</h2>
         <ul>
             {% set menu_items = [
                 ('dashboard', '📊 Dashboard'),
                 ('terminal', '🧠 Terminal'),
-                ('shell_remote', '🛰️ Shell Distant'),
                 ('upload', '📤 Upload'),
                 ('download', '📥 Download'),
                 ('keylogger', '⌨️ Keylogger'),
@@ -35,70 +35,55 @@
         </ul>
     </div>
 
+    <!-- MAIN CONTENT -->
     <div class="main-content hidden">
-        <p>Epirootkit{{ request.path }}</p>
+        <!-- <p>Epirootkit{{ request.path }}</p> -->
         {% block content %}{% endblock %}
     </div>
 
+    <!-- AUTHENTICATION MODAL -->
     <script>
-
-        const redirectToDashboard = () => {
-            window.location.replace('/dashboard');
+        const $ = selector => document.querySelector(selector);
+        const $$ = selector => document.querySelectorAll(selector);
+    
+        const toggleVisibility = (selector, show) => {
+            $$(selector).forEach(elt => elt.classList.toggle('hidden', !show));
         };
-        const showMainContent = () => {
-            document.querySelector('.main-content').classList.remove('hidden');
-            document.querySelector('.sidebar').classList.remove('hidden');
-        };
-        const hideMainContent = () => {
-            document.querySelector('.main-content').classList.add('hidden');
-            document.querySelector('.sidebar').classList.add('hidden');
-        };
-        const hideAuthRequiredElements = () => {
-            const ifAuthElements = document.querySelectorAll('.if_auth');
-            ifAuthElements.forEach(el => el.classList.add('hidden'));
-        };
-        const showAuthRequiredElements = () => {
-            const ifAuthElements = document.querySelectorAll('.if_auth');
-            ifAuthElements.forEach(el => el.classList.remove('hidden'));
-        };
-
-        const isAuthREquiredElementsDisplayed = () => {
-            const ifAuthElements = document.querySelectorAll('.if_auth');
-            return Array.from(ifAuthElements).some(el => el.style.display !== 'none');
-        };
-
+    
+        const redirectToDashboard = () => window.location.replace('/dashboard');
+    
         let clientInfoCache = null;
-
+    
         function checkAuthentication() {
             fetch("{{ url_for('clientInfo') }}")
-                .then(response => response.json())
+                .then(res => res.json())
                 .then(data => {
-                    const isauthenticated = data.authenticated;
-                    const isDashboard = window.location.pathname === '/dashboard';
-
-                    // if not authenticated and not on dashboard, redirect to dashboard
-                    if (!isauthenticated) {
-                        if (!isDashboard || clientInfoCache && isAuthREquiredElementsDisplayed()) {
-                            return redirectToDashboard();
+                    const authenticated = data.authenticated;
+                    const onDashboard = location.pathname === '/dashboard';
+    
+                    toggleVisibility('.sidebar', true);
+                    toggleVisibility('.main-content', true);
+    
+                    if (!authenticated) {
+                        toggleVisibility('.if_auth', false);
+                        const auth_elt_are_displayed = Array.from($$('.if_auth')).some(elt => !elt.classList.contains('hidden'));
+                        if (!onDashboard || (clientInfoCache && auth_elt_are_displayed)) {
+                            redirectToDashboard();
+                            return;
                         }
-                        hideAuthRequiredElements();
                     } else {
-                        showAuthRequiredElements();
+                        toggleVisibility('.if_auth', true);
                     }
-
-                    showMainContent();
-
+    
                     clientInfoCache = data;
                 })
-                .catch(error => {
-                    console.error('Erreur lors du fetch client-info:', error);
-                });
+                .catch(err => console.error('Erreur client-info :', err));
         }
-
-        checkAuthentication();
+    
         document.addEventListener('DOMContentLoaded', () => {
-            setInterval(checkAuthentication, 1000);
+            checkAuthentication();
+            setInterval(checkAuthentication, 5000);
         });
-    </script>
+    </script>    
 </body>
 </html>

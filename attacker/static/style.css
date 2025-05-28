@@ -1,18 +1,97 @@
-body {
+@font-face {
+    font-family: 'HackNerdFont';
+    src: url('./fonts/HackNerdFont-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'GohuFont11NerdFont';
+    src: url('./fonts/GohuFont11NerdFont-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'TerminessNerdFont';
+    src: url('./fonts/TerminessNerdFont-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: '3270NerdFont';
+    src: url('./fonts/3270NerdFont-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'ProggyCleanSZNerdFont';
+    src: url('./fonts/ProggyCleanSZNerdFont-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+:root {
+    --very-dark-grey: #151515;
+    --dark-grey: #1c1d1f;
+    --middle-grey: #859399;
+    --light-grey: #d2dbde;
+    --neon-blue: #4779ac;
+    --blue: #1982d2;
+    --blue-hover: #5ca8e2;
+    --dark-red: #880000;
+    --red: #aa0000;
+    --red-hover: #cc0000;
+    --green: #4caf50;
+    --shadow-color: rgba(0, 0, 0, 0.4);
+}
+
+* {
     margin: 0;
-    background-color: #1e1e1e;
-    color: #ccc;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'HackNerdFont', sans-serif;
+    font-size: 16px;
+}
+
+ul, ol {
+    list-style-position: inside;
+}
+
+body {
+    background-color: var(--dark-grey);
+    color: var(--light-grey);
     font-family: 'Courier New', monospace;
     display: flex;
     height: 100vh;
 }
 
+h1, h2, h3, h4 {
+    color: var(--neon-blue);
+    margin-bottom: 20px;
+}
+h1 {
+    color: var(--light-grey);
+    font-size: 1.8rem;
+}
+h2 {
+    font-size: 1.5rem;
+}
+h3 {
+    font-size: 1.3rem;
+}
+h4 {
+    font-size: 1.3rem;
+}
+
 /* Sidebar fixe à gauche */
 .sidebar {
     width: 230px;
-    background-color: #151515;
+    background-color: var(--very-dark-grey);
     padding: 20px 0 0 20px;
-    box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+    box-shadow: 2px 0 5px var(--shadow-color);
     height: 100vh;
     position: fixed;
     top: 0;
@@ -20,12 +99,12 @@ body {
 }
 
 .sidebar .active {
-    background-color: #1e1e1e;
+    background-color: var(--dark-grey);
     padding: 20px;
 }
 
 .sidebar h2 {
-    color: #0ff;
+    color: var(--neon-blue);
     font-size: 22px;
     margin-bottom: 20px;
 }
@@ -40,14 +119,14 @@ body {
 }
 
 .sidebar ul li a {
-    color: #ccc;
+    color: var(--light-grey);
     text-decoration: none;
     font-weight: bold;
     transition: 0.2s;
 }
 
 .sidebar ul li a:hover {
-    color: #0ff;
+    color: var(--neon-blue);
 }
 
 .main-content {
@@ -58,40 +137,26 @@ body {
 }
 
 /* Style général */
-.container {
-    max-width: 800px;
-    margin: auto;
-    background-color: #2e2e2e;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.5);
-}
-
 input[type="text"],
-input[type="password"],
-textarea {
-    background-color: #111;
-    color: #eee;
-    border: 1px solid #444;
+input[type="password"] {
+    background-color: var(--dark-grey);
+    color: var(--light-grey);
+    border: 1px solid var(--middle-grey);
     border-radius: 8px;
     padding: 0.5rem;
 }
 
 button {
     padding: 0.5rem 1rem;
-    background-color: #007acc;
-    color: white;
+    background-color: var(--blue);
+    color: var(--light-grey);
     border: none;
     border-radius: 8px;
     cursor: pointer;
 }
 
 button:hover {
-    background-color: #005a99;
-}
-
-textarea {
-    resize: vertical;
+    background-color: var(--blue-hover);
 }
 
 .status {
@@ -100,43 +165,135 @@ textarea {
 }
 
 .flash-error {
-    background-color: #4e0000;
-    color: #ffbaba;
-    border: 1px solid #ff4d4d;
+    background-color: var(--dark-red);
+    color: var(--light-grey);
+    border: 1px solid var(--red-hover);
     padding: 0.75rem;
     border-radius: 8px;
     margin-bottom: 1rem;
     text-align: center;
 }
 
+/* Style commun aux cartes */
 .status-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
     background-color: #2a2a2a;
-    padding: 1.5rem;
+    padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 0 8px rgba(0,0,0,0.4);
-    max-width: 500px;
+    box-shadow: 0 0 8px var(--shadow-color);
+    height: 100%;
+}
+
+.status-card h4 {
+    margin-bottom: 10px;
+}
+
+.status-card span {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: stretch;
+    gap: 10px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.status-card span > * {
+    width: 100%;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+        "status sysinfo"
+        "shell cpuram"
+        "diskusage cpuram";
+    gap: 1rem;
+}
+
+.client-status-card {
+    grid-area: status;
+}
+
+.client-status-card .status-card {
+    justify-content: space-around;
+}
+
+.sysinfo-card {
+    grid-area: sysinfo;
+}
+
+.shell-card {
+    grid-area: shell;
+}
+
+.cpu-ram-card {
+    grid-area: cpuram;
+}
+
+.diskusage-card {
+    grid-area: diskusage;
+}
+
+.diskusage-card .status-card {
+    justify-content: space-around;
+}
+
+#shell-port {
+    width: 70%;
+}
+
+#launch-shell-btn {
+    width: 30%;
+}
+
+#disk-usage-info {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    height: 100%;
+}
+
+#diskusage-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 25px;
+    height: 25px;
+    padding: 0;
+    margin: 0;
+    background: none;
+    aspect-ratio: 1 / 1;
 }
 
 .info-table {
     width: 100%;
     border-collapse: collapse;
-    margin: 1rem 0;
+    table-layout: auto;
 }
 
 .info-table th,
 .info-table td {
+    padding: 8px 12px;
     text-align: left;
-    padding: 0.5rem 1rem;
+    vertical-align: top;
+    white-space: nowrap;
 }
 
 .info-table th {
-    background-color: #333;
-    color: #0ff;
-    width: 150px;
+    font-weight: bold;
+    width: 1%; 
+    white-space: nowrap;
 }
 
 .info-table td {
-    background-color: #222;
+    width: auto;
+    white-space: nowrap;
 }
 
 .kill-form {
@@ -144,11 +301,16 @@ textarea {
 }
 
 .danger-btn {
-    background-color: #aa0000;
+    background-color: var(--red);
+    border: none;
+    color: var(--light-grey);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
 }
 
 .danger-btn:hover {
-    background-color: #cc0000;
+    background-color: var(--red-hover);
 }
 
 .history-list {
@@ -157,23 +319,15 @@ textarea {
 }
 
 .history-list li {
-    background-color: #2c2c2c;
+    background-color: var(--middle-grey);
     margin-bottom: 0.5rem;
     padding: 0.5rem;
-    border-left: 4px solid #0ff;
+    border-left: 4px solid var(--neon-blue);
     border-radius: 8px;
 }
 
 input[type="file"] {
     margin-bottom: 1rem;
-}
-
-.status-card {
-    background-color: #2a2a2a;
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 0 8px rgba(0,0,0,0.4);
-    max-width: 500px;
 }
 
 .info-table {
@@ -189,27 +343,13 @@ input[type="file"] {
 }
 
 .info-table th {
-    background-color: #333;
-    color: #0ff;
+    background-color: var(--very-dark-grey);
+    color: var(--neon-blue);
     width: 150px;
 }
 
 .info-table td {
-    background-color: #222;
-}
-
-.danger-btn {
-    background-color: #aa0000;
-    border: none;
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    cursor: pointer;
-    margin-top: 1rem;
-}
-
-.danger-btn:hover {
-    background-color: #cc0000;
+    background-color: var(--dark-grey);
 }
 
 .terminal-response {
@@ -220,28 +360,27 @@ input[type="file"] {
 }
 
 .stdout-block, .stderr-block, .return-code-block {
-    background-color: #1b1b1b;
-    border: 1px solid #444;
+    background-color: var(--very-dark-grey);
+    border: 1px solid var(--light-grey);
     padding: 1rem;
     border-radius: 8px;
-    box-shadow: 0 0 5px rgba(0,0,0,0.3);
+    box-shadow: 0 0 5px var(--shadow-color);
 }
 .return-code-block {
     margin-top: 10px;
 }
 
 .stdout-block h3 {
-    color: #4caf50;
+    color: var(--green);
 }
 
 .stderr-block h3 {
-    color: #ff5555;
+    color: var(--red);
 }
 
 pre {
     white-space: pre-wrap;
     word-break: break-word;
-    margin: 0;
 }
 
 .terminal-response-row {
@@ -255,32 +394,25 @@ pre {
 .stdout-block, .stderr-block {
     flex: 1 1 45%;
     min-width: 300px;
-    background-color: #1b1b1b;
-    border: 1px solid #444;
+    background-color: var(--very-dark-grey);
+    border: 1px solid var(--light-grey);
     padding: 1rem;
     border-radius: 8px;
-    box-shadow: 0 0 5px rgba(0,0,0,0.3);
+    box-shadow: 0 0 5px var(--shadow-color);
 }
 
 .stdout-block h3 {
-    color: #4caf50;
+    color: var(--green);
     margin-top: 0;
 }
 
 .stderr-block h3 {
-    color: #ff5555;
+    color: var(--red);
     margin-top: 0;
 }
 
-pre {
-    white-space: pre-wrap;
-    word-break: break-word;
-    margin: 0;
-}
-
-
 .close {
-    color: #aaa;
+    color: var(--light-grey);
     float: right;
     font-size: 28px;
     font-weight: bold;
@@ -288,13 +420,13 @@ pre {
 
 .close:hover,
 .close:focus {
-    color: black;
+    color: var(--shadow-color);
     text-decoration: none;
     cursor: pointer;
 }
 
 .command-text {
-    color: #ffffff;
+    color: var(--light-grey);
     cursor: pointer;
 }
 
@@ -328,22 +460,22 @@ pre {
     padding-left: 10px;
     padding-bottom: 10px;
     border-radius: 8px;
-    background-color: #1b1b1b;
+    background-color: var(--dark-grey);
 }
 
 .stdsdiv {
-    display: flex; /* Utilisation de flexbox pour aligner les colonnes */
-    flex-direction: row; /* Alignement horizontal */
+    display: flex;
+    flex-direction: row;
 }
 
 .stdout, .stderr {
-    flex: 1; /* Les deux blocs prennent la même largeur */
-    margin-right: 10px; /* Espacement entre les colonnes */
+    flex: 1;
+    margin-right: 10px;
     padding: 10px;
 }
 
 summary:hover {
-    color: #0ff;
+    color: var(--neon-blue);
 }
 
 .command-form {
@@ -386,12 +518,12 @@ details summary {
 }
 
 details summary:hover {
-    color: #0ff;
+    color: var(--neon-blue);
 }
 
 p.error-message {
-    color: #ff4d4d;
-    background-color: #4e0000;
+    color: var(--red-hover);
+    background-color: var(--dark-red);
     padding: 10px;
     border-radius: 8px;
     margin-bottom: 20px;
@@ -405,7 +537,7 @@ p.error-message {
     left: 0; top: 0;
     width: 100%; height: 100%;
     overflow: auto;
-    background-color: rgba(0, 0, 0, 0.4);
+    background-color: var(--shadow-color);
 }
 
 .modal-main-span {
@@ -419,7 +551,7 @@ p.error-message {
 }
 
 .modal-content {
-    background-color: #1e1e1e;
+    background-color: var(--dark-grey);
     margin: 15% auto;
     padding: 10px;
     border-radius: 8px;
@@ -435,7 +567,7 @@ p.error-message {
     cursor: pointer;
 }
 .close:hover, .close:focus {
-    color: black;
+    color: var(--dark-grey);
     text-decoration: none;
 }
 .hidden {

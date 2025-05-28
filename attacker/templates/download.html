@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-<h3>📥 Fichiers disponibles</h3>
+<h1>📥 Fichiers disponibles</h1>
 <ul>
     {% for file in files %}
     <li><a href="{{ url_for('download_file', filename=file) }}">{{ file }}</a></li>

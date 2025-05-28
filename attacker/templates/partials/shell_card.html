@@ -1,0 +1,36 @@
+<div class="status-card hidden-until-loaded if_auth" id="shell-remote-card">
+    <h4>🛰️ Launch a reverse shell on port:</h4>
+    <span>
+        <input type="number" id="shell-port" min="1024" max="65535" value="9001" required>
+        <button onclick="launchShell()" class="btn" id="launch-shell-btn">Launch Shell</button>
+    </span>
+    <div id="shell-output" class="output-message hidden"></div>
+
+    <script>
+        function displayMessage(element, message, { color = 'black', hidden = false } = {}) {
+            element.textContent = message;
+            element.style.color = color;
+            element.classList.toggle('hidden', hidden);
+        }
+
+        // Launch a reverse shell by sending a request to the server
+        async function launchShell() {
+            displayMessage(dom.shellOutput, '', { hidden: true });
+
+            const port = dom.portInput.value;
+            const { data, status } = await fetchJSON('/getshell', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ port }),
+            });
+
+            if (!data) {
+                displayMessage(dom.shellOutput, '❌ Network or server error.', { color: 'red', hidden: false });
+                return;
+            }
+
+            const color = status === 200 ? 'green' : 'red';
+            displayMessage(dom.shellOutput, data.message || '❌ An error occurred.', { color, hidden: false });
+        }
+    </script>
+</div>

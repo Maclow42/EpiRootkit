@@ -1,0 +1,68 @@
+<div class="status-card hidden-until-loaded if_auth">
+  <h4>⚡️ CPU & RAM Usage</h4>
+  <canvas id="sysGraph"  width="400" height="200"></canvas>
+  
+  <script src="{{ url_for('static', filename='js/chart.js') }}"></script>
+</div>
+
+<script>
+  // ##################################################
+  //   !! A part of this script is in dashboard.js !!
+  // ##################################################
+
+  // Update the chart with new CPU and RAM data
+  function updateChart(cpu, ram) {
+      const now = new Date().toLocaleTimeString();
+
+      if (chartData.labels.length >= 20) {
+          chartData.labels.shift();
+          chartData.datasets.forEach(ds => ds.data.shift());
+      }
+
+      chartData.labels.push(now);
+      chartData.datasets[0].data.push(cpu);
+      chartData.datasets[1].data.push(ram);
+
+      const maxVal = Math.max(...chartData.datasets[0].data, ...chartData.datasets[1].data);
+      chart.options.scales.y.max = Math.min(100, Math.ceil(maxVal * 1.1));
+
+      chart.update();
+  }
+
+  // Fetch CPU and RAM usage data from the server
+  async function fetchCpuRamUsage() {
+      const { data } = await fetchJSON('/cpu-ram');
+      if (!data) return null;
+
+      return {
+          cpu: Number(data.cpu) || 0,
+          ram_used: Number(data.ram_used) || 0,
+          ram_total: Number(data.ram_total) || 0,
+      };
+  }
+
+  // Activate periodic fetching of CPU and RAM usage
+  function activateCpuRamFetching() {
+      if (intervals.cpuRam) return;
+      intervals.cpuRam = setInterval(async () => {
+          const stat = await fetchCpuRamUsage();
+          if (!stat) return;
+
+          const ramPercent = stat.ram_total > 0 ? (stat.ram_used / stat.ram_total * 100).toFixed(1) : 0;
+          updateChart(stat.cpu, ramPercent);
+      }, 5000);
+  }
+
+  // Deactivate periodic fetching of CPU and RAM usage
+  function deactivateCpuRamFetching() {
+      if (intervals.cpuRam) {
+          clearInterval(intervals.cpuRam);
+          delete intervals.cpuRam;
+      }
+  }
+
+  // Start fetching CPU and RAM usage
+  function runCpuRamFetching() {
+      activateCpuRamFetching();
+  }
+</script>

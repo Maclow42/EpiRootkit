@@ -1,0 +1,20 @@
+<div class="status-card hidden-until-loaded if_auth" id="sysinfo-remote-card">
+    <h4>⚙️ System informations</h4>
+    <ul id="sysinfo-list"></ul>
+    <script>
+        // Fetch and update system information if not cached
+        async function fetchAndUpdateSysInfo() {
+            if (isCacheValid(systemInfos)) return;
+            const { data } = await fetchJSON('/sysinfo');
+            if (data) {
+                systemInfos = data;
+                dom.sysInfoList.innerHTML = '';
+                for (const [key, value] of Object.entries(systemInfos)) {
+                    const li = document.createElement('li');
+                    li.textContent = `${key}: ${value}`;
+                    dom.sysInfoList.appendChild(li);
+                }
+            }
+        }
+    </script>
+</div>
