@@ -21,7 +21,19 @@ Grâce à ce montage, les deux machines virtuelles communiquent entre elles en �
 
 ## 2. 🧠 Systèmes d'exploitation
 
-## 3. 📦 Packages supplémentaire
+Ce projet vise à développer un rootkit pédagogique capable de communiquer avec un serveur d’attaque via deux canaux (TCP et DNS), d’injecter et de cacher du code au sein d’un noyau Linux, puis de démontrer ses fonctionnalités sur une machine victime virtuelle. Pour cela, nous avons choisi deux environnements distincts.
+- **Victime** : `Ubuntu Server 22.04 LTS (noyau 6.8.0-58-generic)`
+- **Attaquant** : `Manjaro Linux (noyau 6.12.28-1-MANJARO)`
+
+### Victime
+
+Concernant le système d’exploitation de la victime, le noyau `6.8.0-58-generic`, largement déployé sur les environnements serveurs modernes, prend en charge toutes les API de modules standard (`ftrace`, hooking des syscalls, API réseau, etc.) utilisées par notre rootkit. Toutefois, nous avons dû mettre en œuvre quelques adaptations, notamment pour la technique de `hook` des appels système via `ftrace`. En effet, dans les versions récentes de Linux, la fonction `kallsyms_lookup_name` n’étant plus exportée, il est nécessaire de recourir à un `kprobe` pour en récupérer l’adresse. Un kprobe est un mécanisme du noyau Linux permettant d’insérer dynamiquement un point d’observation (sonde) dans le code du noyau sans recompiler ni redémarrer la machine.
+
+Par ailleurs, une installation *Server* sans interface graphique limite le bruit (services non essentiels) et facilite l’observation des effets du rootkit (logs, appels système, journald, etc). APT fournit des outils simples pour installer *build-essential*, *linux-headers* et les autres dépendances nécessaires au développement de modules. Enfin, l’utilisation d’une machine virtuelle `Ubuntu` simplifie la préparation de l’environnement d’expérimentation (création de volumes, snapshots, débogage, etc).
+
+### Attaquant
+
+Manjaro suit un modèle “rolling release” avec un noyau plus récent (ici 6.12.28-1) que les distributions LTS. Les versions récentes des bibliothèques Python (flask, dnslib, etc) sont disponibles directement ou via l’AUR, simplifiant le développement de l’interface Web de l’attaquant. Le choix du système d’exploitation est en réalité assez arbitraire, puisque sa seule fonction est d’héberger, dans un navigateur web, le serveur Python de l’attaquant. Tout autre système récent, doté des bibliothèques Python requises et d’un navigateur tel que Firefox, conviendrait tout aussi bien. L’ISO est disponible au téléchargement à l’adresse suivante : https://manjaro.org/products/download/x86.
 
 <img 
   src="logo_no_text.png" 

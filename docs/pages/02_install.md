@@ -31,7 +31,7 @@ Exécutez **2__launch.sh**. Ce script vérifie que tout est correctement install
 ```bash 
 attacker@attacker$ cd /home/attacker/Documents/server/
 ```
-Vous trouverez ci-dessous des informations relatives aux deux machines virtuelles, notamment les identifiants de connexion. Sur la VM victime, le rootkit est préinstallé et se lance automatiquement au démarrage. Sur la VM attaquante, rendez-vous dans le répertoire ci dessus et exécutez `sudo python main.py`. Ensuite, ouvrez Firefox et entrez l’adresse `http://192.168.249.59:5000`.
+Vous trouverez ci-dessous des informations relatives aux deux machines virtuelles, notamment les identifiants de connexion. Sur la VM victime, le rootkit est préinstallé et se lance automatiquement au démarrage. Sur la VM attaquante, rendez-vous dans le répertoire ci dessus et exécutez `sudo python main.py`. Ensuite, choisissez l'option **2**, ouvrez Firefox et entrez l’adresse indiquée dans la console (*Running on http://x.x.x.x:5000...*) pour accéder à l’interface graphique. Une interaction en CLI est également possible via l’option 1.
 
 <div class="full_width_table">
 |                  | Victim             | Attacker           |
