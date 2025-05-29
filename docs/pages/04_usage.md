@@ -1,9 +1,30 @@
-# Usage
+# Utilisation
 \tableofcontents
 
-L’utilisation du rootkit peut se faire soit en ligne de commande, soit via l’interface graphique intégrée. Nous décrirons ici l’ensemble des commandes de base pour interagir à distance avec le rootkit, disponibles aussi bien en CLI chez l’attaquant que par des boutons ou des entrées de commandes dans l’interface web. Pour utiliser cette section de manière optimale, veuillez d'abord vous assurer que la mise en place a été correctement effectuée, comme expliqué précédemment.
+L’utilisation du rootkit peut se faire soit en ligne de commande, soit via l’interface graphique intégrée. Nous allons ici décrire les deux méthodes.
+> Pour tirer pleinement parti de cette section, veuillez d’abord vous assurer que la mise en place a été correctement effectuée, comme décrit précédemment dans la section [Mise en place](02_install.md).
 
-## 1. ⌨️ CLI
+Dans un premier temps, nous expliquerons comment interagir avec l’interface web. Ensuite, nous détaillerons l’ensemble des commandes de base permettant d’interagir à distance avec le rootkit, accessibles aussi bien en ligne de commande (CLI) côté attaquant qu’à travers des boutons ou des champs de saisie dans l’interface graphique.
+
+## 🌐 Interface Web
+
+### 1. Connexion
+
+FIXME
+
+### 2. Dashboard
+
+FIXME
+
+### 3. Terminal
+
+FIXME
+
+### 4. Keylogger
+
+FIXME
+
+## 🚀 Commandes
 
 ### 1. help
 ```bash
@@ -35,13 +56,18 @@ passwd [PASSWORD]
 ```
 Cette commande permet de changer le mot de passe actuellement utilisé pour se connecter au rootkit. Une fois le mot de passe modifié, il sera haché et stocké en interne sur la machine victime.
 
+**Exemple**
+```bash
+passwd root
+```
+
 ### 6. exec
 ```bash
 exec [OPTIONS] [COMMAND]
 ```
 Cette commande permet d'exécuter du code Bash dans l’espace utilisateur (userland) de la machine victime. Par défaut, elle renvoie le contenu de *stdout*, *stderr* ainsi que le code de sortie. Pour éviter cette sortie, il est possible d’ajouter l’option `-s`. Une fois exécutée, la commande se comporte comme si le code Bash était directement saisi dans le terminal de la victime.
 
-#### Exemples
+**Exemples**
 ```bash
 exec ls
 exec man man
@@ -72,7 +98,7 @@ getshell
 ```bash
 killcom
 ```
-Cette commande est relativement intrusive : elle coupe la communication avec le rootkit et supprime le module via `rmmod`. Elle est principalement utilisée à des fins de test et de développement, car en conditions réelles, on ne souhaiterait pas nécessairement détruire le module.
+Cette commande est relativement intrusive : elle coupe la communication avec le rootkit et supprime le module via `rmmod`. Elle est principalement utilisée à des fins de test et de développement, car en conditions réelles, on ne souhaiterait pas nécessairement détruire le module. Si l’objectif est uniquement de déconnecter proprement l’attaquant, utilisez plutôt la commande `disconnect`.
 
 ### 12. hide_module
 ```bash
@@ -87,10 +113,19 @@ unhide_module
 Cette commande est l’inverse de la précédente : elle permet de rétablir un module précédemment masqué en le réinsérant dans la liste des modules du noyau.
 
 ### 14. get_file
+```bash
+get_file
+```
 
 ### 15. upload
+```bash
+upload
+```
 
 ### 16. sysinfo
+```bash
+sysinfo
+```
 
 ### 17. is_in_vm
 ```bash
@@ -100,8 +135,79 @@ Cette commande permet de détecter si le rootkit s'exécute dans un environnemen
 
 ### 18. hooks
 
+Cette commande permet en réalité d’accéder à un sous-menu de commandes, spécifiquement dédié à l’interception des appels système (syscalls) sur la machine victime. Ainsi, toutes les commandes suivantes doivent être précédées de `hooks` pour fonctionner correctement. Ces fonctionnalité sont persistantes, donc ne sont pas affectées par un redémarrage du système ou une déconnexion, du moment que le module est inseré. En effet, des fichiers de configuration sont recupérés à chaque insertions et mis à jour régulièrement pour maintenir le comportement des alterations.
 
-## 2. 🌐 Web
+#### a. help
+```bash
+hooks help
+```
+Cette commande permet simplement d’afficher un menu récapitulatif de toutes les commandes `hooks` disponibles pour l’attaquant.
+
+#### b. hide
+```bash
+hooks hide [PATH]
+```
+Cette commande permet de masquer un fichier ou un dossier spécifique en fournissant son chemin absolu. En arrière-plan, le syscall `getdents64` est intercepté afin de filtrer le contenu affiché lors de l’énumération des fichiers.
+
+#### c. unhide
+```bash
+hooks unhide [PATH]
+```
+Cette commande annule l’effet de la commande `hooks hide` en rendant à nouveau visible le fichier ou dossier ciblé.
+
+#### e. list_hide
+```bash
+hooks list_hide
+```
+Cette commande affiche la liste complète des chemins absolus de tous les fichiers et répertoires ayant été masqués à l’aide de la commande `hooks hide`.
+
+#### f. forbid
+```bash
+hooks forbid [PATH]
+```
+Cette commande permet d’interdire l’accès à un fichier ou à un dossier, sans pour autant le masquer, même pour un utilisateur disposant des privilèges superutilisateur. Les appels système `openat`, `newfstatat`, `fstat`, `lstat`, `stat` et `chdir` sont interceptés et renvoient l’erreur `-ENOENT` (*No such file or directory*), comme si l’élément n’existait pas.
+
+#### g. unforbid
+```bash
+hooks unforbid [PATH]
+```
+Cette commande annule l’effet de la commande précédente. 
+
+#### h. list_forbid
+```bash
+hooks list_forbid
+```
+Cette commande affiche la liste complète des chemins absolus de tous les fichiers et répertoires ayant été interdits à l’aide de la commande `hooks forbid`.
+
+#### i. modify
+```bash
+hooks modify [PATH]
+```
+
+#### j. unmodify
+```bash
+hooks unmodify [PATH]
+```
+
+#### k. list_modify
+```bash
+hooks list_modify
+```
+
+#### l. add_port
+```bash
+hooks add_port [PORT]
+```
+
+#### m. remove_port
+```bash
+hooks remove_port [PORT]
+```
+
+#### n. list_port
+```bash
+hooks list_port
+```
 
 <img 
   src="logo_no_text.png" 

@@ -10,18 +10,22 @@
 
 ### Virtualisation
 
-Voici un petit guide pour installer QEMU/KVM sur Ubuntu 24.10 et activer la virtualisation. Dans un premier temps, autorisez la virtualisation dans votre BIOS. Ensuite mettez à jour la liste des paquets. Puis installez QEMU, KVM et Libvirt (optionnel : `virt-manager` pour une GUI). 
+Voici un petit guide pour installer QEMU/KVM sur Ubuntu 24.10 et activer la virtualisation. Dans un premier temps, autorisez la virtualisation dans votre BIOS. Ensuite mettez à jour la liste des paquets.
 ```bash
 sudo apt update
+```
+
+Puis installez QEMU, KVM et Libvirt (optionnel : `virt-manager` pour une GUI) comme montré ci-dessous. 
+```bash
 sudo apt install -y qemu-kvm libvirt-daemon-system libvirt-clients
 sudo apt install -y bridge-utils build-essential linux-headers-$(uname -r)
 ```
-Ajouter votre utilisateur aux groupes, puis déconnectez-vous/reconnectez-vous pour que la modification prenne effet. Activer ensuite et démarrer le service libvirt.
+
+Ajoutez votre utilisateur aux groupes, puis déconnectez-vous/reconnectez-vous pour que la modification prenne effet. Activez ensuite et démarrer le service libvirt.
 ```bash
 sudo usermod -aG libvirt,kvm $USER
 sudo systemctl enable --now libvirtd
 ```
-
 
 ## 2. 📁 Dossier
 ```bash
@@ -124,7 +128,10 @@ Vous trouverez ci-dessous des informations relatives aux deux machines virtuelle
 \endhtmlonly
 
 ## 6. 🛠️ Utilisation
-Pour l’utilisation, veuillez vous référer à la section [Utilisation](04_usage.md).
+Pour l’utilisation, veuillez vous référer à la section [Utilisation](04_usage.md). Pour ce qui est du mot de passe par défaut utilisé par l’attaquant pour s’authentifier auprès du rootkit sur la machine victime, il suffit de cliquer sur `Authentification` dans l’interface web et d’entrer `evannounet`. Si vous passez par la ligne de commande, entrez simplement la commande indiquée ci-dessous. Vous pourrez changer le mot de passe ultérieurement.
+```bash
+connect evannounet
+```
 
 ## 7. 🧹 Nettoyage
 ```bash 

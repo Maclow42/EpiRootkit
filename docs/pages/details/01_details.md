@@ -6,7 +6,7 @@ L'ensemble de ces pages a pour but d'expliquer plus précisément les différent
 - \subpage hooks
 
 <img 
-  src="../logo_no_text.png" 
+  src="logo_no_text.png" 
   style="
     display: block;
     margin: 100px auto;

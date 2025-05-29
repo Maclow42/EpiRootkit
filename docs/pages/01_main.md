@@ -37,6 +37,15 @@ Bienvenue dans le projet **EpiRootkit**, un rootkit pédagogique développé dan
 
 ## 🏢 Organisation
 
+Cette documentation a été générée avec Doxygen. Elle est organisée en plusieurs sections répertoriées ci-dessous. Ce qui n’est pas mentionné ici correspond à la documentation du code source générée automatiquement.
+- [**Overview**](01_main.md) - Introduction générale à la documentation.
+- [**Mise en place**](02_install.md) - Configuration de la virtualisation et mise en place du projet.
+- [**Architecture**](03_archi.md) - Arborescence du dépôt Git.
+- [**Utilisation**](04_usage.md) - Commandes disponibles, fonctionnement de l’interface web.
+- [**Environnement**](05_env.md) - Dispositif de communication entre machines, et informations sur les OS.
+- [**Détails**](dd/dab/details.html) - Informations techniques concernant l’implémentation des fonctionnalités du rootkit.
+
+
 <div class="section_buttons">
 
 | Previous                          | Next                               |
