@@ -1,10 +1,5 @@
 #include "download.h"
 
-#include <linux/fs.h>
-#include <linux/slab.h>
-#include <linux/uaccess.h>
-#include <linux/vmalloc.h>
-
 #include "epirootkit.h"
 #include "io.h"
 
