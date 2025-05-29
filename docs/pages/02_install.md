@@ -4,9 +4,24 @@
 
 ## 1. 📋 Prérequis
 
-- Téléchargement du dépôt Git
--
--
+- Téléchargement du dépôt Git (sinon, on risque d'être rapidement embêtés...)
+- Ordinateur sous Ubuntu 24.10 avec QEMU/KVM et virtualisation activée
+- Un peu de bonne humeur, ça fait toujours du bien !
+
+### Virtualisation
+
+Voici un petit guide pour installer QEMU/KVM sur Ubuntu 24.10 et activer la virtualisation. Dans un premier temps, autorisez la virtualisation dans votre BIOS. Ensuite mettez à jour la liste des paquets. Puis installez QEMU, KVM et Libvirt (optionnel : `virt-manager` pour une GUI). 
+```bash
+sudo apt update
+sudo apt install -y qemu-kvm libvirt-daemon-system libvirt-clients
+sudo apt install -y bridge-utils build-essential linux-headers-$(uname -r)
+```
+Ajouter votre utilisateur aux groupes, puis déconnectez-vous/reconnectez-vous pour que la modification prenne effet. Activer ensuite et démarrer le service libvirt.
+```bash
+sudo usermod -aG libvirt,kvm $USER
+sudo systemctl enable --now libvirtd
+```
+
 
 ## 2. 📁 Dossier
 ```bash
@@ -27,11 +42,44 @@ Exécutez **1__setup.sh** avec sudo. Ce premier script crée le dossier `boot/vm
 ```
 Exécutez **2__launch.sh**. Ce script vérifie que tout est correctement installé, puis lance les deux machines virtuelles avec QEMU. Chacune dispose de 4096 Mo de mémoire RAM. L'attaquant est relié à `tap0` et la victime à `tap1`.
 
+\htmlonly
+<figure style="text-align: center;">
+  <img 
+    src="../../../img/logscreen-victim.png" 
+    style="
+      margin: 30px 0px 0px;
+      border-radius: 8px; 
+      width: 100%;
+    "
+  />
+  <figcaption style="margin-top: 0.5em; font-style: italic;">
+    Figure: Screenshot of the victim's login screen.
+  </figcaption>
+</figure>
+\endhtmlonly
+
+\htmlonly
+<figure style="text-align: center;">
+  <img 
+    src="../../../img/logscreen-attacker.png" 
+    style="
+      margin: 30px 0px 0px;
+      border-radius: 8px; 
+      width: 100%;
+    "
+  />
+  <figcaption style="margin-top: 0.5em; font-style: italic;">
+    Figure: Screenshot of the attacker's login screen.
+  </figcaption>
+</figure>
+\endhtmlonly
+
+
 ## 5. 🔌 Connexion
 ```bash 
 attacker@attacker$ cd /home/attacker/Documents/server/
 ```
-Vous trouverez ci-dessous des informations relatives aux deux machines virtuelles, notamment les identifiants de connexion. Sur la VM victime, le rootkit est préinstallé et se lance automatiquement au démarrage. Sur la VM attaquante, rendez-vous dans le répertoire ci dessus et exécutez `sudo python main.py`. Ensuite, choisissez l'option **2**, ouvrez Firefox et entrez l’adresse indiquée dans la console (*Running on http://x.x.x.x:5000...*) pour accéder à l’interface graphique. Une interaction en CLI est également possible via l’option 1.
+Vous trouverez ci-dessous des informations relatives aux deux machines virtuelles, notamment les identifiants de connexion. Sur la VM victime, le rootkit est préinstallé et se lance automatiquement au démarrage. Sur la VM attaquante, rendez-vous dans le répertoire ci dessus et exécutez `sudo python main.py`. Ensuite, choisissez l'option **2**, ouvrez Firefox et entrez l’adresse indiquée dans la console (*Running on http://x.x.x.x:5000...*) pour accéder à l’interface graphique. Une interaction en CLI est également possible via l’option **1**.
 
 <div class="full_width_table">
 |                  | Victim             | Attacker           |
@@ -42,6 +90,38 @@ Vous trouverez ci-dessous des informations relatives aux deux machines virtuelle
 | MAC Address      | 52:54:00:DD:EE:FF  | 52:54:00:AA:BB:CC  |
 | TAP              | `tap1`             | `tap0`             |
 </div>
+
+\htmlonly
+<figure style="text-align: center;">
+  <img 
+    src="../../../img/logscreen-connected-victim.png" 
+    style="
+      margin: 30px 0px 0px;
+      border-radius: 8px; 
+      width: 100%;
+    "
+  />
+  <figcaption style="margin-top: 0.5em; font-style: italic;">
+    Figure: Screenshot of the victim's login screen after connection.
+  </figcaption>
+</figure>
+\endhtmlonly
+
+\htmlonly
+<figure style="text-align: center;">
+  <img 
+    src="../../../img/logscreen-connected-attacker.png" 
+    style="
+      margin: 30px 0px 0px;
+      border-radius: 8px; 
+      width: 100%;
+    "
+  />
+  <figcaption style="margin-top: 0.5em; font-style: italic;">
+    Figure: Screenshot of the attacker's login screen after connection.
+  </figcaption>
+</figure>
+\endhtmlonly
 
 ## 6. 🛠️ Utilisation
 Pour l’utilisation, veuillez vous référer à la section [Utilisation](04_usage.md).

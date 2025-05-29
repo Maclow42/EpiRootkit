@@ -13,8 +13,7 @@
   "
 />
 \endhtmlonly
-![C](https://img.shields.io/badge/c-%2300599C.svg?logo=c&logoColor=white) ![Python](https://img.shields.io/badge/python-3670A0?logo=python&logoColor=ffdd54) ![Flask](https://img.shields.io/badge/flask-%23000.svg?logo=flask&logoColor=white) ![Doxygen](https://img.shields.io/badge/doxygen-2C4AA8?logo=doxygen&logoColor=white) ![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black)
-
+![C](https://img.shields.io/badge/c-%2300599C.svg?logo=c&logoColor=white) ![Python](https://img.shields.io/badge/python-3670A0?logo=python&logoColor=ffdd54) ![Flask](https://img.shields.io/badge/flask-%23000.svg?logo=flask&logoColor=white) ![Doxygen](https://img.shields.io/badge/doxygen-2C4AA8?logo=doxygen&logoColor=white) ![Manjaro](https://img.shields.io/badge/manjaro-35BF5C?style=flat&logo=manjaro&logoColor=white) ![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?logo=Ubuntu&logoColor=white) 
 ## ✨ Introduction
 
 Bienvenue dans le projet **EpiRootkit**, un rootkit pédagogique développé dans le cadre de notre cursus à EPITA. Ce rootkit s’insère au niveau noyau pour offrir un canal de commande et de contrôle (C2) hybride, combinant une communication classique par TCP ainsi qu'une communication furtive par requêtes DNS. Les membres du groupes sont **Thibault Colcomb**, **Oleg Krajic** et **Evann Marrel**.

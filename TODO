@@ -42,6 +42,8 @@ each task!
 - [✅] API to detect VMs
 - [❌] Hide PID Socat
 - [❌] Command to activate DEBUG or not remotely
+- [❌] Kill persistence with command remotely
+- [❌] Ouvrir automatiquement Firefox ?
 
 -------------------------------------------------------------
 2. 📝 Bonus et idees
@@ -61,6 +63,7 @@ each task!
 - [❌] Hook modprob ?
 - [❌] Aneantir le capitalisme et les rapports marchands    (need documentation)
 - [❌] CHECK CONFIG FILE WORKING FOR HOOKS  
+- [❌] Timer dans les requetes ??
 
 -------------------------------------------------------------
 2. 📝 Documentation
