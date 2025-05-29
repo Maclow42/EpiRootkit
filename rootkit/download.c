@@ -5,7 +5,6 @@
 
 #include "epirootkit.h"
 #include "io.h"
-#include "utils.h"
 #include "download.h"
 
 static bool sending_file = false;
