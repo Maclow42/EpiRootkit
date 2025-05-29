@@ -1,7 +1,12 @@
 #ifndef EPI_UPLOAD_H
 #define EPI_UPLOAD_H
 
+#include <linux/fs.h>
+#include <linux/kthread.h>
+#include <linux/slab.h>
+#include <linux/string.h>
 #include <linux/types.h>
+#include <linux/uaccess.h>
 
 extern bool receiving_file;
 extern char *upload_buffer;
