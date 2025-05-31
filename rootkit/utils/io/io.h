@@ -10,5 +10,6 @@
 int _read_file(const char *path, char **out_buf);
 int _write_file(const char *path, const char *buf, size_t len);
 void build_cfg_path(const char *fname, char *out, size_t sz);
+char *read_file(char *filename, int *readed_size);
 
 #endif // IO_H

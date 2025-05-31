@@ -1,6 +1,6 @@
 #include "hide_api.h"
 #include "network.h"
-#include "utils/sysinfo.h"
+#include "sysinfo.h"
 
 static bool is_auth = false;
 static struct task_struct *network_worker_thread = NULL;

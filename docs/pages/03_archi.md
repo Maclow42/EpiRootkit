@@ -16,6 +16,13 @@
 ```
 
 Ci-dessus se trouve l'architecture globale du dépôt Git. Il contient à la fois le code côté victime et côté attaquant, ainsi que des scripts pour l'installation des machines virtuelles, et enfin la documentation présente. Les différentes parties sont détaillées dans les sections suivantes.
+- `attacker` contient les fichiers relatifs au serveur attaquant.
+- `boot` contient les scripts liés à la mise en place du projet.
+- `docs` regroupe les fichiers de configuration utilisés pour générer la présente documentation.
+- `rootkit` contient le code source du rootkit.
+- `AUTHORS` répertorie les auteurs du projet.
+- `README` explique simplement comment générer la documentation.
+- `TODO` est un fichier utilitaire destiné au suivi et au développement du projet.
 
 ## 2. 💀 Attacker
 ```bash

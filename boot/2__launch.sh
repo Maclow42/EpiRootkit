@@ -33,6 +33,8 @@ qemu-system-x86_64 \
   -enable-kvm \
   -m 4096 \
   -hda "$ATTACKER_DISK" \
+  -vga virtio \
+  -display gtk \
   -netdev tap,ifname=tap0,script=no,downscript=no,id=net0 \
   -device virtio-net-pci,netdev=net0,mac=52:54:00:AA:BB:CC \
   -name "Attacker VM" &
@@ -46,6 +48,8 @@ qemu-system-x86_64 \
   -enable-kvm \
   -m 4069 \
   -hda "$VICTIM_DISK" \
+  -vga virtio \
+  -display gtk \
   -netdev tap,ifname=tap1,script=no,downscript=no,id=net1 \
   -device virtio-net-pci,netdev=net1,mac=52:54:00:DD:EE:FF\
   -name "Victim VM" & 

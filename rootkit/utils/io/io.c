@@ -2,12 +2,14 @@
 #include "config.h"
 
 int _read_file(const char *path, char **out_buf) {
+    size_t tot = 0;
+    size_t buf_size = STD_BUFFER_SIZE;
     struct file *f;
     loff_t pos = 0;
     char *buf;
     int ret;
 
-    buf = kzalloc(STD_BUFFER_SIZE, GFP_KERNEL);
+    buf = kzalloc(buf_size, GFP_KERNEL);
     if (!buf)
         return -ENOMEM;
 
@@ -18,16 +20,32 @@ int _read_file(const char *path, char **out_buf) {
         return ret;
     }
 
-    ret = kernel_read(f, buf, STD_BUFFER_SIZE - 1, &pos);
+    while ((ret = kernel_read(f, buf + tot, buf_size - tot - 1, &pos)) > 0) {
+        tot += ret;
+        
+        if (tot >= buf_size - 1) {
+            size_t new_size = buf_size * 2;
+            char *resized = krealloc(buf, new_size, GFP_KERNEL);
+            if (!resized) {
+                kfree(buf);
+                filp_close(f, NULL);
+                return -ENOMEM;
+            }
+
+            buf = resized;
+            buf_size = new_size;
+        }
+    }
+
     filp_close(f, NULL);
     if (ret < 0) {
         kfree(buf);
         return ret;
     }
 
-    buf[ret] = '\0';
+    buf[tot] = '\0';
     *out_buf = buf;
-    return ret;
+    return tot;
 }
 
 int _write_file(const char *path, const char *buf, size_t len) {

