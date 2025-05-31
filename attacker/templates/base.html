@@ -4,17 +4,27 @@
     <meta charset="UTF-8">
     <title>EpiRootkit Web Panel</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <style>
-        body {
-            background-color: #1e1e1e;
-        }
-
-        .hidden {
-            visibility: hidden;
-        }
-    </style>
 </head>
 <body>
+    <!-- TOP BAR -->
+    <div id="top">
+        <div id="titlearea">
+            <table cellspacing="0" cellpadding="0">
+                <tbody>
+                    <tr id="projectrow">
+                        <td id="projectlogo">
+                            <img alt="Logo" src="static/img/logo.png">
+                        </td>
+                        <td id="projectalign">
+                            <div id="projectname">EpiRootkit</div>
+                            <div id="projectbrief">By STDBOOL</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <!-- SIDEBAR -->
     <div class="sidebar hidden">
         <h2>EpiRootkit</h2>
@@ -37,7 +47,6 @@
 
     <!-- MAIN CONTENT -->
     <div class="main-content hidden">
-        <!-- <p>Epirootkit{{ request.path }}</p> -->
         {% block content %}{% endblock %}
     </div>
 
