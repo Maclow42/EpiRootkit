@@ -87,6 +87,7 @@ async function retrieveHistory() {
 // Generates the full history display
 function renderHistory(data) {
     elements.historyList.innerHTML = '';
+    elements.historyList.classList.add('hidden');
 
     for (let i = data.length - 1; i >= 0; i--) {
         const cmd = data[i];
@@ -110,6 +111,9 @@ function renderHistory(data) {
             </details>`;
         elements.historyList.appendChild(li);
     }
+
+    if (data.length > 0) 
+        elements.historyList.classList.remove('hidden');
 }
 
 // Displays the last executed command
