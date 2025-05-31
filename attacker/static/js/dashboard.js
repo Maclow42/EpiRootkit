@@ -134,7 +134,7 @@ async function updateDashboard(firstLoad = false) {
                         <tr><th>📜 Last Command</th><td>${lastCommand}</td></tr>
                     </table>
                     ${client_is_vm ? `<p style="color: red;">⚠️ Warning: rootkit client is running in a VM.</p>` : ''}
-                    <span>
+                    <span class='button-span'>
                         <button onclick="sendCommand(URL_DISCONNECT).then(() => location.reload())">👋 Disconnect</button>
                         <button class="danger-btn" onclick="sendCommand(URL_KILLCOM).then(() => location.reload())">💀 Kill rootkit</button>
                     </span>

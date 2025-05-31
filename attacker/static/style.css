@@ -65,7 +65,10 @@ body {
     color: var(--light-grey);
     font-family: 'Courier New', monospace;
     display: flex;
+    flex-direction: row;
     height: 100vh;
+    width: 100%;
+    padding: 20px;
 }
 
 h1, h2, h3, h4 {
@@ -86,16 +89,27 @@ h4 {
     font-size: 1.3rem;
 }
 
-/* Sidebar fixe à gauche */
+.main-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: stretch;
+    gap: 20px;
+    margin-left: 230px;
+    width: 100%;
+    height: fit-content;
+    padding: 20px;
+    padding-top: 10px;
+}
+
+/* Fixed sidebar on the left */
 .sidebar {
-    width: 230px;
     background-color: var(--very-dark-grey);
-    padding: 20px 20px 20px 20px;
+    padding: 20px;
     box-shadow: 2px 0 5px var(--shadow-color);
-    height: calc(100% - 40px);
+    height: calc(100vh - 40px);
+    width: 230px;
+    border-radius: 8px;
     position: fixed;
-    margin: 20px 20px 20px 20px;
-    border-radius: 12px;
 }
 
 .sidebar .active {
@@ -129,14 +143,108 @@ h4 {
     color: var(--neon-blue);
 }
 
-.main-content {
-    margin-left: 250px;
-    padding: 40px;
-    width: calc(100% - 250px);
-    overflow-y: auto;
+.command-input-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
 }
 
-/* Style général */
+.command-input-row input {
+    flex: 5;
+    margin-right: 10px;
+    height: 100%;
+}
+
+.command-input-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    gap: 10px;
+}
+
+.command-input-col#left-col {
+    flex: 4;
+}
+
+.command-input-col#right-col {
+    flex: 1;
+}
+
+#send-mode-span{
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+    width: max-content;
+}
+
+.toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.toggle-label {
+    font-weight: bold;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--blue);
+    transition: 0.4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: var(--light-grey);
+    transition: 0.4s;
+}
+
+input:checked + .slider {
+    background-color: var(--blue);
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+/* General styles */
 input[type="text"],
 input[type="password"] {
     background-color: var(--dark-grey);
@@ -155,8 +263,27 @@ button {
     cursor: pointer;
 }
 
+#button.loading {
+    background-color: #ccc;
+    color: #555;
+    cursor: not-allowed;
+}
+
 button:hover {
     background-color: var(--blue-hover);
+}
+
+.danger-btn {
+    background-color: var(--red);
+    border: none;
+    color: var(--light-grey);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.danger-btn:hover {
+    background-color: var(--red-hover);
 }
 
 .status {
@@ -174,7 +301,7 @@ button:hover {
     text-align: center;
 }
 
-/* Style commun aux cartes */
+/* Common styles for cards */
 .status-card {
     display: flex;
     flex-direction: column;
@@ -196,7 +323,7 @@ button:hover {
     margin-bottom: 10px;
 }
 
-.status-card span {
+.status-card .button-span {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
@@ -250,11 +377,11 @@ button:hover {
 }
 
 #shell-port {
-    width: 70%;
+    width: 60%;
 }
 
 #launch-shell-btn {
-    width: 30%;
+    width: 40%;
 }
 
 #disk-usage-info {
@@ -305,17 +432,13 @@ button:hover {
     text-align: right;
 }
 
-.danger-btn {
-    background-color: var(--red);
-    border: none;
-    color: var(--light-grey);
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    cursor: pointer;
+#command-history-block {
+    height: fit-content;
+    gap: 20px;
 }
 
-.danger-btn:hover {
-    background-color: var(--red-hover);
+#command-history-block h3 {
+    margin-bottom: 0;
 }
 
 .history-list {
@@ -324,7 +447,7 @@ button:hover {
 }
 
 .history-list li {
-    background-color: var(--middle-grey);
+    background-color: var(--dark-grey);
     margin-bottom: 0.5rem;
     padding: 0.5rem;
     border-left: 4px solid var(--neon-blue);
@@ -348,7 +471,7 @@ input[type="file"] {
 }
 
 .info-table th {
-    background-color: var(--very-dark-grey);
+    background-color: var(--dark-grey);
     color: var(--neon-blue);
     width: 150px;
 }
@@ -365,12 +488,28 @@ input[type="file"] {
 }
 
 .stdout-block, .stderr-block, .return-code-block {
-    background-color: var(--very-dark-grey);
-    border: 1px solid var(--light-grey);
+    background-color: var(--dark-grey);
+    border: 1px solid var(--very-dark-grey);
     padding: 1rem;
     border-radius: 8px;
     box-shadow: 0 0 5px var(--shadow-color);
 }
+
+.stdout-block, .stderr-block {
+    flex: 1 1 45%;
+    min-width: 300px;
+}
+
+.stdout-block h3 {
+    color: var(--green);
+    margin-top: 0;
+}
+
+.stderr-block h3 {
+    color: var(--red);
+    margin-top: 0;
+}
+
 .return-code-block {
     margin-top: 10px;
 }
@@ -394,26 +533,6 @@ pre {
     gap: 1.5rem;
     margin-top: 1.5rem;
     flex-wrap: wrap;
-}
-
-.stdout-block, .stderr-block {
-    flex: 1 1 45%;
-    min-width: 300px;
-    background-color: var(--very-dark-grey);
-    border: 1px solid var(--light-grey);
-    padding: 1rem;
-    border-radius: 8px;
-    box-shadow: 0 0 5px var(--shadow-color);
-}
-
-.stdout-block h3 {
-    color: var(--green);
-    margin-top: 0;
-}
-
-.stderr-block h3 {
-    color: var(--red);
-    margin-top: 0;
 }
 
 .close {
@@ -487,17 +606,16 @@ summary:hover {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    margin-bottom: 20px;
 }
 
-/* Styliser la réponse de la commande */
+/* Style the command response */
 .terminal-response-row {
     display: flex;
     gap: 10px;
     margin-top: 20px;
 }
 
-/* Liste des commandes précédentes */
+/* List of previous commands */
 .history-list {
     list-style-type: none;
     padding-left: 20px;
@@ -516,7 +634,28 @@ summary:hover {
     flex: 1;
 }
 
-/* Style des éléments cliquables */
+#last-result-block {
+    height: fit-content !important;
+}
+
+.growFromLine {
+    animation: growFromLine 0.3s ease-in-out forwards;
+}
+
+@keyframes growFromLine {
+    from {
+        opacity: 0;
+        transform: scaleY(0);
+        transform-origin: top;
+    }
+    to {
+        opacity: 1;
+        transform: scaleY(1);
+        transform-origin: top;
+    }
+}
+
+/* Style clickable elements */
 details summary {
     font-weight: bold;
     cursor: pointer;
