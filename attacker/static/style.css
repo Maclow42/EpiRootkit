@@ -698,25 +698,43 @@ p.error-message {
     gap: 10px;
     margin-bottom: 20px;
 }
-
 .modal-content {
     background-color: var(--dark-grey);
     margin: 15% auto;
-    padding: 10px;
+    padding: 20px;
     border-radius: 8px;
-    width: 80%;
+    width: 110%;
     max-width: 400px;
     text-align: center;
+    background-image: url('img/logo.png');
+    background-position: center right 10px;
+    background-size: cover;
+    position: relative;
 }
+
+.modal-content h3 {
+    color: var(--light-grey);
+    text-align: center;
+}
+
+.modal-content #connect-input {
+    width: 300px;
+}
+
 .close {
     color: #aaa;
-    float: right;
+    position: absolute;
+    top: 5px;
+    right: 5px;
     font-size: 28px;
     font-weight: bold;
     cursor: pointer;
+    width: 28px;
+    height: 28px;
 }
+
 .close:hover, .close:focus {
-    color: var(--dark-grey);
+    color: var(--neon-blue);
     text-decoration: none;
 }
 .hidden {

