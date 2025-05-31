@@ -187,6 +187,11 @@ button:hover {
     height: 100%;
 }
 
+.status-card.not_auth_status_card {
+    min-height: 300px;
+    max-width: 500px;
+}
+
 .status-card h4 {
     margin-bottom: 10px;
 }

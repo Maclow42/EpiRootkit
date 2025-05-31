@@ -105,9 +105,7 @@ async function updateDashboard(firstLoad = false) {
             `;
             deactivateCpuRamFetching();
         } else {
-            fetchAndUpdateSysInfo();
-            runCpuRamFetching();
-
+            await fetchAndUpdateSysInfo();
             const client_is_vm = systemInfos?.virtual_env;
 
             if (!is_authenticated) {
@@ -121,8 +119,10 @@ async function updateDashboard(firstLoad = false) {
                     ${client_is_vm ? `<p style="color: red;">⚠️ Warning: rootkit client is running in a VM.</p>` : ''}
                     <button onclick="modal.open()">🔐 Authenticate</button>
                 `;
+                dom.statusCard.classList.add('not_auth_status_card');
             } else {
-                await fetchSysDiskUsage();
+                fetchSysDiskUsage();
+                runCpuRamFetching();
 
                 html = `
                     <h4>👾 Rootkit Dashboard</h4>
@@ -140,6 +140,7 @@ async function updateDashboard(firstLoad = false) {
                     </span>
                 `;
                 document.querySelectorAll('.if_auth').forEach(el => (el.style.display = 'flex'));
+                dom.statusCard.classList.remove('not_auth_status_card');
             }
         }
 
