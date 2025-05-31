@@ -105,11 +105,16 @@ body {
 }
 
 #top {
-    background-color: var(--grey);
+    background-color: var(--dark-grey);
     padding: 10px 20px;
     box-shadow: 2px 0 5px var(--shadow-color);
     margin-bottom: 10px;
     border-radius: 8px;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: 60px;
+    z-index: 1000;
 }
 
 #titlearea {
@@ -152,17 +157,16 @@ body {
     flex-direction: column;
     justify-content: stretch;
     gap: 20px;
+    margin-top:70px;
     margin-left: 230px;
     height: fit-content;
     min-height: 100vh;
-    width: 100%;
     padding: 20px;
     padding-top: 10px;
     background-image: url('img/logo.png');
     background-repeat: no-repeat;
     background-position: center;
     background-size: contain;
-    background-attachment: fixed;
 }
 
 /* Fixed sidebar on the left */
