@@ -162,6 +162,7 @@ body {
     background-repeat: no-repeat;
     background-position: center;
     background-size: contain;
+    background-attachment: fixed;
 }
 
 /* Fixed sidebar on the left */
