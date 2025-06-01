@@ -19,9 +19,6 @@ DNS_DOMAIN = "dns.google.com"
 DNS_RESPONSE_TIMEOUT = 12.0
 DNS_POLL_INTERVAL = 0.2
 
-# ---------------------------- ÉTAT GLOBAL ------------------------------- #
-# (à utiliser uniquement côté backend rootkit et socket)
-
 # Connexion active avec le rootkit (Should be now BigMama)
 rootkit_connexion = None
 

