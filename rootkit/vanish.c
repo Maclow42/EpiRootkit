@@ -22,7 +22,7 @@ bool check_hypervisor(void) {
  *
  * This function uses DMI (Desktop Management Interface) system information
  * to check for known virtual machine vendors such as VMware, VirtualBox,
- * QEMU, and others.
+ * QEMU, and others lol.
  *
  * @return `true` if a virtualized environment is detected, `false` otherwise.
  */

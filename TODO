@@ -25,7 +25,6 @@ each task!
 - [✅] Get a personal directory at startup to put files
 - [✅] Filtrage des logs...
 - [❌] Auto-update rootkit								(maclow)
-- [❌] Improve design of web app ui
 - [❌] Chiffrer le DNS
 - [❌] Implementer une API de gestion de fichiers
 - [❌] Chiffrer l'upload/download
@@ -65,15 +64,13 @@ each task!
 - [❌] Aneantir le capitalisme et les rapports marchands    (need documentation)
 - [❌] CHECK CONFIG FILE WORKING FOR HOOKS  
 - [❌] Timer dans les requetes ??
+- [❌] Chiffrer fichiers de config ?
 
 -------------------------------------------------------------
 2. 📝 Documentation
 -------------------------------------------------------------
 
-- [❌] Presentation, Architecture, Mise en place et installation
-- [❌] Usage
-- [❌] Ameliorations
-- [❌] Purge de l'inutile de Doxygen
+- [❌] Documenter C avec docstrings
 - [❌] Documenter Python avec docstrings
 
 =============================================================

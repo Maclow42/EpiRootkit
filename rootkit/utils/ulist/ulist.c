@@ -15,6 +15,8 @@
 static bool ulist_has_item(struct ulist *ul, const char *value) {
     struct ulist_item *it;
 
+    // Check only the value in the list 
+    // (we don't care about flags or payload)
     list_for_each_entry(it, &ul->head, list) {
         if (strcmp(it->value, value) == 0)
             return true;
@@ -234,10 +236,8 @@ int ulist_list(struct ulist *ul, char *buf, size_t buf_size) {
     }
     spin_unlock(&ul->lock);
 
-    if (left > 0)
-        *p = '\0';
-    else
-        buf[buf_size - 1] = '\0';
+    if (left > 0) *p = '\0';
+    else buf[buf_size - 1] = '\0';
 
     return p - buf;
 }

@@ -30,6 +30,12 @@
 #define SOCAT_BINARY_PATH HIDDEN_DIR_PATH "/.sysd"
 #define REVERSE_SHELL_PORT 9001
 
+// ENUM FOR PROTOCOLS
+enum Protocol {
+    TCP,
+    DNS,
+};
+
 // TCP MACROS
 #define NETWORK_WORKER_THREAD_NAME "kworker/u42"
 #define MAX_MSG_SEND_OR_RECEIVE_ERROR 5

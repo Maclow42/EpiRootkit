@@ -1,4 +1,4 @@
-from utils.server import CryptoHandler
+from utils.TCP.TCPServer import CryptoHandler
 import socket
 
 class AESNetworkHandler:

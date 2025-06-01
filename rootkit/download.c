@@ -19,9 +19,13 @@ void reset_download_state(void) {
     sending_file = false;
 }
 
-int download_handler(char *args) {
+int download_handler(char *args, enum Protocol protocol) {
+    if (protocol != TCP) {
+        DBG_MSG("warning: download will be over TCP.\n");
+    }
+
     if (!args || !*args) {
-        send_to_server("Usage: download <path>\n");
+        send_to_server(TCP, "Usage: download <path>\n");
         return -EINVAL;
     }
 
@@ -30,7 +34,7 @@ int download_handler(char *args) {
     struct file *filp = filp_open(args, O_RDONLY, 0);
     if (IS_ERR(filp)) {
         ERR_MSG("download_handler: failed to open %s\n", args);
-        send_to_server("Failed to open file.\n");
+        send_to_server(protocol, "Failed to open file.\n");
         return PTR_ERR(filp);
     }
 
@@ -38,14 +42,14 @@ int download_handler(char *args) {
     int size = i_size_read(file_inode(filp));
     if (size <= 0) {
         filp_close(filp, NULL);
-        send_to_server("File is empty or unreadable.\n");
+        send_to_server(protocol, "File is empty or unreadable.\n");
         return -EINVAL;
     }
 
     char *buffer = kmalloc(size, GFP_KERNEL);
     if (!buffer) {
         filp_close(filp, NULL);
-        send_to_server("Insufficient memory.\n");
+        send_to_server(protocol, "Insufficient memory.\n");
         return -ENOMEM;
     }
 
@@ -55,7 +59,7 @@ int download_handler(char *args) {
     if (read_bytes != size) {
         ERR_MSG("download_handler: failed to read file (%d / %d)\n", read_bytes, size);
         kfree(buffer);
-        send_to_server("Error reading file.\n");
+        send_to_server(protocol, "Error reading file.\n");
         return -EIO;
     }
 
@@ -65,7 +69,7 @@ int download_handler(char *args) {
 
     char size_msg[64];
     snprintf(size_msg, sizeof(size_msg), "SIZE %ld\n", download_size);
-    send_to_server(size_msg);
+    send_to_server(protocol, size_msg);
 
     DBG_MSG("download_handler: ready to send %ld bytes after READY\n", download_size);
     return 0;
@@ -74,7 +78,7 @@ int download_handler(char *args) {
 int download(const char *command) {
     if (sending_file && strncmp(command, "READY", 5) == 0) {
         DBG_MSG("download: sending file (%ld bytes)\n", download_size);
-        send_to_server(download_buffer);
+        send_to_server(TCP, download_buffer);
         reset_download_state();
         return 0;
     }

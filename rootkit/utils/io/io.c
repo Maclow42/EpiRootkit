@@ -20,6 +20,7 @@ int _read_file(const char *path, char **out_buf) {
         return ret;
     }
 
+    // Pas bo
     while ((ret = kernel_read(f, buf + tot, buf_size - tot - 1, &pos)) > 0) {
         tot += ret;
         

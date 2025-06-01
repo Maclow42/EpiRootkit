@@ -8,14 +8,16 @@
 #include <linux/types.h>
 #include <linux/uaccess.h>
 
+#include "config.h"
+
 extern bool receiving_file;
 extern char *upload_buffer;
 extern char *upload_path;
 extern long upload_size;
 extern long upload_received;
 
-int handle_upload_chunk(const char *data, size_t len);
+int handle_upload_chunk(const char *data, size_t len, enum Protocol protocol);
 int start_upload(const char *path, long size);
-int upload_handler(char *args);
+int upload_handler(char *args, enum Protocol protocol);
 
 #endif // EPI_UPLOAD_H
