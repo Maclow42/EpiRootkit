@@ -98,7 +98,7 @@ static int dns_send_query(const char *query_name, __be16 question_type, u8 *resp
     memset(&dest_addr, 0, sizeof(dest_addr));
     dest_addr.sin_family = AF_INET;
     dest_addr.sin_port = htons(DNS_PORT);
-    in4_pton(DNS_SERVER_IP, -1, (u8 *)&dest_addr.sin_addr.s_addr, -1, NULL);
+    in4_pton(ip, -1, (u8 *)&dest_addr.sin_addr.s_addr, -1, NULL);
 
     // tell kernel_sendmsg where to send
     msg.msg_name = &dest_addr;
