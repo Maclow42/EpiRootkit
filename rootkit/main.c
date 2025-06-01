@@ -12,9 +12,6 @@ module_param(port, int, 0644);
 MODULE_PARM_DESC(ip, "IPv4 of attacking server");
 MODULE_PARM_DESC(port, "Port of attacking server");
 
-// Enable debug messages by default
-int DEBUG = 1;
-
 /**
  * @brief Initializes the epirootkit module.
  *

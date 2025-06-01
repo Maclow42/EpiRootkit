@@ -6,7 +6,7 @@
 #define FAILURE 1
 
 // LOG MACROS
-extern int DEBUG;
+#define DEBUG 1
 #define DBG_MSG(fmt, args...) 								\
 	do { 													\
 		if (DEBUG) { 										\
