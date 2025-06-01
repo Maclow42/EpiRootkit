@@ -25,7 +25,7 @@ each task!
 - [✅] Get a personal directory at startup to put files
 - [✅] Filtrage des logs...
 - [❌] Auto-update rootkit								(maclow)
-- [❌] Chiffrer le DNS
+- [✅] Chiffrer le DNS
 - [❌] Implementer une API de gestion de fichiers
 - [❌] Chiffrer l'upload/download
 - [❌] Trouver une facon d'arreter d'hardcoder les cles AES/rootkit
