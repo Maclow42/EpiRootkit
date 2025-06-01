@@ -175,7 +175,7 @@ body {
     background-color: var(--very-dark-grey);
     padding: 20px;
     box-shadow: 2px 0 5px var(--shadow-color);
-    height: calc(100vh - 40px);
+    height: 100vh;
     width: 230px;
     border-radius: 8px;
     position: fixed;
@@ -183,7 +183,8 @@ body {
 
 .sidebar .active {
     background-color: var(--dark-grey);
-    padding: 20px;
+    padding: 10px 10px 10px 0px;
+    border-radius: 8px;
 }
 
 .sidebar h2 {
@@ -198,13 +199,14 @@ body {
 }
 
 .sidebar ul li {
-    margin: 15px 0;
+    margin: 20px 0;
 }
 
 .sidebar ul li a {
     color: var(--light-grey);
     text-decoration: none;
     font-weight: bold;
+    padding: 10px;
     transition: 0.2s;
 }
 
@@ -222,7 +224,6 @@ body {
 
 .command-input-row input {
     flex: 5;
-    margin-right: 10px;
     height: 100%;
 }
 
