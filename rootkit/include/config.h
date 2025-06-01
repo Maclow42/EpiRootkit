@@ -49,6 +49,7 @@ enum Protocol {
 #define DNS_MAX_BUF 4096
 #define DNS_HDR_SIZE 12
 #define DNS_MAX_CHUNK 28
+#define DNS_MAX_AUTHORIZED_NB_CHUNKS 128
 #define DNS_SERVER_IP SERVER_IP
 #define DNS_DOMAIN "dns.google.com"
 

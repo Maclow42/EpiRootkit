@@ -35,7 +35,7 @@ class BigMama:
         """
 
         resp: Optional[str] = None
-        
+
         # Delegate to the chosen channel
         if channel == "tcp":
             if use_history: resp = self._tcp.send_to_client_with_history(command)
@@ -48,7 +48,6 @@ class BigMama:
 
         # DNS channel always uses `use_history=True`
         else:
-            self._command_history.append({"command": command, "stdout": "", "stderr": "", "termination_code": ""})
             resp = self._dns.send(command)
             if resp is None:
                 print("[DNS] Failed to send command or no response received.")

