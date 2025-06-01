@@ -1,7 +1,6 @@
 #include "init.h"
 
 #include "alterate_api.h"
-#include "config.h"
 #include "epirootkit.h"
 #include "forbid_api.h"
 #include "ftrace.h"
