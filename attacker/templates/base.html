@@ -6,6 +6,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+    <audio id="bg-music" src="{{ url_for('static', filename='sounds/viva_italia.mp3') }}" autoplay loop preload="auto"></audio>
+
     <!-- TOP BAR -->
     {% include "partials/topbar.html" %}
 
