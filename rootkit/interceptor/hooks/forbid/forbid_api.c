@@ -88,6 +88,10 @@ int forbid_contains(const char __user *u_path)
     return blocked;
 }
 
+int forbid_contains_str(const char *k_path) {
+    return ulist_contains(&forbid_list, k_path);
+}
+
 int forbid_list_get(char *buf, size_t buf_size) {
     return ulist_list(&forbid_list, buf, buf_size);
 }

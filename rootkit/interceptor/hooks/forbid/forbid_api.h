@@ -15,6 +15,7 @@ void forbid_exit(void);
 int forbid_file(const char *path);
 int unforbid_file(const char *path);
 int forbid_contains(const char __user *u_path);
+int forbid_contains_str(const char *k_path)
 int forbid_list_get(char *buf, size_t buf_size);
 
 #endif /* FORBID_API_H */

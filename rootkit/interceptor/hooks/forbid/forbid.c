@@ -1,10 +1,11 @@
 #include "forbid.h"
+
 #include "forbid_api.h"
 
 asmlinkage long (*__orig_openat)(const struct pt_regs *) = NULL;
 asmlinkage long (*__orig_newfstatat)(const struct pt_regs *) = NULL;
-asmlinkage long (*__orig_fstat)(const struct pt_regs *) = NULL;
 asmlinkage long (*__orig_lstat)(const struct pt_regs *) = NULL;
+asmlinkage long (*__orig_fstat)(const struct pt_regs *) = NULL;
 asmlinkage long (*__orig_stat)(const struct pt_regs *) = NULL;
 asmlinkage long (*__orig_chdir)(const struct pt_regs *regs) = NULL;
 asmlinkage long (*__orig_ptrace)(const struct pt_regs *regs) = NULL;
@@ -13,12 +14,40 @@ asmlinkage long notrace openat_hook(const struct pt_regs *regs) {
     const char __user *u_path = (const char __user *)regs->si;
     if (forbid_contains(u_path))
         return -ENOENT;
-    
     return __orig_openat(regs);
 }
 
 asmlinkage long notrace stat_hook(const struct pt_regs *regs) {
-    const char __user *u_path = (const char __user *)regs->si;
+    const char __user *u_path = NULL;
+
+    switch ((int)regs->orig_ax) {
+    case __NR_stat:
+    case __NR_lstat:
+        u_path = (const char __user *)regs->di;
+        break;
+    case __NR_newfstatat:
+        u_path = (const char __user *)regs->si;
+        break;
+    case __NR_fstat:
+        int fd = (int)regs->di;
+        struct file *filp = fget(fd);
+
+        // Not sure, but seems to work
+        if (filp) {
+            struct path p = filp->f_path;
+            path_get(&p);
+            char buf_path[STD_BUFFER_SIZE];
+            char *full = d_path(&p, buf_path, sizeof(buf_path));
+            path_put(&p);
+            if (full && forbid_contains_str(full)) {
+                fput(filp);
+                return -ENOENT;
+            }
+        }
+        fput(filp);
+        return __orig_fstat(regs);
+    }
+
     if (forbid_contains(u_path))
         return -ENOENT;
 
@@ -27,8 +56,6 @@ asmlinkage long notrace stat_hook(const struct pt_regs *regs) {
         return __orig_stat(regs);
     case __NR_lstat:
         return __orig_lstat(regs);
-    case __NR_fstat:
-        return __orig_fstat(regs);
     case __NR_newfstatat:
         return __orig_newfstatat(regs);
     default:

