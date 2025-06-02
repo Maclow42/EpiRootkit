@@ -181,7 +181,23 @@ Cette commande affiche la liste complète des chemins absolus de tous les fichie
 
 #### i. modify
 ```bash
-hooks modify [PATH]
+hooks modify [PATH] [hide_line=N] [hide_substr=TXT] [replace=SRC:DST]
+```
+
+Cette commande correspond à l’interception de l’appel système read(). Elle permet, pour n’importe quel fichier, de :
+- cacher une ligne précise,
+- cacher les lignes contenant un mot-clé,
+- remplacer certains mots-clés par d'autres.
+
+Bien entendu, il ne s’agit pas d’une fonctionnalité particulièrement utile dans le cadre d’un rootkit, mais elle permet de démontrer concrètement la plupart des manipulations possibles à l’aide de hooks. Cela dit, cette commande reste délicate à utiliser, notamment en présence de fichiers très longs, ce qui peut entraîner des comportements imprévus... Pour l’utiliser et la tester, il faut respecter le modèle présenté ci-dessus, en précisant les paramètres `hide_line`, `hide_substr` ou `replace` uniquement lorsque cela est nécessaire. Comme pour les autres commandes, le chemin du fichier doit être absolu. Le fonctionnement est également assez primitif, car les espaces ne sont pas pris en charge.
+
+**Exemples**
+```bash
+modify /home/victim/test.txt hide_line=3 hide_substr=claire replace=efrei:epita
+modify /home/victim/test.txt hide_substr=claire replace=efrei:epita
+modify /home/victim/test.txt replace=efrei:epita hide_substr=claire
+modify /home/victim/test.txt hide_substr=claire hide_line=10
+modify /home/victim/test.txt hide_line=1
 ```
 
 #### j. unmodify

