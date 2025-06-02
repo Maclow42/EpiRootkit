@@ -906,6 +906,7 @@ pre#textDisplay {
     height: 300px;
     overflow-y: auto;
     background: #2c2c2c;
+    padding: 10px;
     white-space: pre-wrap;
     border-radius: 8px;
     border: 1px solid rgba(0,0,0,0.5);
