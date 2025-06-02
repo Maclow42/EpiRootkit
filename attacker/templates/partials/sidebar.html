@@ -1,0 +1,18 @@
+<div class="sidebar hidden">
+    <h2>EpiRootkit</h2>
+    <ul>
+        {% set menu_items = [
+            ('dashboard', '📊 Dashboard'),
+            ('terminal', '🧠 Terminal'),
+            ('upload', '📤 Upload'),
+            ('download', '📥 Download'),
+            ('keylogger', '⌨️ Keylogger'),
+            ('webcam', '📷 Webcam')
+        ] %}
+        {% for endpoint, label in menu_items %}
+            <li class="{% if request.path == url_for(endpoint) %}active{% endif %} {% if endpoint != 'dashboard' %}if_auth{% endif %}">
+                <a href="{{ url_for(endpoint) }}">{{ label }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
