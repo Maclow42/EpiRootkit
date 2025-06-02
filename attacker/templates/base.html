@@ -7,56 +7,21 @@
 </head>
 <body>
     <!-- TOP BAR -->
-    <div id="top">
-        <div id="titlearea">
-            <table cellspacing="0" cellpadding="0">
-                <tbody>
-                    <tr id="projectrow">
-                        <td id="projectlogo">
-                            <img alt="Logo" src="static/img/logo.png">
-                        </td>
-                        <td id="projectalign">
-                            <div id="projectname">EpiRootkit</div>
-                            <div id="projectbrief">By STDBOOL</div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
+    {% include "partials/topbar.html" %}
 
     <!-- SIDEBAR -->
-    <div class="sidebar hidden">
-        <h2>EpiRootkit</h2>
-        <ul>
-            {% set menu_items = [
-                ('dashboard', '📊 Dashboard'),
-                ('terminal', '🧠 Terminal'),
-                ('upload', '📤 Upload'),
-                ('download', '📥 Download'),
-                ('keylogger', '⌨️ Keylogger'),
-                ('webcam', '📷 Webcam')
-            ] %}
-            {% for endpoint, label in menu_items %}
-                <li class="{% if request.path == url_for(endpoint) %}active{% endif %} {% if endpoint != 'dashboard' %}if_auth{% endif %}">
-                    <a href="{{ url_for(endpoint) }}">{{ label }}</a>
-                </li>
-            {% endfor %}
-        </ul>
-    </div>
+    {% include "partials/sidebar.html" %}
+    
 
     <!-- MAIN CONTENT -->
-    <div class="main-content hidden">
+    <div class="main-content sidebar-open hidden">
         {% block content %}{% endblock %}
     </div>
 
-    <!-- AUTHENTICATION MODAL -->
+    <!-- AUTHENTICATION SCRIPT -->
     <script>
-        const $ = selector => document.querySelector(selector);
-        const $$ = selector => document.querySelectorAll(selector);
-    
         const toggleVisibility = (selector, show) => {
-            $$(selector).forEach(elt => elt.classList.toggle('hidden', !show));
+            document.querySelectorAll(selector).forEach(elt => elt.classList.toggle('hidden', !show));
         };
     
         const redirectToDashboard = () => window.location.replace('/dashboard');
@@ -75,7 +40,8 @@
     
                     if (!authenticated) {
                         toggleVisibility('.if_auth', false);
-                        const auth_elt_are_displayed = Array.from($$('.if_auth')).some(elt => !elt.classList.contains('hidden'));
+                        const auth_elt_are_displayed = Array.from(document.querySelectorAll('.if_auth'))
+                                                            .some(elt => !elt.classList.contains('hidden'));
                         if (!onDashboard || (clientInfoCache && auth_elt_are_displayed)) {
                             redirectToDashboard();
                             return;
