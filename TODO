@@ -17,7 +17,7 @@ each task!
 - [✅] Hide the module in userspace
 - [❌] Upload: 1.5 points  								(yols)
 - [❌] Download: 1.5 points 								(yols)
-- [✅] Hide the rootkit from the module list: 1 point  
+- [✅] Hide the rootkit from the module list: 1 point
 - [✅] Hide a line from a file in userland: 2 points 	(done but need to improve ergonomy lol)
 - [✅] Hide a directory / files from userland: 2 points
 - [✅] Cipher the data on the network: 1 point

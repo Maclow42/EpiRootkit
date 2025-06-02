@@ -214,9 +214,50 @@ struct ftrace_hook *hook = container_of(ops, struct ftrace_hook, ops);
 
 #### 3.1.6 Autre
 
-> Les autres fonctions de ftrace.c permettent de gérer la liste des hooks à installer, ainsi que le désenregistrement des hooks ftrace (fh_remove_hook, fh_install_hooks et fh_remove_hooks)
+> Les autres fonctions de ftrace.c permettent de gérer la liste des hooks à installer, ainsi que le désenregistrement des hooks ftrace (fh_remove_hook, fh_install_hooks et fh_remove_hooks).
 
 ### 3.2 ⚙️ API
+
+Comme mentionné dans la section [Utilisation](dc/da7/md_pages_204__usage.html), les hooks disposent d’un sous-menu spécifique défini dans `menu.c`, permettant d’interagir facilement à distance avec les différentes fonctions. Ce menu repose sur la même structure et les mêmes principes que celui de `cmd.c`. Pour chaque catégorie, trois commandes sont disponibles : une pour ajouter un hook, une pour le supprimer, et une pour lister les éléments actuellement affectés par un hook ftrace. Ci-dessous figure un aperçu de ce menu et des différentes fonctions associées. Lors de l’utilisation, il suffit d’exécuter la commande help pour afficher l’ensemble des commandes disponibles. Chaque liste de fichiers affectés par les hooks est dynamique et enregistrée dans des fichiers de configuration sur la machine victime. Ainsi, à chaque redémarrage, la configuration est automatiquement restaurée.
+```c
+static struct command hooks_commands[] = {
+    { "hide", 4, "hide a file or directory (getdents64 hook)", 43, hide_dir_handler },
+    { "unhide", 6, "unhide a file or directory", 32, unhide_dir_handler },
+    { "list_hide", 9, "list hidden files/directories", 34, list_hidden_handler },
+    { "add_port", 8, "add port to hide", 16, hide_port_handler },
+    { "remove_port", 11, "remove hidden port", 18, unhide_port_handler },
+    { "list_port", 9, "list hidden ports", 17, list_hidden_port_handler },
+    { "forbid", 6, "forbid open/stat on a file (openat/stat/lstat... hook)", 55, forbid_file_handler },
+    { "unforbid", 8, "remove forbid on a file", 30, unforbid_file_handler },
+    { "list_forbid", 11, "list forbidden files", 30, list_forbidden_handler },
+    { "modify", 6, "[CAREFUL] modify a file with hide/replace operation (read hook)", 64, modify_file_handler },
+    { "unmodify", 8, "unmodify a file", 30, unmodify_file_handler },
+    { "list_modify", 11, "list alterate rules", 30, list_alterate_handler },
+    { "help", 4, "display hooks help menu", 25, hooks_help },
+    { NULL, 0, NULL, 0, NULL }
+};
+```
+
+### 3.3 🚀 Initialisation
+
+Le fichier `init.c` est appelé dès l’insertion du rootkit et permet de gérer les fichiers pris en charge par défaut. Il installe les hooks via ftrace, initialise les différentes configurations en récupérant les fichiers associés, puis les charge en mémoire. Ces fichiers de configuration se trouvent dans un répertoire spécifique, `/var/lib/systemd/.epirootkit-hidden-fs` (dont l’accès est restreint). Les noms des fichiers sont paramétrables dans `include/config.h` et incluent notamment :
+- `hide_list.cfg`
+- `forbid_list.cfg`
+- `alterate_list.cfg`
+- `passwd.cfg`
+- `hide_ports.cfg`
+- `std.out`
+- `std.err`
+
+> Par ailleurs, ce fichier gère également le déchargement du rootkit, en s’occupant de la désinstallation des hooks et de la mise à jour des fichiers de configuration.
+
+## 4. 🪝 Hooks
+
+### 4.1
+
+La partie hide du rootkit est chargée de masquer deux catégories principales d’éléments au sein du système :
+
+
 
 <img 
   src="logo_no_text.png" 

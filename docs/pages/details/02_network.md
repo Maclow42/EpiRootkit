@@ -7,6 +7,8 @@
 
 ## 3. 🧭 DNS
 
+## 4. 🔒 Chiffrement
+
 <img 
   src="logo_no_text.png" 
   style="

