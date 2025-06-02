@@ -78,6 +78,43 @@ Exécutez **2__launch.sh**. Ce script vérifie que tout est correctement install
 </figure>
 \endhtmlonly
 
+Si le programme s’exécute sans problème et sans aucune erreur, la sortie affichée dans la console devrait ressembler à la figure ci-dessous.
+
+```bash
+ ./2__launch.sh
+=================================================
+                  Launching VMs                  
+=================================================
+[DEBUG] Launching Attacker VM...
+[DEBUG] Launching Victim VM...
+=================================================
+                   Information                   
+=================================================
+  Project Directory       : vms
+  Attacker Disk           : attacker_disk.qcow2
+  Victim Disk             : victim_disk.qcow2
+-------------------------------------------------
+  Attacker VM PID         : 243473        
+  Attacker MAC Address    : 52:54:00:AA:BB:CC    
+  Attacker IP             : 192.168.100.2        
+  Attacker TAP Interface  : tap0                 
+  Attacker Username       : attacker             
+  Attacker Password       : attacker             
+-------------------------------------------------
+  Victim VM PID           : 243505          
+  Victim MAC Address      : 52:54:00:DD:EE:FF    
+  Victim IP               : 192.168.100.3        
+  Victim TAP Interface    : tap1                 
+  Victim Username         : victim               
+  Victim Password         : victim               
+-------------------------------------------------
+  Bridge Name             : br0                  
+  Bridge IP               : 192.168.100.1        
+=================================================
+             Completed Launching VMs             
+=================================================
+```
+
 
 ## 5. 🔌 Connexion
 ```bash 

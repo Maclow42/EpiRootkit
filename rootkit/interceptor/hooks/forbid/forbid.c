@@ -36,7 +36,7 @@ asmlinkage long notrace stat_hook(const struct pt_regs *regs) {
         if (filp) {
             struct path p = filp->f_path;
             path_get(&p);
-            char buf_path[STD_BUFFER_SIZE];
+            char buf_path[512];
             char *full = d_path(&p, buf_path, sizeof(buf_path));
             path_put(&p);
             if (full && forbid_contains_str(full)) {
