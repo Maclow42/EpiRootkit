@@ -4,8 +4,8 @@
 
 <!-- Command Input Section -->
 <div class="command-form">
-    <div class="command-input-row">
-        <div class="status-card command-input-col" id="left-col">
+    <div class="flex-row">
+        <div class="status-card flex-col" id="left-col">
             <input 
                 type="text" 
                 id="commandInput" 
@@ -13,12 +13,12 @@
                 autofocus 
                 onkeypress="if(event.key === 'Enter') handleSend()"
             >
-            <p class="command-input-hint">
+            <p class="flex-hint">
                 Type 'help' to see available commands.<br>
                 Press <em>Enter</em> to send the command.
             </p>
         </div>
-        <div class="status-card command-input-col" id="right-col">
+        <div class="status-card flex-col" id="right-col">
             <!-- Sending Mode Toggle -->
             <span id="send-mode-span">
                 <p>Sending mode:</p>
@@ -34,7 +34,6 @@
                     </label>
                     <span class="toggle-label toggle-right">DNS</span>
                     <input type="hidden" id="channelInput" name="channel" value="tcp">
-                    <input type="hidden" id="selectedChannel" value="{{ last_channel or 'tcp' }}">
                 </div>
             </span>
             <button type="button" onclick="handleSend()" id="send-cmd-button">Send</button>

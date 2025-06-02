@@ -63,7 +63,7 @@ ul, ol {
     list-style-position: inside;
 }
 
-h1, h2, h3, h4 {
+h2, h3, h4 {
     color: var(--neon-blue);
     margin-bottom: 20px;
 }
@@ -84,6 +84,51 @@ h4 {
 
 h5 {
     margin-bottom: 10px;
+}
+
+pre {
+    font-size: 15px;
+    font-family: 'HackNerdFont'
+}
+
+/* General styles */
+input[type="text"],
+input[type="password"] {
+    background-color: var(--dark-grey);
+    color: var(--light-grey);
+    border: 1px solid var(--middle-grey);
+    border-radius: 8px;
+    padding: 0.5rem;
+}
+
+button {
+    padding: 0.5rem 1rem;
+    background-color: var(--blue);
+    color: var(--light-grey);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+button:hover {
+    background-color: var(--blue-hover);
+}
+
+button:disabled {
+    background-color: var(--middle-grey);
+    color: var(--light-grey);
+    cursor: not-allowed;
+}
+
+button:hover {
+    background-color: var(--blue-hover);
+}
+
+button:disabled {
+    background-color: var(--middle-grey);
+    color: var(--light-grey);
+    cursor: not-allowed;
 }
 
 body {
@@ -176,7 +221,6 @@ body {
     }
 }
 
-
 .background-image {
     position: fixed;
     top: 69px; /* Adjusted to account for the fixed header */
@@ -202,10 +246,6 @@ body {
     justify-content: stretch;
     padding: 40px;
     background: none;
-}
-
-.main-content h1 {
-    margin-bottom: 0;
 }
 
 /* Fixed sidebar on the left */
@@ -257,17 +297,36 @@ body {
     gap: 10px;
 }
 
-.command-input-row {
+.command-form #left-col {
+    flex: 4;
+}
+
+.command-form #right-col {
+    flex: 1;
+}
+
+.flex-row {
     display: flex;
     gap: 20px;
 }
 
-.command-input-row input {
-    flex: 5;
-    height: 100%;
+#main-klg-div {
+    width: min-content;
 }
 
-.command-input-col {
+#main-klg-div .flex-col {
+    gap: 20px;
+}
+
+#klg-search-btn {
+    min-width: 200px;
+}
+
+#klg-results-block {
+    height: fit-content;
+}
+
+.flex-col {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -278,15 +337,7 @@ body {
     min-width: fit-content;
 }
 
-.command-input-col#left-col {
-    flex: 4;
-}
-
-.command-input-col#right-col {
-    flex: 1;
-}
-
-#send-mode-span{
+#send-mode-span, #regex-mode-span{
     display: flex;
     flex-direction: row;
     justify-content: flex-start;
@@ -299,6 +350,7 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
+    width: fit-content;
 }
 
 .toggle-label {
@@ -344,6 +396,14 @@ input:checked + .slider {
     background-color: var(--blue);
 }
 
+.on-off-slider input + .slider {
+    background-color: var(--red-hover);
+}
+
+.on-off-slider input:checked + .slider {
+    background-color: var(--green);
+}
+
 input:checked + .slider:before {
     transform: translateX(26px);
 }
@@ -356,33 +416,17 @@ input:checked + .slider:before {
     border-radius: 50%;
 }
 
-/* General styles */
-input[type="text"],
-input[type="password"] {
-    background-color: var(--dark-grey);
-    color: var(--light-grey);
-    border: 1px solid var(--middle-grey);
-    border-radius: 8px;
-    padding: 0.5rem;
-}
-
-button {
-    padding: 0.5rem 1rem;
-    background-color: var(--blue);
-    color: var(--light-grey);
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-}
-
 #button.loading {
     background-color: var(--middle-grey);
     color: var(--light-grey);
     cursor: not-allowed;
 }
 
-button:hover {
-    background-color: var(--blue-hover);
+#fetch-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
 }
 
 .danger-btn {
@@ -503,21 +547,50 @@ button:hover {
     height: 100%;
 }
 
-#diskusage-remote-card span {
-    display: flex;
-    flex-direction: row;
+#diskusage-btn {
+    align-self: flex-end;
 }
 
-#diskusage-btn {
+/* Add rotation animation */
+@keyframes rotate {
+    0% {
+        transform: rotate(0deg);
+        transform-origin: center;
+    }
+    100% {
+        transform: rotate(360deg);
+        transform-origin: center;
+    }
+}
+
+.rotating {
+    animation: rotate 1s linear infinite;
+}
+
+#diskusage-header {
     display: flex;
-    align-items: center;
+    flex-direction: row;
     justify-content: center;
-    width: 25px;
-    height: 25px;
-    padding: 0;
-    margin: 0;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.loader-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 0px !important;
+    height: 0px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: none !important;
+    aspect-ratio: 1 / 1 !important;
+    line-height: 0px !important;
+    align-self: center !important;
+}
+
+.loader-btn:hover {
     background: none;
-    aspect-ratio: 1 / 1;
 }
 
 #sysGraph {
@@ -560,19 +633,6 @@ button:hover {
 
 #command-history-block h3 {
     margin-bottom: 0;
-}
-
-.history-list {
-    list-style: none;
-    padding: 0;
-}
-
-.history-list li {
-    background-color: var(--dark-grey);
-    margin-bottom: 0.5rem;
-    padding: 0.5rem;
-    border-left: 4px solid var(--neon-blue);
-    border-radius: 8px;
 }
 
 input[type="file"] {
@@ -680,21 +740,16 @@ pre {
 }
 
 .history-list {
-    list-style-type: none;
-    padding: 0;
+    list-style: none;
+    padding-left: 20px;
 }
 
 .history-list li {
+    background-color: var(--dark-grey);
     margin-bottom: 10px;
-}
-
-.history-list {
-    list-style-type: none;
-    padding: 0;
-}
-
-.history-list li {
-    margin-bottom: 15px;
+    padding: 10px;
+    border-left: 4px solid var(--neon-blue);
+    border-radius: 8px;
 }
 
 .command-details {
@@ -728,16 +783,6 @@ summary:hover {
     display: flex;
     gap: 10px;
     margin-top: 20px;
-}
-
-/* List of previous commands */
-.history-list {
-    list-style-type: none;
-    padding-left: 20px;
-}
-
-.history-list li {
-    margin-bottom: 15px;
 }
 
 .command-details {
@@ -849,4 +894,22 @@ p.error-message {
 }
 .hidden {
     display: none;
+}
+
+/* KEYLOGGER */
+
+.highlight {
+    background-color: yellow;
+}
+pre#textDisplay {
+    width: 100%;
+    height: 300px;
+    overflow-y: auto;
+    background: #2c2c2c;
+    padding: 10px;
+    white-space: pre-wrap;
+    border-radius: 8px;
+    margin-top: 10px;
+    border: 1px solid rgba(0,0,0,0.5);
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
 }

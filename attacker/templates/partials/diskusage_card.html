@@ -1,28 +1,10 @@
 <div class="status-card hidden-until-loaded if_auth" id="diskusage-remote-card">
     <h4>💾 Disk Usage</h4>
-    <span>
+    <span id="diskusage-header">
         <p id="disk-usage-info">[result of 'df -h']</p>
-        <button onclick="fetchSysDiskUsage(force_reload=true)" class="btn" id="diskusage-btn">🗘</button>
+        <button onclick="fetchSysDiskUsage(force_reload=true)" class="btn loader-btn" id="diskusage-btn">🗘</button>
     </span>
     <pre id="diskusage-output" class="output-message"></pre>
-
-    <style>
-        /* Add rotation animation */
-        @keyframes rotate {
-            0% {
-                transform: rotate(0deg);
-                transform-origin: center;
-            }
-            100% {
-                transform: rotate(360deg);
-                transform-origin: center;
-            }
-        }
-
-        .rotating {
-            animation: rotate 1s linear infinite;
-        }
-    </style>
 
     <script>
         // Extract stdout, stderr, and termination code from a message
