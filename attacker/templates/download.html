@@ -12,7 +12,7 @@
 <h3>📥 Fichiers disponibles</h3>
 <ul>
     {% for file in files %}
-    <li><a href="{{ url_for('download_file', filename=file) }}">{{ file }}</a></li>
+    <li><a href="{{ download_folder }}/{{ file }}">{{ file }}</a></li>
     {% endfor %}
 </ul>
 {% endblock %}

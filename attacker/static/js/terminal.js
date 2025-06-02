@@ -58,6 +58,9 @@ async function handleSend() {
         elements.sendButton.classList.remove('loading');
         elements.sendButton.textContent = originalText;
     }
+
+    const audio = new Audio('/static/sounds/cell-send.mp3');
+    audio.play().catch(err => console.error('Failed to play sound:', err));
 }
 
 
