@@ -6,8 +6,8 @@ PORT = 4242
 BUFFER_SIZE = 1024
 
 # Dossiers pour les fichiers
-UPLOAD_FOLDER = "uploads"
-DOWNLOAD_FOLDER = "downloads"
+UPLOAD_FOLDER = "static/uploads"
+DOWNLOAD_FOLDER = "static/downloads"
 
 # Chiffrement AES (128 bits)
 AES_KEY = b'1234567890abcdef'   # 16 bytes

