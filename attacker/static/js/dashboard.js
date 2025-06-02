@@ -114,7 +114,7 @@ async function updateDashboard(firstLoad = false) {
                     <table class="info-table">
                         <tr><th>📍 IP</th><td>${rootkitAddress[0]}</td></tr>
                         <tr><th>🔌 Port</th><td>${rootkitAddress[1]}</td></tr>
-                        <tr><th>🕒 Time</th><td>${new Date().toLocaleTimeString()}</td></tr>
+                        <tr><th>🕒 Time</th><td class='time'>${new Date().toLocaleTimeString()}</td></tr>
                     </table>
                     ${client_is_vm ? `<p style="color: red;">⚠️ Warning: rootkit client is running in a VM.</p>` : ''}
                     <button onclick="modal.open()">🔐 Authenticate</button>
@@ -142,6 +142,14 @@ async function updateDashboard(firstLoad = false) {
                 document.querySelectorAll('.if_auth').forEach(el => (el.style.display = 'flex'));
                 dom.statusCard.classList.remove('not_auth_status_card');
             }
+
+            // Automatically update time every second
+            setInterval(() => {
+                const timeCell = dom.statusCard.querySelector('.info-table .time');
+                if (timeCell) {
+                    timeCell.textContent = new Date().toLocaleTimeString();
+                }
+            }, 1000);
         }
 
         dom.statusCard.innerHTML = html;
