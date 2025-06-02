@@ -402,7 +402,7 @@ int alterate_list_get(char *buf, size_t buf_size);
 ```
 #### 4.3.2 Interception
 
-Le fichier alterate.c implémente l’intégralité de la logique d’interception de `read` par la fonction `read_hook(const struct pt_regs *regs)`. La fonction de hook n’est ni très élégante ni optimisée, car le parsing répétitif de la liste introduit peut-être une complexité inutile.
+Le fichier `alterate.c` implémente l’intégralité de la logique d’interception de `read` par la fonction `read_hook(const struct pt_regs *regs)`. La fonction de hook n’est ni très élégante ni optimisée, car le parsing répétitif de la liste introduit peut-être une complexité inutile.
 ```c
     char *dup = kstrdup(rule_payload, GFP_KERNEL);
     if (!dup)

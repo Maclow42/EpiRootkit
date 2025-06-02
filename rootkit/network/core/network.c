@@ -25,34 +25,27 @@ static inline bool all_chunks_received(bool *received, size_t count) {
 }
 
 // Formats a string with variable arguments and returns a dynamically allocated buffer
-static char *format_string(const char *fmt, ...) {
-    va_list args;
+static char *vformat_string(const char *fmt, va_list ap) {
     va_list args_copy;
-    char *formatted_message;
+    char *formatted;
     int needed;
 
-    // Compute required size
-    va_start(args, fmt);
-    va_copy(args_copy, args);
-    needed = vsnprintf(NULL, 0, fmt, args);
-    va_end(args);
-
+    va_copy(args_copy, ap);
+    needed = vsnprintf(NULL, 0, fmt, ap);
     if (needed < 0) {
         va_end(args_copy);
         return NULL;
     }
 
-    formatted_message = kzalloc(needed + 1, GFP_KERNEL); // +1 for null terminator
-    if (!formatted_message) {
+    formatted = kzalloc(needed + 1, GFP_KERNEL);
+    if (!formatted) {
         va_end(args_copy);
         return NULL;
     }
 
-    // Format the string
-    vsnprintf(formatted_message, needed + 1, fmt, args_copy);
+    vsnprintf(formatted, needed + 1, fmt, args_copy);
     va_end(args_copy);
-
-    return formatted_message;
+    return formatted;
 }
 
 // Formats and sends a message to the server
@@ -77,8 +70,12 @@ int send_to_server(enum Protocol protocol, char *message, ...) {
     }
     va_end(args);
 
+    va_start(args, message);
+
     // If there are more parameters, format the message
-    char *formatted_message = format_string(message);
+    char *formatted_message = vformat_string(message, args);
+    va_end(args);
+    
     if (!formatted_message) {
         ERR_MSG("send_to_server: failed to format message\n");
         return -ENOMEM;
