@@ -91,6 +91,13 @@ class BigMama:
         else:
             stdout, stderr, termination_code = message, "", ""
         return stdout, stderr, termination_code
+
+    def reset_command_history(self) -> None:
+        """
+        Resets the command history.
+        """
+
+        self._command_history = []
     
     def get_tcp_object(self) -> TCPServer:
         """

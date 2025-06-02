@@ -195,3 +195,5 @@ class TCPServer:
             self._client_ip = None
         self._client_socket = None
         self._owner._authenticated = False
+        self._command_history = []
+        self._owner.reset_command_history()
