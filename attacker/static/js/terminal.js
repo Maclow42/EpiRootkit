@@ -40,7 +40,7 @@ async function handleSend() {
     const originalText = elements.sendButton.textContent;
     elements.sendButton.disabled = true;
     elements.sendButton.classList.add('loading');
-    elements.sendButton.textContent = '⏳ Exécution...';
+    elements.sendButton.textContent = '⏳ Execution...';
 
     try {
         await fetch(URL_EXEC, {

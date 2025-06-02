@@ -16,8 +16,11 @@ AES_IV = b'abcdef1234567890'    # 16 bytes
 # DNS covert channel
 DNS_PORT = 53
 DNS_DOMAIN = "dns.google.com"
-DNS_RESPONSE_TIMEOUT = 20.0
+DNS_RESPONSE_TIMEOUT = 30.0
 DNS_POLL_INTERVAL = 0.2
+
+# ---------------------------- ÉTAT GLOBAL ------------------------------- #
+# (à utiliser uniquement côté backend rootkit et socket)
 
 # Connexion active avec le rootkit (Should be now BigMama)
 rootkit_connexion = None

