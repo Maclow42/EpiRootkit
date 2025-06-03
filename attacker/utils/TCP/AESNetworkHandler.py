@@ -37,6 +37,7 @@ class AESNetworkHandler:
 
         try:
             while True:
+                sock.settimeout(10)
                 chunk = sock.recv(self._buffer_size)
                 if not chunk:
                     print("[RECEIVE ERROR] Socket closed")

