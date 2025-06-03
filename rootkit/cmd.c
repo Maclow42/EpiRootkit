@@ -161,6 +161,14 @@ static int change_password_handler(char *args, enum Protocol protocol) {
         return -EINVAL;
     }
 
+    // Check spaces
+    for (char *p = args; *p; p++) {
+        if (*p == ' ') {
+            send_to_server(protocol, "Password must not contain spaces\n");
+            return -EINVAL;
+        }
+    }
+
     int ret = passwd_set(args);
     if (ret < 0) {
         ERR_MSG("change_password_handler: failed to set password: %d\n", ret);
