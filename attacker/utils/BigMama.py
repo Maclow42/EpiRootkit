@@ -70,18 +70,20 @@ class BigMama:
                 self._klg_on = False
                 print("[KLG] Keylogger desactivated.")   
     
-    def _update_command_history(self, message: str) -> None:
-        stdout, stderr, termination_code = self._extract_outputs(message)
+    def _update_command_history(self, command: str, reponse: str, tcp_error="") -> None:
+        stdout, stderr, termination_code = self._extract_outputs(reponse)
 
-        # A bit strange... (from tibo) ...bad shit may happen.
-        # I don't want to fight for the moment.
-        for entry in reversed(self._command_history):
-            if not entry["stdout"] and not entry["stderr"]:
-                entry["stdout"] = stdout
-                entry["stderr"] = stderr
-                if termination_code:
-                    entry["termination_code"] = termination_code
-                break
+        to_append = {
+            "command": command,
+            "stdout": stdout,
+            "stderr": stderr,
+            "termination_code": termination_code if termination_code else None,
+            "tcp_error": tcp_error if tcp_error else None
+        }
+
+        self._command_history.append(to_append)
+
+        return to_append
     
     def _extract_outputs(self, message: str):
         if all(k in message for k in ["stdout:\n", "stderr:\n", "Terminated with code"]):

