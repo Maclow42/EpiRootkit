@@ -23,11 +23,19 @@
     {% endfor %}
 </ul>
 
+<style>
+    .selected-file {
+        font-weight: bold;
+        color: #00ffff;
+    }
+</style>
+
 <script>
     let currentPath = "/";
+    let selectedElement = null;
 
     function setCurrentPath(path) {
-        currentPath = path.replace(/\/+/g, "/"); // nettoie les multiples slashs
+        currentPath = path.replace(/\/+/g, "/");
         document.getElementById("current-path").textContent = currentPath;
     }
 
@@ -47,6 +55,7 @@
                     alert("Erreur LS : " + data.error);
                     return;
                 }
+                clearSelection();
                 renderFileList(data.entries);
             });
     }
@@ -83,6 +92,10 @@
                     const fullPath = currentPath === "/" ? `/${entry.name}` : `${currentPath}/${entry.name}`;
                     document.getElementById("remote_path_input").value = fullPath;
                     document.getElementById("download-button").disabled = false;
+
+                    if (selectedElement) selectedElement.classList.remove("selected-file");
+                    link.classList.add("selected-file");
+                    selectedElement = link;
                 };
             }
 
@@ -91,9 +104,16 @@
         });
     }
 
+    function clearSelection() {
+        selectedElement = null;
+        document.getElementById("remote_path_input").value = "";
+        document.getElementById("download-button").disabled = true;
+    }
+
     window.onload = () => {
         setCurrentPath("/");
         loadDirectory();
     };
 </script>
+
 {% endblock %}
