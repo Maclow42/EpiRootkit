@@ -91,6 +91,19 @@ iptables -A INPUT -i br0 -p tcp --dport 4242 -j ACCEPT
 iptables -I INPUT  -p udp --dport 53 -j ACCEPT
 iptables -I OUTPUT -p udp --sport 53 -j ACCEPT
 
+sysctl -w net.ipv4.ip_forward=1
+
+# Trying to get the connected interface of user lol (a bit ugly I now)
+IFACE=$(ip -o link show | awk '/state UP/ && /LOWER_UP/ {print $2}' | sed 's/://g' | grep -Ev '^(lo|br0|docker|tap|virbr)' | head -n 1)
+if [ -z "$IFACE" ]; then
+    echo "[ERROR] No valid interface... Aborting."
+    exit 1
+fi
+
+iptables -A FORWARD -i "$IFACE" -o br0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -i br0 -o "$IFACE" -j ACCEPT
+iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o "$IFACE" -j MASQUERADE
+
 # 7. Create TAP interface tap0 for the attacker VM if it does not exist.
 if ip link show tap0 &>/dev/null; then
     echo "[DEBUG] TAP interface tap0 already exists."
