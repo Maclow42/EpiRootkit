@@ -141,25 +141,20 @@ class TCPServer:
         try:
             while self._running:
                 # Log: Checking if the socket is still connected
-                print("[DEBUG] Checking socket connection status.")
                 if self._client_socket is None or self._is_socket_closed(self._client_socket):
                     print("[SOCKET] Client disconnected.")
                     break
 
                 # Log: Attempting to retrieve a request from the queue
-                print("[DEBUG] Attempting to retrieve a request from the send queue.")
                 try:
                     request: Request = self._send_queue.get(timeout=1)
                 except queue.Empty:
-                    print("[DEBUG] Send queue is empty, continuing.")
                     continue
 
                 if request is None:
-                    print("[WARN] Received None request, skipping.")
                     continue
 
                 # --- Sending the command ---
-                print(f"[DEBUG] Sending command: {request.message}")
                 success = self._network_handler.send(self._client_socket, request.message)
                 if not success:
                     tcp_error = "[ERROR] Failed to send command."
@@ -172,7 +167,6 @@ class TCPServer:
                 print(f"[SENT] {request.message}")
 
                 # --- Receiving the response ---
-                print("[DEBUG] Waiting for response from client.")
                 response = self._network_handler.receive(self._client_socket)
                 if response is False:
                     tcp_error = "[ERROR] Failed to receive response."
@@ -185,12 +179,10 @@ class TCPServer:
                 print(f"[RECEIVED] {response}")
 
                 # --- Post-processing ---
-                print("[DEBUG] Processing received response.")
                 self._recv_queue.put(response)
                 self._owner._check_rootkit_command(response)
 
                 if request.add_to_history:
-                    print("[DEBUG] Updating command history.")
                     self._owner._update_command_history(request.message, response)
 
                 request.response = response
