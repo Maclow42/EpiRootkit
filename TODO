@@ -29,7 +29,7 @@ each task!
 - [✅] Implementer une API de gestion de fichiers
 - [✅] Chiffrer l'upload/download
 - [❌] Trouver une facon d'arreter d'hardcoder les cles AES/rootkit
-- [❌] Implementer un VRAI mot de passe cote Web ?
+- [✅] Implementer un VRAI mot de passe cote Web ?
 - [✅] Implementer un AIDA (CPU, RAM...)
 - [✅] requirements.txt propre
 - [✅] Serveur TCP Tibounet
@@ -51,7 +51,7 @@ each task!
 - [✅] Communication using DNS requests
 - [✅] Hide network activity                               (MAKE IT DYNAMIC, AND NEED OTHER TECHNIQUES)
 - [✅] Anti-VM
-- [❌] Add timeout for command execution in userland.c (bug reprodution: exec ping 8.8.8.8)
+- [✅] Add timeout for command execution in userland.c (bug reprodution: exec ping 8.8.8.8)
 - [❌] Brute-force password in /etc/shadow lol
 - [❌] Chiffrement du filesystem personnel du rooktit
 - [❌] Supprimer le .ko au load ?
