@@ -102,7 +102,7 @@ int create_dir(char *path) {
     int rc;
 
     snprintf(cmd, sizeof(cmd), "mkdir -p -- %s", path);
-    rc = exec_str_as_command(cmd, false);
+    rc = exec_str_as_command_no_timeout(cmd, false);
     if (rc < 0)
         return rc;
 
