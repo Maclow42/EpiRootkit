@@ -60,6 +60,34 @@ async function fetchJSON(url, options = {}) {
     }
 }
 
+async function sendDisconnectCommand() {
+    const logout_button = document.getElementById('logout_button');
+    logout_button.disabled = true;
+    const oldText = logout_button.textContent;
+    logout_button.textContent = 'Disconnecting...';
+    
+    const data = await sendCommand(URL_DISCONNECT);
+    
+    logout_button.disabled = false;
+    logout_button.textContent = oldText;
+
+    return data;
+}
+
+async function sendKillCommand() {
+    const killcom_button = document.getElementById('killcom_button');
+    killcom_button.disabled = true;
+    const oldText = killcom_button.textContent;
+    killcom_button.textContent = 'Killing...';
+    
+    const data = await sendCommand(URL_KILLCOM);
+    
+    killcom_button.disabled = false;
+    killcom_button.textContent = oldText;
+
+    return data;
+}
+
 // Send a command to the server
 async function sendCommand(url, command, channel = 'tcp') {
     try {
@@ -103,6 +131,7 @@ async function updateDashboard(firstLoad = false) {
                 <p><strong>Status:</strong> 🔴 Disconnected</p>
                 <p>🟥 No rootkit connected.</p>
             `;
+            dom.statusCard.classList.add('not_connected');
             deactivateCpuRamFetching();
         } else {
             await fetchAndUpdateSysInfo();
@@ -135,8 +164,8 @@ async function updateDashboard(firstLoad = false) {
                     </table>
                     ${client_is_vm ? `<p style="color: red;">⚠️ Warning: rootkit client is running in a VM.</p>` : ''}
                     <span class='button-span'>
-                        <button onclick="sendCommand(URL_DISCONNECT).then(() => location.reload())">👋 Disconnect</button>
-                        <button class="danger-btn" onclick="sendCommand(URL_KILLCOM).then(() => location.reload())">💀 Kill rootkit</button>
+                        <button id='logout_button' onclick="sendDisconnectCommand().then(() => location.reload())">👋 Disconnect</button>
+                        <button id='killcom_button' class="danger-btn" onclick="sendKillCommand().then(() => location.reload())">💀 Kill rootkit</button>
                     </span>
                 `;
                 document.querySelectorAll('.if_auth').forEach(el => (el.style.display = 'flex'));

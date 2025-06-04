@@ -36,7 +36,6 @@
             dom.errorMessage.classList.add('hidden');
             modal.close();
             updateDashboard();
-            toggleButtonState(dom.connectButton, false, 'Connect');
         }
     
         // Handle connection errors
@@ -53,13 +52,6 @@
     
             dom.errorMessage.textContent = "❌ " + errorText;
             dom.errorMessage.classList.remove('hidden');
-            toggleButtonState(dom.connectButton, false, 'Connect');
-        }
-    
-        // Toggle the state of a button (enabled/disabled)
-        function toggleButtonState(button, disabled, text) {
-            button.disabled = disabled;
-            button.textContent = text;
         }
     
         // Wait for a condition to be met, checking periodically
@@ -77,7 +69,10 @@
         // Connect to rootkit
         async function connectToRootkit() {
             dom.errorMessage.classList.add('hidden');
-            toggleButtonState(dom.connectButton, true, 'Connecting...');
+            const button = dom.connectButton;
+            button.disabled = true;
+            const old_text = button.textContent;
+            button.textContent = 'Connecting...';
     
             const details = dom.connectInput.value;
             const { data, status } = await sendCommand(URL_CONNECT, details);
@@ -88,6 +83,8 @@
             } else {
                 handleError(status, data);
             }
+            button.disabled = false;
+            button.textContent = old_text;
         }
     </script>    
 </div>

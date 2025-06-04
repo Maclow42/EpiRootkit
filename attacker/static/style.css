@@ -470,6 +470,10 @@ input:checked + .slider:before {
     height: 100%;
 }
 
+.status-card.not_connected {
+    max-width: 500px;
+}
+
 .status-card.not_auth_status_card {
     min-height: 300px;
     max-width: 500px;
