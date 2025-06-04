@@ -1,0 +1,92 @@
+<h4>Downloaded Files</h4>
+<div id="downloaded-file-container">
+    <ul id="downloaded-file-list">
+        <li>Loading...</li>
+    </ul>
+</div>
+<script>
+    function deleteFile(filename) {
+        fetch('/delete_downloaded_file', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename })
+        })
+        .then(response => {
+            if (response.status === 200) {
+                fetchDownloadedFiles();
+            } else {
+                alert('Failed to delete file');
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting file:', error);
+            alert('Network or server error');
+        });
+    }
+
+    async function fetchDownloadedFiles() {
+        try {
+            const response = await fetch('/get_dowloaded_files', {
+                method: 'GET'
+            });
+
+            let data = null;
+            try {
+                data = await response.json();
+            } catch {
+                console.error('Non-JSON response from server.');
+            }
+
+            if (response.status !== 200 || !data) {
+                const filesList = document.getElementById('downloaded-file-list');
+                filesList.innerHTML = '<li>Failed to fetch files</li>';
+                return;
+            }
+
+            const filesList = document.getElementById('downloaded-file-list');
+            filesList.innerHTML = '';
+            if (data && data.files && data.files.length > 0) {
+                data.files.forEach(file => {
+                    // Main element
+                    const listItem = document.createElement('li');
+
+                    // Create link element
+                    const link = document.createElement('a');
+                    link.textContent = file;
+                    link.onclick = (e) => {
+                        e.preventDefault();
+                        downloadFile(file);
+                    }
+                    listItem.style.cursor = 'pointer';
+                    listItem.appendChild(link);
+
+                    // Add delete button as <a>
+                    const deleteLink = document.createElement('a');
+                    deleteLink.textContent = '❌';
+                    deleteLink.href = '#';
+                    deleteLink.className = '';
+                    deleteLink.classList.add("moving-button");
+                    deleteLink.onclick = (e) => {
+                        e.preventDefault();
+                        deleteFile(file);
+                    };
+                    listItem.appendChild(deleteLink);
+
+                    filesList.appendChild(listItem);
+                });
+            } else {
+                const noFilesItem = document.createElement('li');
+                noFilesItem.textContent = 'No downloaded files found.';
+                filesList.appendChild(noFilesItem);
+            }
+        } catch (error) {
+            const filesList = document.getElementById('downloaded-file-list');
+            filesList.innerHTML = '<li>Network or server error</li>';
+        }
+    }
+
+    // Fetch hidden files on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchDownloadedFiles();
+    });
+</script>

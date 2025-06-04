@@ -916,3 +916,96 @@ pre#textDisplay {
     border: 1px solid rgba(0,0,0,0.5);
     box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
 }
+
+#explorer-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 20px;
+    height: fit-content;
+    width: 50%;
+}
+
+#explorer-container ul, #downloaded-file-container ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    overflow-y: auto;
+}
+
+#explorer-container li, #downloaded-file-container li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+#explorer-container a, #downloaded-file-container a {
+    color: var(--light-grey);
+    text-decoration: none;
+    font-weight: normal;
+}
+
+#explorer-container li:hover, #downloaded-file-container li:hover {
+    background-color: var(--dark-grey);
+}
+
+#downloaded-file-container a:hover {
+    color: var(--blue-hover);
+}
+
+#explorer-container li.selected-file, a.selected-file {
+    background-color: var(--blue-hover);
+    color: var(--light-grey);
+}
+
+#explorer-container .path-link:hover {
+    color: var(--blue-hover);
+    text-decoration: underline;
+}
+
+#explorer-updownload {
+    height: fit-content !important;
+}
+
+#explorer-updownload .status-card {
+    height: fit-content !important;
+}
+
+#remote-path-container {
+    gap: 5px;
+}
+
+#uploadPath-span {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    width: 100%;
+}
+
+#uploadPath-span input {
+    width: max-content;
+    flex: 1;
+}
+
+#uploadPath-span pre {
+    width: auto;
+}
+
+#file-selector {
+    align-items: center;
+}
+
+#file-selector input[type="file"] {
+    margin: 0;
+}

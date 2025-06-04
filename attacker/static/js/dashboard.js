@@ -132,6 +132,7 @@ async function updateDashboard(firstLoad = false) {
                 <p>🟥 No rootkit connected.</p>
             `;
             dom.statusCard.classList.add('not_connected');
+            dom.statusCard.classList.remove('not_auth_status_card');
             deactivateCpuRamFetching();
         } else {
             await fetchAndUpdateSysInfo();
@@ -149,6 +150,7 @@ async function updateDashboard(firstLoad = false) {
                     <button onclick="modal.open()">🔐 Authenticate</button>
                 `;
                 dom.statusCard.classList.add('not_auth_status_card');
+                dom.statusCard.classList.remove('not_connected');
             } else {
                 fetchSysDiskUsage();
                 runCpuRamFetching();
@@ -170,6 +172,7 @@ async function updateDashboard(firstLoad = false) {
                 `;
                 document.querySelectorAll('.if_auth').forEach(el => (el.style.display = 'flex'));
                 dom.statusCard.classList.remove('not_auth_status_card');
+                dom.statusCard.classList.remove('not_connected');
             }
 
             // Automatically update time every second
