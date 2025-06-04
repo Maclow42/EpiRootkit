@@ -237,6 +237,8 @@ static int exec_handler(char *args, enum Protocol protocol) {
 
     // Execute the command
     int ret_code = exec_str_as_command(command, catch_stds);
+    ret_code = ret_code >> 8;
+    DBG_MSG("exec_handler: command executed with return code: %d\n", ret_code);
     if (ret_code < 0) {
         ERR_MSG("exec_handler: failed to execute command\n");
         return ret_code;
