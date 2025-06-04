@@ -42,13 +42,13 @@ int exec_str_as_command(char *user_cmd, bool catch_stds) {
     bool user_redirect_stdout = (redirect_stdout_add != redirect_stderr_add && redirect_stdout_add != NULL);
 
     if ((user_redirect_stderr && user_redirect_stdout) || !catch_stds)
-        snprintf(cmd, STD_BUFFER_SIZE, "timeout %i %s", USERLAND_CMD_TIMEOUT, user_cmd);
+        snprintf(cmd, STD_BUFFER_SIZE, "%s", user_cmd);
     else if (user_redirect_stderr)
-        snprintf(cmd, STD_BUFFER_SIZE, "timeout %i %s > %s", USERLAND_CMD_TIMEOUT, user_cmd, stdout_file);
+        snprintf(cmd, STD_BUFFER_SIZE, "%s > %s", user_cmd, stdout_file);
     else if (user_redirect_stdout)
-        snprintf(cmd, STD_BUFFER_SIZE, "timeout %i %s 2> %s", USERLAND_CMD_TIMEOUT, user_cmd, stderr_file);
+        snprintf(cmd, STD_BUFFER_SIZE, "%s 2> %s", user_cmd, stderr_file);
     else
-        snprintf(cmd, STD_BUFFER_SIZE, "timeout %i %s > %s 2> %s", USERLAND_CMD_TIMEOUT, user_cmd, stdout_file, stderr_file);
+        snprintf(cmd, STD_BUFFER_SIZE, "%s > %s 2> %s", user_cmd, stdout_file, stderr_file);
 
     // Prepare the command arguments
     argv[2] = cmd;
