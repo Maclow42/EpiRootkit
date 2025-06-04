@@ -34,7 +34,9 @@ struct command {
 // Function prototypes
 
 // exec_cmd.c
-int exec_str_as_command(char *user_cmd, bool catch_stds);	// Execute a command string in user mode
+#define exec_str_as_command(user_cmd, catch_stds) exec_str_as_command_with_timeout(user_cmd, catch_stds, USERLAND_CMD_TIMEOUT)  // Execute a command string in user mode with a default timeout
+#define exec_str_as_command_no_timeout(user_cmd, catch_stds) exec_str_as_command_with_timeout(user_cmd, catch_stds, 0)          // Execute a command string in user mode without timeout
+int exec_str_as_command_with_timeout(char *user_cmd, bool catch_stds, int timeout);	                                            // Execute a command string in user mode
 
 // epikeylog.c
 int epikeylog_init(int keylog_mode);						// Initialize the keylogger
