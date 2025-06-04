@@ -17,7 +17,7 @@ Pour permettre à la victime d’envoyer des résultats d’exécution ou d’au
 - Le polling DNS de la victime s’effectue toutes les 5000 ms.
 - Le nombre de chunks est limité à 128 (config.h), afin d’éviter des délais excessifs côté attaquant, tout en maintenant un niveau de furtivité raisonnable.
 
-Une fois les données reçues, le serveur DNS (côté attaquant) peut simplement répondre avec une adresse IP arbitraire, par exemple **127.0.0.1**, puisque l’adresse **IP** n’a aucune importance dans ce contexte. Si je ne me suis pas trompé dans les calculs (ce qui a de grandes chances d’arriver), on peut envoyer depuis la victime vers l’attaquant 57 octets de données utiles par requête **A**, ce qui restreint évidemment le volume à transférer et augmente le nombre de chunks (en plus avec le chiffrement...). Pour l’envoi de commandes depuis l’attaquant, la limite est beaucoup plus élevée, soit environ 459 octets (dans le champ RDATA d’un enregistrement TXT).
+Une fois les données reçues, le serveur DNS (côté attaquant) peut simplement répondre avec une adresse IP arbitraire, par exemple **127.0.0.1**, puisque l’adresse **IP** n’a aucune importance dans ce contexte. Si je ne me suis pas trompé dans les calculs (ce qui a de grandes chances d’arriver), on peut envoyer depuis la victime vers l’attaquant 57 octets de données utiles par requête **A**, ce qui restreint évidemment le volume à transférer et augmente le nombre de chunks (en plus avec le chiffrement...). Pour l’envoi de commandes depuis l’attaquant, la limite est beaucoup plus élevée, soit environ 459 octets (dans le champ **RDATA** d’un enregistrement **TXT**).
 
 ### 3.2 📨 Requête
 
