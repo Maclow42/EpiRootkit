@@ -152,10 +152,17 @@ function renderFileList(entries) {
 
         if (entry.type === "D") {
             link.textContent = "📁 " + entry.name;
-            li.onclick = () => {
+            let isClicking = false;
+
+            li.onclick = async () => {
+                if (isClicking) return; // Prevent double-clicking
+                isClicking = true;
+
                 const nextPath = currentPath === "/" ? `/${entry.name}/` : `${currentPath}${entry.name}/`;
                 setCurrentPath(nextPath);
-                loadDirectory();
+                await loadDirectory();
+
+                isClicking = false; // Reset after the operation is complete
             };
 
             // Add a ❌ text for deleting
