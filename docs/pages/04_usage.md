@@ -60,7 +60,50 @@ Normalement, à ce stade, vous devriez avoir les deux machines virtuelles ouvert
 
 ### 2. Dashboard
 
-FIXME
+Une fois connecté et authentifié, le tableau de bord principal (dashboard) s’affiche. Il permet un aperçu global de l’état de la machine cible, ainsi qu’un accès rapide à certaines fonctionnalités du rootkit. Voici les différents éléments présents :
+
+#### ✅ État de la connexion
+
+- **Status : Connected** — Indique que le rootkit est bien connecté à la machine cible.
+- **IP :** Adresse IP locale de la machine cible (ici `192.168.100.3`).
+- **Port :** Port utilisé pour la connexion (ici `4242`).
+- **Time :** Heure actuelle sur la machine victime.
+- **Last Command :** Affiche la dernière commande envoyée à la cible.
+- **Avertissement VM :** Affiche un message d’alerte si le rootkit détecte qu’il s’exécute dans un environnement virtuel.
+
+#### 🛠 Actions disponibles
+
+- **Disconnect :** Permet de fermer proprement la connexion avec la cible.
+- **Kill rootkit :** Met un terme à l’exécution du rootkit sur la machine cible (destruction du processus distant).
+
+#### 🖥 Informations système
+
+- **Architecture :** Architecture processeur de la machine (ici `x86_64`).
+- **CPU Cores :** Nombre de cœurs processeur détectés (1 cœur ici).
+- **CPU Model :** Nom du processeur ou de l’émulateur utilisé (`QEMU Virtual CPU` dans ce cas).
+- **Hostname :** Nom d’hôte de la machine (ici `victim`).
+- **RAM :** Quantité totale de RAM disponible (3889 Mo ici).
+- **Version kernel :** Version du noyau Linux (`6.8.0-60-generic`).
+- **Version OS :** Détail de la distribution Linux et son build.
+- **Virtual Env :** Indique si la machine semble tourner dans une VM (`true` ici).
+
+#### 💻 Lancement de shell distant
+
+- **Champ de port :** Permet de spécifier un port sur lequel ouvrir un shell inversé.
+- **Bouton “Launch Shell” :** Lance le shell distant sur le port défini.
+
+> **⚠️ Attention :** Le bouton "Launch Shell" ouvre un terminal sur la machine d'attaque. Par conséquent, le serveur web **et** le navigateur doivent être lancés dans la VM d'attaque pour que cette fonctionnalité fonctionne correctement.
+
+#### 💾 Utilisation du disque
+
+Un aperçu est fourni via la commande `df -h`, indiquant les différentes partitions, leur taille, l’espace utilisé/disponible et leur point de montage.
+
+#### 📊 Utilisation CPU & RAM
+
+Un petit graphique à droite affiche en temps réel :
+- **L’utilisation du CPU (%)** en rouge.
+- **L’utilisation de la RAM (%)** en bleu.
+
 
 ### 3. Terminal
 
