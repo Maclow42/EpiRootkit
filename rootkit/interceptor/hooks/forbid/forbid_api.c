@@ -38,7 +38,7 @@ int forbid_file(const char *path)
         modpath[len - 1] = '\0';
     }
 
-    ret = ulist_add(&forbid_list, modpath, 0, payload);
+    ret = ulist_add(&forbid_list, modpath, 0, NULL);
     if (ret < 0)
         return ret;
 
