@@ -44,7 +44,7 @@ class TCPServer:
         self._server_socket.bind((self._host, self._port))
         self._server_socket.listen(1)
 
-        print(f"[SERVER] Listening on {self._host}:{self._port}")
+        print(f"[TCP SERVER] Listening on {self._host}:{self._port}")
         self._server_thread = threading.Thread(target=self._accept_client_loop, daemon=True)
         self._server_thread.start()
 
@@ -55,7 +55,7 @@ class TCPServer:
         with self._ip_lock:
             self._client_ip = None
             self._owner._authenticated = False
-        print("[SERVER] Stopped cleanly.")
+        print("[TCP SERVER] Stopped cleanly.")
 
     def send_to_client(self, message: str) -> Optional[str]:
         req = Request(message, add_to_history=False)
@@ -114,7 +114,7 @@ class TCPServer:
     def _accept_client_loop(self) -> None:
         while self._running:
             try:
-                print("[SERVER] Waiting for connection...")
+                print("[TCP SERVER] Waiting for connection...")
                 self._client_socket, client_addr = self._server_socket.accept()
                 with self._ip_lock:
                     self._client_ip = client_addr[0]
@@ -202,7 +202,7 @@ class TCPServer:
 
 
     def _cleanup_after_disconnect(self) -> None:
-        print("[SERVER] Client disconnected.")
+        print("[TCP SERVER] Client disconnected.")
         with self._ip_lock:
             self._client_ip = None
         self._client_socket = None
