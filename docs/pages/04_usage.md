@@ -123,6 +123,7 @@ Un petit graphique à droite affiche en temps réel :
 
 ### 3. Terminal
 
+L’onglet **Terminal** permet de prendre le contrôle de la machine cible à distance en exécutant des commandes comme si l’on utilisait un terminal local.
 \htmlonly
 <figure style="text-align: center;">
   <img 
@@ -139,37 +140,33 @@ Un petit graphique à droite affiche en temps réel :
 </figure>
 \endhtmlonly
 
-L’onglet **Terminal** permet de prendre le contrôle de la machine cible à distance en exécutant des commandes comme si l’on utilisait un terminal local.
+#### 🖥️ Interface
+<div class="full_width_table">
+| Élément      | Description                                                                                     |
+|:-------------|:------------------------------------------------------------------------------------------------|
+| **Commande** | Saisissez ici une commande Unix/Linux classique (ex. : `ls -la`, `whoami`).                     |
+| **Send**     | Permet d’envoyer la commande à la machine cible.                                                |
+| **Mode TCP** | Connexion directe via TCP. Timeout de 5 s. côté rootkit pour éviter les blocages (ex. : `ping`).|
+| **Mode DNS** | Commande via DNS. Timeout de 30 s.  |
+</div>
 
-#### 🔹 Interface utilisateur
-
-- **Champ de commande** : Saisissez ici une commande Unix/Linux classique. Par exemple : `ls -la`, `cat /etc/passwd`, `whoami`, etc.
-- **Bouton “Send”** : Permet d’envoyer la commande à la machine cible.
-- **Mode d’envoi (TCP/DNS)** :
-  - **TCP** (par défaut) : Les données sont envoyées sur une connexion directe. Un timeout de 5 secondes est implémenté côté rootkit pour éviter qu’une commande comme `ping` ne bloque indéfiniment.
-  - **DNS** : Permet d’envoyer les commandes via des requêtes DNS (plus discret). Le timeout est de 30 secondes. Les commandes dont la réponse semble trop longue sont automatiquement interrompues avant l’envoi.
-
-#### 🔹 Résultats de la commande
-
+#### 📄 Résultats
+<div class="full_width_table">
 Les résultats de l'exécution apparaissent dans deux blocs distincts :
-- **stdout (standard output)** : Affiche le contenu de la sortie standard de la commande.
-- **stderr (standard error)** : Affiche le contenu de la sortie d’erreur de la commande.
-- **Code de sortie** : Affichage du code de terminaison.
+| Élément             | Description                                   |
+|:--------------------|:----------------------------------------------|
+| **stdout**          | Contenu de la sortie standard de la commande. |
+| **stderr**          | Contenu de la sortie d’erreur de la commande. |
+| **Code de sortie**  | Code de terminaison de la commande            |
+</div>
 
-#### 🔹 Historique des commandes
+#### 🕘 Historique 
 
-En bas de l’écran, une section "Command history" permet de retrouver :
-- Les commandes précédemment envoyées.
-- Leur résultat, sous forme repliable pour chaque entrée.
-- Ceci facilite le débogage ou la réutilisation de commandes courantes.
-
-Cette fonctionnalité est utile pour :
-- Effectuer un audit du système distant.
-- Modifier des fichiers ou exécuter des scripts malveillants.
-- Mettre en œuvre des actions de persistance ou de nettoyage après compromission.
+En bas de l’écran, une section intitulée *Command history* permet de consulter les commandes précédemment envoyées à la machine cible. Chaque commande est accompagnée de son résultat, affiché dans un bloc repliable afin de préserver la lisibilité de l’interface. Cette fonctionnalité facilite à la fois le suivi des actions réalisées, le débogage en cas de problème, et la réutilisation rapide de commandes fréquentes.
 
 ### 4. Keylogger
 
+L’onglet **Keylogger** permet de récupérer les frappes clavier effectuées sur la machine victime. Cette fonctionnalité est particulièrement utile pour collecter des mots de passe, des requêtes tapées dans un navigateur, ou encore pour surveiller l’activité de la victime.
 \htmlonly
 <figure style="text-align: center;">
   <img 
@@ -186,28 +183,14 @@ Cette fonctionnalité est utile pour :
 </figure>
 \endhtmlonly
 
-L’onglet **Keylogger** permet de récupérer les frappes clavier effectuées sur la machine victime. Cette fonctionnalité est particulièrement utile pour collecter des mots de passe, des requêtes tapées dans un navigateur, ou encore pour surveiller l’activité de la victime.
+#### ⌨️ Frappes
+Une zone de texte centrale affiche le contenu capturé par le module de keylogging sous forme brute, sans mise en forme, exactement tel qu’il est stocké sur la machine cible. Le bouton *Fetch data* permet de récupérer les nouvelles frappes enregistrées depuis le module rootkit. L’état du module est représenté par un *switch ON/OFF* : lorsqu’il est activé, toutes les frappes clavier sont enregistrées en temps réel ; lorsqu’il est désactivé, aucune donnée n’est collectée.
 
-#### 🔹 Affichage des frappes
+#### 🔍 Recherche
+Un champ de recherche permet de filtrer dynamiquement les résultats affichés. Deux modes sont disponibles : en mode *Normal*, la recherche s’effectue en texte brut, tandis que le mode *RegEx* active la prise en charge des expressions régulières, offrant ainsi des possibilités de filtrage avancées. Une fois les critères saisis, le bouton *Search* permet d’appliquer le filtre sur les données visibles.
 
-- Une zone de texte centrale affiche le contenu capturé sous forme brute (sans mise en forme), comme stocké par le module de keylogging sur la machine cible.
-- Le bouton **Fetch data** permet de récupérer les nouvelles frappes depuis le module rootkit.
-- L’état du module est affiché via un **interrupteur ON/OFF** :
-  - Quand le module est actif, les frappes sont enregistrées.
-  - Quand il est désactivé, aucune frappe n’est collectée.
-
-#### 🔹 Recherche dans les frappes
-
-- Un champ de recherche permet de filtrer les résultats affichés :
-  - **Mode Normal** : la recherche est effectuée en texte brut.
-  - **Mode RegEx** : active une recherche utilisant des expressions régulières.
-- Le bouton **Search** permet d’appliquer le filtre sur les données affichées.
-
-#### 🔹 Exportation
-
-- Le bouton **Download as .txt** permet de télécharger l’ensemble des frappes capturées sous forme d’un fichier `.txt`, pour une analyse hors-ligne ou un archivage.
-
-Cette interface permet donc une surveillance continue et discrète du poste compromis, tout en offrant des outils de recherche et d’exportation pratiques pour l’attaquant.
+#### 📦 Exportation
+Le bouton *Download as .txt* permet de télécharger l’ensemble des frappes capturées sous forme d’un fichier `.txt` directement sur la machine attaquante.
 
 ## 🚀 Commandes
 
