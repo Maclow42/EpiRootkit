@@ -43,14 +43,14 @@ class BigMama:
 
             # If the TCP thread never got a client, resp may be None or False
             if resp is None or resp is False:
-                print("[TCP] No client connected or failed to send command.")
+                print("[TCP SERVER] No client connected or failed to send command.")
                 resp = ""
 
         # DNS channel always uses `use_history=True`
         else:
             resp = self._dns.send(command)
             if resp is None:
-                print("[DNS] Failed to send command or no response received.")
+                print("[DNS SERVER] Failed to send command or no response received.")
                 resp = ""
 
         return resp.strip()

@@ -6,7 +6,7 @@
             const response = await fetch('/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ command: 'hooks list_forbid', channel: 'tcp', use_history: false }),
+                body: JSON.stringify({ command: 'hooks list_hide', channel: 'tcp', use_history: false }),
             });
 
             let data = null;

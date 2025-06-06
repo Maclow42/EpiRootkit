@@ -21,10 +21,24 @@ void forbid_exit(void) {
     ulist_clear(&forbid_list);
 }
 
-int forbid_file(const char *path) {
+int forbid_file(const char *path)
+{
     int ret;
+    char modpath[256];
 
-    ret = ulist_add(&forbid_list, path, 0, NULL);
+    if (strcmp(path, "/") == 0)
+        return -EINVAL;
+
+    if (strlen(path) >= sizeof(modpath))
+        return -ENAMETOOLONG;
+    strscpy(modpath, path, sizeof(modpath));
+
+    size_t len = strlen(modpath);
+    if (len > 1 && modpath[len - 1] == '/') {
+        modpath[len - 1] = '\0';
+    }
+
+    ret = ulist_add(&forbid_list, modpath, 0, NULL);
     if (ret < 0)
         return ret;
 
