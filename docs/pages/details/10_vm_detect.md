@@ -1,6 +1,10 @@
 \page vm_detect Hypervisor
 \tableofcontents
 
+## 1. 🕵️‍♂️ Détection
+
+## 2. ⚰️ Cimetière
+
 <img 
   src="logo_no_text.png" 
   style="
