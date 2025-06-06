@@ -42,6 +42,9 @@ Normalement, à ce stade, vous devriez avoir les deux machines virtuelles ouvert
   </figcaption>
 </figure>
 \endhtmlonly
+
+### 2. Dashboard
+
 \htmlonly
 <figure style="text-align: center;">
   <img 
@@ -57,8 +60,6 @@ Normalement, à ce stade, vous devriez avoir les deux machines virtuelles ouvert
   </figcaption>
 </figure>
 \endhtmlonly
-
-### 2. Dashboard
 
 Une fois connecté et authentifié, le tableau de bord principal (dashboard) s’affiche. Il permet un aperçu global de l’état de la machine cible, ainsi qu’un accès rapide à certaines fonctionnalités du rootkit. Voici les différents éléments présents :
 
@@ -107,11 +108,91 @@ Un petit graphique à droite affiche en temps réel :
 
 ### 3. Terminal
 
-FIXME
+\htmlonly
+<figure style="text-align: center;">
+  <img 
+    src="../../../img/terminal.png" 
+    style="
+      margin: 30px 0px 0px;
+      border-radius: 8px; 
+      width: 100%;
+    "
+  />
+  <figcaption style="margin-top: 0.5em; font-style: italic;">
+    Figure: Screenshot of the attacker's terminal interface for remote command execution.
+  </figcaption>
+</figure>
+\endhtmlonly
+
+L’onglet **Terminal** permet de prendre le contrôle de la machine cible à distance en exécutant des commandes comme si l’on utilisait un terminal local.
+
+#### 🔹 Interface utilisateur
+
+- **Champ de commande** : Saisissez ici une commande Unix/Linux classique. Par exemple : `ls -la`, `cat /etc/passwd`, `whoami`, etc.
+- **Bouton “Send”** : Permet d’envoyer la commande à la machine cible.
+- **Mode d’envoi (TCP/DNS)** :
+  - **TCP** (par défaut) : Les données sont envoyées sur une connexion directe. Un timeout de 5 secondes est implémenté côté rootkit pour éviter qu’une commande comme `ping` ne bloque indéfiniment.
+  - **DNS** : Permet d’envoyer les commandes via des requêtes DNS (plus discret). Le timeout est de 30 secondes. Les commandes dont la réponse semble trop longue sont automatiquement interrompues avant l’envoi.
+
+#### 🔹 Résultats de la commande
+
+Les résultats de l'exécution apparaissent dans deux blocs distincts :
+- **stdout (standard output)** : Affiche le contenu de la sortie standard de la commande.
+- **stderr (standard error)** : Affiche le contenu de la sortie d’erreur de la commande.
+- **Code de sortie** : Affichage du code de terminaison.
+
+#### 🔹 Historique des commandes
+
+En bas de l’écran, une section "Command history" permet de retrouver :
+- Les commandes précédemment envoyées.
+- Leur résultat, sous forme repliable pour chaque entrée.
+- Ceci facilite le débogage ou la réutilisation de commandes courantes.
+
+Cette fonctionnalité est utile pour :
+- Effectuer un audit du système distant.
+- Modifier des fichiers ou exécuter des scripts malveillants.
+- Mettre en œuvre des actions de persistance ou de nettoyage après compromission.
 
 ### 4. Keylogger
 
-FIXME
+\htmlonly
+<figure style="text-align: center;">
+  <img 
+    src="../../../img/keylogger.png" 
+    style="
+      margin: 30px 0px 0px;
+      border-radius: 8px; 
+      width: 100%;
+    "
+  />
+  <figcaption style="margin-top: 0.5em; font-style: italic;">
+    Figure: Screenshot of the keylogger interface in the attacker's web UI.
+  </figcaption>
+</figure>
+\endhtmlonly
+
+L’onglet **Keylogger** permet de récupérer les frappes clavier effectuées sur la machine victime. Cette fonctionnalité est particulièrement utile pour collecter des mots de passe, des requêtes tapées dans un navigateur, ou encore pour surveiller l’activité de la victime.
+
+#### 🔹 Affichage des frappes
+
+- Une zone de texte centrale affiche le contenu capturé sous forme brute (sans mise en forme), comme stocké par le module de keylogging sur la machine cible.
+- Le bouton **Fetch data** permet de récupérer les nouvelles frappes depuis le module rootkit.
+- L’état du module est affiché via un **interrupteur ON/OFF** :
+  - Quand le module est actif, les frappes sont enregistrées.
+  - Quand il est désactivé, aucune frappe n’est collectée.
+
+#### 🔹 Recherche dans les frappes
+
+- Un champ de recherche permet de filtrer les résultats affichés :
+  - **Mode Normal** : la recherche est effectuée en texte brut.
+  - **Mode RegEx** : active une recherche utilisant des expressions régulières.
+- Le bouton **Search** permet d’appliquer le filtre sur les données affichées.
+
+#### 🔹 Exportation
+
+- Le bouton **Download as .txt** permet de télécharger l’ensemble des frappes capturées sous forme d’un fichier `.txt`, pour une analyse hors-ligne ou un archivage.
+
+Cette interface permet donc une surveillance continue et discrète du poste compromis, tout en offrant des outils de recherche et d’exportation pratiques pour l’attaquant.
 
 ## 🚀 Commandes
 
