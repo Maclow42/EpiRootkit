@@ -20,20 +20,23 @@ Bienvenue dans le projet **EpiRootkit**, un rootkit pédagogique développé dan
 
 ## 🚀 Fonctionnalités
 
-- 🌐 Communication par canal TCP et/ou DNS  
-- 🖥️ Exécution de commandes à distance  
-- 🐚 Reverse shell  
-- 🙈 Cacher des répertoires et des fichiers (dynamique)  
-- 🚫 Interdire l’accès à des répertoires ou fichiers (dynamique)  
-- ✏️ Modifier l’affichage de certains fichiers ciblés (dynamique)  
-- 🕵️ Cacher le module dans la liste des modules  
-- 🔐 Chiffrement AES des communications TCP (non DNS)  
-- 🔑 Authentification à distance  
-- 🕸️ Interface Web de contrôle distant  
-- 🚪 Cacher des ports réseau  
-- ⌨️ Keylogger  
-- 🗑️ Filtrage des logs  
-- 🔄 Persistance au reboot  
+- 🌐 Communication par canal TCP et/ou DNS
+- 🖥️ Exécution de commandes à distance
+- 🐚 Reverse shell
+- 🙈 Cacher des répertoires et des fichiers (dynamique)
+- 🚫 Interdire l’accès à des répertoires ou fichiers (dynamique)
+- ✏️ Modifier l’affichage de certains fichiers ciblés (dynamique)
+- 🕵️ Cacher le module dans la liste des modules
+- 🔐 Chiffrement AES des communications (TCP et DNS)
+- 🔑 Authentification à distance
+- 🕸️ Interface Web de contrôle distant
+- 🚪 Cacher des ports réseau
+- ⌨️ Keylogger
+- 🔄 Persistance au reboot
+- 🖼️ ASCII art
+- 📁 Envoi et réception de fichiers
+- 🛡️ Détection d’environnement virtuel
+- 🔍 Explorateur distant de fichiers
 
 ## 🏢 Organisation
 

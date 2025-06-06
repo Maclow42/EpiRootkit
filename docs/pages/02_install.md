@@ -44,7 +44,7 @@ Exécutez **1__setup.sh** avec sudo. Ce premier script crée le dossier `boot/vm
 ```bash
 ./2__launch.sh
 ```
-Exécutez **2__launch.sh**. Ce script vérifie que tout est correctement installé, puis lance les deux machines virtuelles avec QEMU. Chacune dispose de 4096 Mo de mémoire RAM. L'attaquant est relié à `tap0` et la victime à `tap1`. PLus d'informations sur la configuration dans [Réseau](d5/dc4/network.html).
+Exécutez **2__launch.sh**. Ce script vérifie que tout est correctement installé, puis lance les deux machines virtuelles avec QEMU. Chacune dispose de 4096 Mo de mémoire RAM. L'attaquant est relié à `tap0` et la victime à `tap1`. Plus d'informations sur la configuration dans [Réseau](d5/dc4/network.html). Normalement, le rootkit essaie déjà de se connecter à l'attaquant dès le démarrage de la machine virtuelle, en raison de sa persistance.
 
 \htmlonly
 <figure style="text-align: center;">

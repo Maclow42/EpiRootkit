@@ -11,7 +11,7 @@ Dans un premier temps, nous expliquerons comment interagir avec l’interface we
 
 ### 1. Connexion
 
-Normalement, à ce stade, vous devriez avoir les deux machines virtuelles ouvertes, avec le serveur Python en cours d’exécution, ainsi que l’interface web si vous avez choisi cette option. Vous devriez alors voir un écran similaire à celui présenté ci-dessous. Le rootkit est détecté et connecté, mais une authentification est nécessaire pour accéder à l’ensemble des fonctionnalités et contrôler la machine victime à distance. Cliquez ensuite sur Authenticate et saisissez le mot de passe `evannounnet`. Après quelques instants, le tableau de bord principal de l’application devrait s’afficher.
+Normalement, à ce stade, vous devriez avoir les deux machines virtuelles ouvertes, avec le serveur Python en cours d’exécution, ainsi que l’interface web si vous avez choisi cette option. Vous devriez alors voir un écran similaire à celui présenté ci-dessous. Le rootkit est détecté et connecté, mais une authentification est nécessaire pour accéder à l’ensemble des fonctionnalités et contrôler la machine victime à distance. Cliquez ensuite sur Authenticate et saisissez le mot de passe `evannounet`. Après quelques instants, le tableau de bord principal de l’application devrait s’afficher.
 \htmlonly
 <figure style="text-align: center;">
   <img 
@@ -60,56 +60,75 @@ Normalement, à ce stade, vous devriez avoir les deux machines virtuelles ouvert
 
 ### 2. Dashboard
 
-Une fois connecté et authentifié, le tableau de bord principal (dashboard) s’affiche. Il permet un aperçu global de l’état de la machine cible, ainsi qu’un accès rapide à certaines fonctionnalités du rootkit. Voici les différents éléments présents :
+Une fois connecté et authentifié, le tableau de bord principal (dashboard) s’affiche. Il permet un aperçu global de l’état de la machine cible, ainsi qu’un accès rapide à certaines fonctionnalités du rootkit. Voici les différents éléments présents ci-dessous.
 
-#### ✅ État de la connexion
+#### ✅ Connexion
+<div class="full_width_table">
+| Élément             | Description                                                                 |
+|:---------------------|:-----------------------------------------------------------------------------|
+| **Status**          | Indique que le rootkit est bien connecté à la machine cible.                |
+| **IP**              | Adresse IP locale de la machine cible (ici `192.168.100.3`).                |
+| **Port**            | Port utilisé pour la connexion (ici `4242`).                                |
+| **Time**            | Heure actuelle sur la machine victime.                                      |
+| **Last Command**    | Affiche la dernière commande envoyée à la cible.                            |
+| **Avertissement VM**| Affiche un message d’alerte si le rootkit détecte un environnement virtuel. |
+</div>
 
-- **Status : Connected** — Indique que le rootkit est bien connecté à la machine cible.
-- **IP :** Adresse IP locale de la machine cible (ici `192.168.100.3`).
-- **Port :** Port utilisé pour la connexion (ici `4242`).
-- **Time :** Heure actuelle sur la machine victime.
-- **Last Command :** Affiche la dernière commande envoyée à la cible.
-- **Avertissement VM :** Affiche un message d’alerte si le rootkit détecte qu’il s’exécute dans un environnement virtuel.
+#### 🛠 Actions
+<div class="full_width_table">
+| Action              | Description                                                                 |
+|:---------------------|:-----------------------------------------------------------------------------|
+| **Disconnect**      | Permet de fermer proprement la connexion avec la cible.                     |
+| **Kill rootkit**    | Met un terme à l’exécution du rootkit sur la machine cible                  |
+</div>
 
-#### 🛠 Actions disponibles
+#### 🖥 Système
+<div class="full_width_table">
+| Élément             | Description                                                                 |
+|:---------------------|:-----------------------------------------------------------------------------|
+| **Architecture**    | Architecture processeur de la machine (ici `x86_64`).                       |
+| **CPU Cores**       | Nombre de cœurs processeur détectés (ici `1 cœur`).                         |
+| **CPU Model**       | Nom du processeur ou de l’émulateur utilisé (ici `QEMU Virtual CPU`).       |
+| **Hostname**        | Nom d’hôte de la machine (ici `victim`).                                    |
+| **RAM**             | Quantité totale de RAM disponible (ici `3889 Mo`).                          |
+| **Version kernel**  | Version du noyau Linux (ici `6.8.0-60-generic`).                            |
+| **Version OS**      | Détail de la distribution Linux et son build.                               |
+| **Virtual Env**     | Indique si la machine semble tourner dans une VM (ici `true`).              |
+</div>
 
-- **Disconnect :** Permet de fermer proprement la connexion avec la cible.
-- **Kill rootkit :** Met un terme à l’exécution du rootkit sur la machine cible (destruction du processus distant).
+#### 💻 Shell
+<div class="full_width_table">
+| Élément             | Description                                                                 |
+|:---------------------|:-----------------------------------------------------------------------------|
+| **Champ de port**   | Permet de spécifier un port sur lequel ouvrir un shell inversé.             |
+| **Launch Shell**    | Lance le shell distant sur le port défini.                                  |
+</div>
 
-#### 🖥 Informations système
+> **Attention :** Le bouton *Launch Shell* ouvre un terminal sur la machine d'attaque. Par conséquent, le serveur web **et** le navigateur doivent être lancés dans la VM d'attaque pour que cette fonctionnalité fonctionne correctement.
 
-- **Architecture :** Architecture processeur de la machine (ici `x86_64`).
-- **CPU Cores :** Nombre de cœurs processeur détectés (1 cœur ici).
-- **CPU Model :** Nom du processeur ou de l’émulateur utilisé (`QEMU Virtual CPU` dans ce cas).
-- **Hostname :** Nom d’hôte de la machine (ici `victim`).
-- **RAM :** Quantité totale de RAM disponible (3889 Mo ici).
-- **Version kernel :** Version du noyau Linux (`6.8.0-60-generic`).
-- **Version OS :** Détail de la distribution Linux et son build.
-- **Virtual Env :** Indique si la machine semble tourner dans une VM (`true` ici).
+#### 💾 Disque
 
-#### 💻 Lancement de shell distant
+Un aperçu est fourni via la commande distante `df -h` exécutée sur la machine virtuelle victime, indiquant les différentes partitions, leur taille, l’espace utilisé/disponible et leur point de montage.
 
-- **Champ de port :** Permet de spécifier un port sur lequel ouvrir un shell inversé.
-- **Bouton “Launch Shell” :** Lance le shell distant sur le port défini.
-
-> **⚠️ Attention :** Le bouton "Launch Shell" ouvre un terminal sur la machine d'attaque. Par conséquent, le serveur web **et** le navigateur doivent être lancés dans la VM d'attaque pour que cette fonctionnalité fonctionne correctement.
-
-#### 💾 Utilisation du disque
-
-Un aperçu est fourni via la commande `df -h`, indiquant les différentes partitions, leur taille, l’espace utilisé/disponible et leur point de montage.
-
-#### 📊 Utilisation CPU & RAM
+#### 📊 Ressources
 
 Un petit graphique à droite affiche en temps réel :
-- **L’utilisation du CPU (%)** en rouge.
-- **L’utilisation de la RAM (%)** en bleu.
-
+<div class="full_width_table">
+| Ressource           | Couleur d'affichage  |
+|:--------------------|:---------------------|
+| **CPU (%)**         | Rouge                |
+| **RAM (%)** n       | Bleu                 |
+</div>
 
 ### 3. Terminal
 
 FIXME
 
 ### 4. Keylogger
+
+FIXME
+
+### 5. Explorateur
 
 FIXME
 
@@ -239,7 +258,7 @@ Cette commande permet simplement d’afficher un menu récapitulatif de toutes l
 ```bash
 hooks hide [PATH]
 ```
-Cette commande permet de masquer un fichier ou un dossier spécifique en fournissant son chemin absolu. En arrière-plan, le syscall `getdents64` est intercepté afin de filtrer le contenu affiché lors de l’énumération des fichiers.
+Cette commande permet de masquer un fichier ou un dossier spécifique en fournissant son chemin absolu. En arrière-plan, le syscall `getdents64` est intercepté afin de filtrer le contenu affiché lors de l’énumération des fichiers. De plus, par défaut, tout fichier commençant par `stdbool_bypassed_ngl_` sera automatiquement caché.
 
 #### c. unhide
 ```bash
@@ -308,6 +327,7 @@ Cette commande affiche la liste complète des chemins absolus de tous les fichie
 ```bash
 hooks add_port [PORT]
 ```
+Cette commande permet de cacher des ports, notamment dans les fichiers `/proc/net/tcp`... Elle modifie également le comportement de binaires comme `ss` ou `netstat`, en masquant toutes les lignes mentionnant un port source ou destination égal à `[PORT]`.
 
 #### m. remove_port
 ```bash

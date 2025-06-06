@@ -33,27 +33,6 @@ static char *build_timeout_prefix(int timeout) {
     return timeout_cmd;
 }
 
-/**
- * build_full_command - Constructs a full command string with optional redirection.
- *
- * @buffer: Pointer to the buffer where the constructed command will be stored.
- * @buffer_size: Size of the buffer to ensure no overflow occurs.
- * @timeout_cmd: The timeout command to prepend to the user command.
- * @user_cmd: The user command to be executed.
- * @redirect_stdout: Boolean flag indicating whether to redirect standard output.
- * @redirect_stderr: Boolean flag indicating whether to redirect standard error.
- * @catch_stds: Boolean flag indicating whether to catch standard output and error.
- * @stdout_file: File path to redirect standard output (used if redirect_stdout is true).
- * @stderr_file: File path to redirect standard error (used if redirect_stderr is true).
- *
- * This function constructs a command string based on the provided parameters.
- * It supports optional redirection of standard output and/or standard error
- * to specified files. If both `redirect_stdout` and `redirect_stderr` are true,
- * or if `catch_stds` is false, no redirection is applied.
- *
- * Returns:
- *   0 on success, or -EINVAL if the constructed command exceeds the buffer size.
- */
 static int build_full_command(char *buffer, size_t buffer_size,
                               const char *timeout_cmd, const char *user_cmd,
                               bool redirect_stdout, bool redirect_stderr,
@@ -85,35 +64,6 @@ static int execute_command(const char *cmd_str, char *envp[]) {
 
     return call_usermodehelper_exec(sub_info, UMH_WAIT_PROC);
 }
-
-
-/**
- * exec_str_as_command_with_timeout - Executes a user-provided command string with a timeout.
- *
- * @user_cmd: The command string to execute. Leading whitespace will be trimmed.
- * @catch_stds: A boolean indicating whether to redirect standard output and error.
- * @timeout: The maximum time (in seconds) to allow the command to run before timing out.
- *
- * This function builds and executes a command string with optional redirection of
- * standard output and error. It also enforces a timeout for the command execution.
- * The function performs the following steps:
- *   1. Allocates memory for the command buffer.
- *   2. Detects redirection operators in the user-provided command.
- *   3. Constructs a timeout-prefixed command string.
- *   4. Builds the full command string with optional redirection and environment variables.
- *   5. Executes the constructed command.
- *   6. Frees allocated resources and returns the command's exit status.
- *
- * Return:
- *   - On success, returns the exit status of the executed command.
- *   - On failure, returns a negative error code (e.g., -ENOMEM for memory allocation failure).
- *
- * Notes:
- *   - The function uses a static environment variable array (`envp`) to define
- *     the execution environment for the command.
- *   - The caller is responsible for ensuring that `user_cmd` is a valid, null-terminated string.
- *   - The function logs debug messages for command execution and status.
- */
 
 int exec_str_as_command_with_timeout(char *user_cmd, bool catch_stds, int timeout) {
     char *cmd_buffer = NULL;

