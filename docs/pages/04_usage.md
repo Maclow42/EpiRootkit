@@ -170,8 +170,6 @@ Cette fonctionnalité est utile pour :
 
 ### 4. Keylogger
 
-FIXME
-
 \htmlonly
 <figure style="text-align: center;">
   <img 
