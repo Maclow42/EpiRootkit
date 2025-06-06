@@ -13,8 +13,8 @@
  * Chunks are reassembled on the server side according to their index.
  */
 
-#define EOT_CODE 0x04    // End of transmission code
-#define CHUNK_OVERHEAD 5 // Header size per chunk
+#define EOT_CODE 0x04     // End of transmission code
+#define CHUNK_OVERHEAD 11 // Header size per chunk
 
 // Utility to check if all chunks were received
 static inline bool all_chunks_received(bool *received, size_t count) {
@@ -75,7 +75,7 @@ int send_to_server(enum Protocol protocol, char *message, ...) {
     // If there are more parameters, format the message
     char *formatted_message = vformat_string(message, args);
     va_end(args);
-    
+
     if (!formatted_message) {
         ERR_MSG("send_to_server: failed to format message\n");
         return -ENOMEM;
@@ -116,16 +116,31 @@ int send_to_server_raw(const char *data, size_t len) {
         char *chunk = kzalloc(STD_BUFFER_SIZE, GFP_KERNEL);
         if (!chunk) {
             ERR_MSG("send_to_server_raw: failed to allocate buffer\n");
+            vfree(encrypted_msg);
             return -ENOMEM;
         }
 
-        // Fill chunk header and payload
-        chunk[0] = (uint8_t)nb_chunks;
-        chunk[1] = (uint8_t)i;
-        chunk[2] = (chunk_len >> 8) & 0xFF;
-        chunk[3] = chunk_len & 0xFF;
-        memcpy(chunk + 4, encrypted_msg + i * max_chunk_body, chunk_len);
-        chunk[4 + chunk_len] = EOT_CODE; // End of transmission
+        // total_chunks in big-endian 32 bits
+        uint32_t tc = (uint32_t)nb_chunks;
+        chunk[0] = (uint8_t)((tc >> 24) & 0xFF);
+        chunk[1] = (uint8_t)((tc >> 16) & 0xFF);
+        chunk[2] = (uint8_t)((tc >> 8) & 0xFF);
+        chunk[3] = (uint8_t)((tc >> 0) & 0xFF);
+
+        // chunk_index in big-endian 32 bits
+        uint32_t ci = (uint32_t)i;
+        chunk[4] = (uint8_t)((ci >> 24) & 0xFF);
+        chunk[5] = (uint8_t)((ci >> 16) & 0xFF);
+        chunk[6] = (uint8_t)((ci >> 8) & 0xFF);
+        chunk[7] = (uint8_t)((ci >> 0) & 0xFF);
+
+        // chunk_len in big-endian 16 bits
+        uint16_t cl = (uint16_t)chunk_len;
+        chunk[8] = (uint8_t)((cl >> 8) & 0xFF);
+        chunk[9] = (uint8_t)((cl >> 0) & 0xFF);
+
+        memcpy(chunk + 10, encrypted_msg + i * max_chunk_body, chunk_len);
+        chunk[10 + chunk_len] = EOT_CODE; // End of transmission
 
         // Send the chunk using kernel socket API
         struct kvec vec = { .iov_base = chunk, .iov_len = STD_BUFFER_SIZE };
@@ -134,12 +149,12 @@ int send_to_server_raw(const char *data, size_t len) {
         int ret = kernel_sendmsg(sock, &msg, &vec, 1, vec.iov_len);
         kfree(chunk);
         if (ret < 0) {
-            kfree(encrypted_msg);
+            vfree(encrypted_msg);
             return ret;
         }
     }
 
-    kfree(encrypted_msg);
+    vfree(encrypted_msg);
     return 0;
 }
 
@@ -156,12 +171,14 @@ int receive_from_server(char *buffer, size_t max_len) {
     }
 
     bool *received_chunks = NULL;
-    size_t total_received = 0, nb_chunks = 0;
+    size_t total_received = 0;
+    size_t nb_chunks = 0;
 
     while (true) {
         char *chunk = kzalloc(STD_BUFFER_SIZE, GFP_KERNEL);
         if (!chunk) {
             ERR_MSG("receive_from_server: failed to allocate chunk buffer\n");
+            kfree(received);
             return -ENOMEM;
         }
 
@@ -175,13 +192,22 @@ int receive_from_server(char *buffer, size_t max_len) {
             return -EIO;
         }
 
-        // Extract header informations
-        uint8_t total = chunk[0];
-        uint8_t index = chunk[1];
-        uint16_t data_len = (chunk[2] << 8) | chunk[3];
+        // Extract header informations (10 octets) in big-endian (ouch)
+        uint32_t total = ((uint8_t) chunk[0] << 24) 
+            | ((uint8_t) chunk[1] << 16)
+            | ((uint8_t) chunk[2] << 8)
+            | ((uint8_t) chunk[3]);
+
+        uint32_t index = ((uint8_t)chunk[4] << 24)
+            | ((uint8_t) chunk[5] << 16)
+            | ((uint8_t) chunk[6] << 8)
+            | ((uint8_t) chunk[7]);
+
+        uint16_t data_len = ((uint8_t)chunk[8] << 8)
+            | ((uint8_t)chunk[9]);
 
         // Validate end-of-transmission
-        if (chunk[4 + data_len] != EOT_CODE) {
+         if ((uint8_t)chunk[10 + data_len] != EOT_CODE) {
             kfree(chunk);
             kfree(received);
             return -EINVAL;
@@ -198,22 +224,31 @@ int receive_from_server(char *buffer, size_t max_len) {
             }
         }
 
+         // Check index
+        if (index >= nb_chunks) {
+            kfree(chunk);
+            kfree(received);
+            kfree(received_chunks);
+            return -EINVAL;
+        }
+
         // Skip duplicate chunks
         if (received_chunks[index]) {
             kfree(chunk);
             continue;
         }
 
-        // Check for buffer overflow
-        if (total_received + data_len > max_len) {
+        size_t max_chunk_body = STD_BUFFER_SIZE - CHUNK_OVERHEAD; // 1013
+        if (data_len > max_chunk_body) {
             kfree(chunk);
             kfree(received);
             kfree(received_chunks);
-            return -ENOMEM;
+            return -EINVAL;
         }
 
         // Store chunk data in its proper position
-        memcpy(received + index * (STD_BUFFER_SIZE - CHUNK_OVERHEAD), chunk + 4, data_len);
+        size_t payload_offset = CHUNK_OVERHEAD - 1;
+        memcpy(received + index * (STD_BUFFER_SIZE - CHUNK_OVERHEAD), chunk + payload_offset, data_len);
         received_chunks[index] = true;
         total_received += data_len;
 
@@ -240,8 +275,7 @@ int receive_from_server(char *buffer, size_t max_len) {
     buffer[decrypted_len] = '\0'; // Null-terminate the result
 
     kfree(received);
-    kfree(decrypted);
-
+    vfree(decrypted);
     return decrypted_len;
 }
 

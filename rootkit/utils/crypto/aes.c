@@ -4,6 +4,7 @@
 #include <linux/scatterlist.h>
 #include <linux/slab.h>
 
+#include "config.h"
 #include "crypto.h"
 
 /**
@@ -29,7 +30,7 @@ static int add_pkcs7_padding(const char *in, size_t in_len, char **out, size_t *
     padded_len = in_len + padding_len;
 
     // Allocate padded buffer
-    padded_buf = kzalloc(padded_len, GFP_KERNEL);
+    padded_buf = vmalloc(padded_len);
     if (!padded_buf)
         return -ENOMEM;
 
@@ -85,7 +86,7 @@ static int remove_pkcs7_padding(const char *in, size_t in_len, char **out, size_
     data_len = in_len - padding_len;
 
     // Allocate unpadded buffer
-    unpadded_buf = kzalloc(data_len, GFP_KERNEL);
+    unpadded_buf = vmalloc(data_len);
     if (!unpadded_buf)
         return -ENOMEM;
 
@@ -126,10 +127,10 @@ static int _crypt_buffer(bool encrypt, const char *in, size_t in_len, char **out
     else {
         // For decryption, input must be a multiple of block size
         if (in_len % AES_BLOCK_SIZE != 0) {
-            pr_err("Decrypt input length must be a multiple of %d\n", AES_BLOCK_SIZE);
+            ERR_MSG("Decrypt input length must be a multiple of %d\n", AES_BLOCK_SIZE);
             return -EINVAL;
         }
-        padded_in = kzalloc(in_len, GFP_KERNEL);
+        padded_in = vmalloc(in_len);
         if (!padded_in)
             return -ENOMEM;
         memcpy(padded_in, in, in_len);
@@ -137,9 +138,9 @@ static int _crypt_buffer(bool encrypt, const char *in, size_t in_len, char **out
     }
 
     // Allocate buffer for results
-    buf = kzalloc(padded_len, GFP_KERNEL);
+    buf = vmalloc(padded_len);
     if (!buf) {
-        kfree(padded_in);
+        vfree(padded_in);
         return -ENOMEM;
     }
 
@@ -175,7 +176,7 @@ static int _crypt_buffer(bool encrypt, const char *in, size_t in_len, char **out
         ret = crypto_skcipher_decrypt(req);
 
     if (ret) {
-        pr_err("%s failed: %d\n", encrypt ? "encrypt" : "decrypt", ret);
+        ERR_MSG("%s failed: %d\n", encrypt ? "encrypt" : "decrypt", ret);
         goto out_free_req;
     }
 
@@ -189,12 +190,12 @@ static int _crypt_buffer(bool encrypt, const char *in, size_t in_len, char **out
 
         ret = remove_pkcs7_padding(buf, padded_len, &unpadded_buf, &unpadded_len);
         if (ret != 0) {
-            pr_err("Failed to remove padding: %d\n", ret);
+            ERR_MSG("Failed to remove padding: %d\n", ret);
             goto out_free_req;
         }
 
         // Free the original buffer and replace with unpadded one
-        kfree(buf);
+        vfree(buf);
         buf = unpadded_buf;
         padded_len = unpadded_len;
     }
@@ -208,8 +209,8 @@ out_free_req:
 out_free_tfm:
     crypto_free_skcipher(tfm);
 out_free_buffers:
-    kfree(padded_in);
-    kfree(buf); // Will be NULL on success path
+    vfree(padded_in);
+    vfree(buf);
 
     return ret;
 }

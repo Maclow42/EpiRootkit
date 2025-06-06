@@ -176,7 +176,7 @@ class TCPServer:
                     request.event.set()
                     continue
 
-                print(f"[RECEIVED] {response}")
+                print(f"[RECEIVED] {response[:128]}")
 
                 # --- Post-processing ---
                 self._recv_queue.put(response)

