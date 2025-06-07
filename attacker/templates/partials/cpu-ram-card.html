@@ -10,34 +10,6 @@
     //   !! A part of this script is in dashboard.js !!
     // ##################################################
 
-    // Key under which we store history
-    const CHART_KEY = 'cpuRamHistory';
-
-    // Try to load 20 old points from localStorage
-    function loadChartHistory() {
-        try {
-            const json = localStorage.getItem(CHART_KEY);
-            if (!json) return null;
-            const obj = JSON.parse(json);
-            if (!obj.labels || !obj.cpu || !obj.ram) 
-                return null;
-            return obj;
-        } catch {
-            return null;
-        }
-    }
-
-    // Save the last 20 points back to localStorage
-    function saveChartHistory(labels, cpuData, ramData) {
-        if (labels.length > 20) {
-            labels = labels.slice(-20);
-            cpuData = cpuData.slice(-20);
-            ramData = ramData.slice(-20);
-        }
-
-        localStorage.setItem(CHART_KEY, JSON.stringify({ labels, cpu: cpuData, ram: ramData }));
-    }
-
     // Update the chart with new CPU and RAM data
     function updateChart(cpu, ram) {
         const now = new Date().toLocaleTimeString();
@@ -55,8 +27,6 @@
         chart.options.scales.y.max = Math.min(100, Math.ceil(maxVal * 1.1));
 
         chart.update();
-
-        saveChartHistory(chartData.labels, chartData.datasets[0].data, chartData.datasets[1].data);
     }
 
     // Fetch CPU and RAM usage data from the server
