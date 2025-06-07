@@ -338,7 +338,6 @@ def upload():
     if not remote_path:
         return jsonify({"error": "Missing 'remote_path' in request"}), 400
 
-    filename = file.filename
     file_data = file.read()
 
     try:

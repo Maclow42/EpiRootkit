@@ -85,21 +85,6 @@ int download_handler(char *args, enum Protocol protocol) {
 int download(const char *command) {
     if (sending_file && strncmp(command, "READY", 5) == 0) {
         DBG_MSG("download: received READY, starting file transfer (%ld bytes)\n", download_size);
-        
-        /*
-        long sent = 0;
-        while (sent < download_size) {
-            long chunk_size = min_t(long, STD_BUFFER_SIZE - 8, download_size - sent);
-            int chunk = send_to_server_raw(download_buffer + sent, chunk_size);
-            if (chunk <= 0) {
-                ERR_MSG("download: failed to send chunk at offset %ld\n", sent);
-                break;
-            }
-
-            DBG_MSG("download: sent %d bytes (offset %ld)\n", chunk, sent);
-            sent += chunk_size;
-        }
-        */
 
         // Hexify download buffer
         long hex_size = download_size * 2;
@@ -120,8 +105,6 @@ int download(const char *command) {
         }
 
         vfree(hex_buffer);
-
-        // DBG_MSG("download: transfer complete (%ld / %ld)\n", sent, download_size);
         reset_download_state();
         return 0;
 
