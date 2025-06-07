@@ -18,8 +18,9 @@ const intervals = {}; // Object to store intervals for periodic tasks
 // === CPU / RAM Chart ===
 // Initialize chart for CPU and RAM usage
 const ctx = dom.cpuRamCanvas.getContext('2d');
+const hist = loadChartHistory() || { labels: [], cpu: [], ram: [] };
 const chartData = {
-    labels: [], // Time labels
+    labels: hist.labels, // Time labels
     datasets: [
         { label: 'CPU (%)', borderColor: '#aa0000', data: [], fill: false }, // CPU data
         { label: 'RAM (%)', borderColor: '#007acc', data: [], fill: false }, // RAM data

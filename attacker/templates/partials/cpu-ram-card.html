@@ -6,63 +6,93 @@
 </div>
 
 <script>
-  // ##################################################
-  //   !! A part of this script is in dashboard.js !!
-  // ##################################################
+    // ##################################################
+    //   !! A part of this script is in dashboard.js !!
+    // ##################################################
 
-  // Update the chart with new CPU and RAM data
-  function updateChart(cpu, ram) {
-      const now = new Date().toLocaleTimeString();
+    // Key under which we store history
+    const CHART_KEY = 'cpuRamHistory';
 
-      if (chartData.labels.length >= 20) {
-          chartData.labels.shift();
-          chartData.datasets.forEach(ds => ds.data.shift());
-      }
+    // Try to load 20 old points from localStorage
+    function loadChartHistory() {
+        try {
+            const json = localStorage.getItem(CHART_KEY);
+            if (!json) return null;
+            const obj = JSON.parse(json);
+            if (!obj.labels || !obj.cpu || !obj.ram) 
+                return null;
+            return obj;
+        } catch {
+            return null;
+        }
+    }
 
-      chartData.labels.push(now);
-      chartData.datasets[0].data.push(cpu);
-      chartData.datasets[1].data.push(ram);
+    // Save the last 20 points back to localStorage
+    function saveChartHistory(labels, cpuData, ramData) {
+        if (labels.length > 20) {
+            labels = labels.slice(-20);
+            cpuData = cpuData.slice(-20);
+            ramData = ramData.slice(-20);
+        }
 
-      const maxVal = Math.max(...chartData.datasets[0].data, ...chartData.datasets[1].data);
-      chart.options.scales.y.max = Math.min(100, Math.ceil(maxVal * 1.1));
+        localStorage.setItem(CHART_KEY, JSON.stringify({ labels, cpu: cpuData, ram: ramData }));
+    }
 
-      chart.update();
-  }
+    // Update the chart with new CPU and RAM data
+    function updateChart(cpu, ram) {
+        const now = new Date().toLocaleTimeString();
 
-  // Fetch CPU and RAM usage data from the server
-  async function fetchCpuRamUsage() {
-      const { data } = await fetchJSON('/cpu-ram');
-      if (!data) return null;
+        if (chartData.labels.length >= 20) {
+            chartData.labels.shift();
+            chartData.datasets.forEach(ds => ds.data.shift());
+        }
 
-      return {
-          cpu: Number(data.cpu) || 0,
-          ram_used: Number(data.ram_used) || 0,
-          ram_total: Number(data.ram_total) || 0,
-      };
-  }
+        chartData.labels.push(now);
+        chartData.datasets[0].data.push(cpu);
+        chartData.datasets[1].data.push(ram);
 
-  // Activate periodic fetching of CPU and RAM usage
-  function activateCpuRamFetching() {
-      if (intervals.cpuRam) return;
-      intervals.cpuRam = setInterval(async () => {
-          const stat = await fetchCpuRamUsage();
-          if (!stat) return;
+        const maxVal = Math.max(...chartData.datasets[0].data, ...chartData.datasets[1].data);
+        chart.options.scales.y.max = Math.min(100, Math.ceil(maxVal * 1.1));
 
-          const ramPercent = stat.ram_total > 0 ? (stat.ram_used / stat.ram_total * 100).toFixed(1) : 0;
-          updateChart(stat.cpu, ramPercent);
-      }, 5000);
-  }
+        chart.update();
 
-  // Deactivate periodic fetching of CPU and RAM usage
-  function deactivateCpuRamFetching() {
-      if (intervals.cpuRam) {
-          clearInterval(intervals.cpuRam);
-          delete intervals.cpuRam;
-      }
-  }
+        saveChartHistory(chartData.labels, chartData.datasets[0].data, chartData.datasets[1].data);
+    }
 
-  // Start fetching CPU and RAM usage
-  function runCpuRamFetching() {
-      activateCpuRamFetching();
-  }
+    // Fetch CPU and RAM usage data from the server
+    async function fetchCpuRamUsage() {
+        const { data } = await fetchJSON('/cpu-ram');
+        if (!data) return null;
+
+        return {
+            cpu: Number(data.cpu) || 0,
+            ram_used: Number(data.ram_used) || 0,
+            ram_total: Number(data.ram_total) || 0,
+        };
+    }
+
+    // Activate periodic fetching of CPU and RAM usage
+    function activateCpuRamFetching() {
+        if (intervals.cpuRam) return;
+        intervals.cpuRam = setInterval(async () => {
+            const stat = await fetchCpuRamUsage();
+            if (!stat) return;
+
+            const ramPercent = stat.ram_total > 0 ? (stat.ram_used / stat.ram_total * 100).toFixed(1) : 0;
+            updateChart(stat.cpu, ramPercent);
+        }, 5000);
+    }
+
+    // Deactivate periodic fetching of CPU and RAM usage
+    function deactivateCpuRamFetching() {
+        if (intervals.cpuRam) {
+            clearInterval(intervals.cpuRam);
+            delete intervals.cpuRam;
+        }
+    }
+
+    // Start fetching CPU and RAM usage
+    function runCpuRamFetching() {
+        activateCpuRamFetching();
+    }
 </script>

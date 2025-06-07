@@ -73,13 +73,14 @@ async function downloadFile(path) {
         alert("Error downloading file: " + (data?.error || "Unknown error"));
         return;
     }
-
+    /*
     const link = document.createElement("a");
     link.href = data.download_url;
     link.download = path.split("/").pop();
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    */
 }
 
 

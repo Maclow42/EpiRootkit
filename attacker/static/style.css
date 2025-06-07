@@ -962,6 +962,14 @@ pre#textDisplay {
     color: var(--blue-hover);
 }
 
+#downloaded-file-container li .moving-button {
+  display: none;
+}
+
+#downloaded-file-container li:hover .moving-button {
+  display: inline-block;
+}
+
 #explorer-container li.selected-file, a.selected-file {
     background-color: var(--blue-hover);
     color: var(--light-grey);

@@ -53,10 +53,8 @@
                     // Create link element
                     const link = document.createElement('a');
                     link.textContent = file;
-                    link.onclick = (e) => {
-                        e.preventDefault();
-                        downloadFile(file);
-                    }
+                    link.href = `/download_downloaded_file?filename=${encodeURIComponent(file)}`;
+                    link.download = file;
                     listItem.style.cursor = 'pointer';
                     listItem.appendChild(link);
 

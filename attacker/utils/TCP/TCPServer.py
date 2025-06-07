@@ -118,7 +118,7 @@ class TCPServer:
                 self._client_socket, client_addr = self._server_socket.accept()
                 with self._ip_lock:
                     self._client_ip = client_addr[0]
-                print(f"[CONNECTED] Client IP: {self._client_ip}")
+                print(f"[TCP CONNECTED] Client IP: {self._client_ip}")
 
                 # When connected, client send its sysinfo
                 get_sysinfo = self._network_handler.receive(self._client_socket)
@@ -128,13 +128,13 @@ class TCPServer:
                 if "virtual_env" in self._client_sysinfo:
                     self._client_sysinfo["virtual_env"] = bool(self._client_sysinfo["virtual_env"])
 
-                print(f"[SYSINFO] Client sysinfo: {self._client_sysinfo}")
+                print(f"[TCP SYSINFO] Client sysinfo: {self._client_sysinfo}")
 
                 self._handle_client()
 
                 self._cleanup_after_disconnect()
             except Exception as e:
-                print(f"[MAIN LOOP ERROR] {e}")
+                print(f"[TCP MAIN LOOP ERROR] {e}")
 
     def _handle_client(self) -> None:
         request = None
@@ -142,7 +142,7 @@ class TCPServer:
             while self._running:
                 # Log: Checking if the socket is still connected
                 if self._client_socket is None or self._is_socket_closed(self._client_socket):
-                    print("[SOCKET] Client disconnected.")
+                    print("[TCP SOCKET] Client disconnected.")
                     break
 
                 # Log: Attempting to retrieve a request from the queue
@@ -157,26 +157,26 @@ class TCPServer:
                 # --- Sending the command ---
                 success = self._network_handler.send(self._client_socket, request.message)
                 if not success:
-                    tcp_error = "[ERROR] Failed to send command."
+                    tcp_error = "[TCP ERROR] Failed to send command."
                     print(tcp_error)
                     if request.add_to_history:
                         self._owner._update_command_history(request.message, "", tcp_error=tcp_error)
                     request.event.set()
                     continue
 
-                print(f"[SENT] {request.message}")
+                print(f"[TCP SENT] {request.message[:128]}")
 
                 # --- Receiving the response ---
                 response = self._network_handler.receive(self._client_socket)
                 if response is False:
-                    tcp_error = "[ERROR] Failed to receive response."
+                    tcp_error = "[TCP ERROR] Failed to receive response."
                     print(tcp_error)
                     if request.add_to_history:
                         self._owner._update_command_history(request.message, "", tcp_error=tcp_error)
                     request.event.set()
                     continue
 
-                print(f"[RECEIVED] {response[:128]}")
+                print(f"[TCP RECEIVED] {response[:128]}")
 
                 # --- Post-processing ---
                 self._recv_queue.put(response)
@@ -189,13 +189,13 @@ class TCPServer:
                 request.event.set()
 
         except socket.timeout:
-            tcp_error = "[SOCKET TIMEOUT] No data received in the last 2 seconds."
+            tcp_error = "[TCP SOCKET TIMEOUT] No data received in the last 2 seconds."
             print(tcp_error)
             if request and request.add_to_history:
                 self._owner._update_command_history(request.message if request else "", "", tcp_error=tcp_error)
 
         except Exception as e:
-            tcp_error = f"[EXCEPTION] An error occurred: {e}"
+            tcp_error = f"[TCP EXCEPTION] An error occurred: {e}"
             print(tcp_error)
             if request and request.add_to_history:
                 self._owner._update_command_history(request.message if request else "", "", tcp_error=tcp_error)
