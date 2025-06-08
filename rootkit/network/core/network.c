@@ -174,7 +174,7 @@ int receive_from_server(char *buffer, size_t max_len) {
 
     // Statically sized temp buffers
     char header_buffer[10];
-    char payloadbuf[FRAME_SIZE_FULL];
+    char payloadbuf[STD_BUFFER_SIZE];
     char padbuf[10];
 
     char *received = NULL;

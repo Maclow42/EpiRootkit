@@ -11,6 +11,7 @@ static char *trim_leading_whitespace(char *str) {
     return str;
 }
 
+// I hate One Direction
 static void detect_redirections(const char *cmd, bool *redirect_stdout, bool *redirect_stderr) {
     char *redirect_stderr_add = strstr(cmd, "2>");
     char *redirect_stdout_add = strstr(cmd, ">");

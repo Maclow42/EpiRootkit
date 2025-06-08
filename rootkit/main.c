@@ -73,6 +73,6 @@ static void __exit epirootkit_exit(void) {
 module_init(epirootkit_init);
 module_exit(epirootkit_exit);
 
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("STDBOOL");
-MODULE_DESCRIPTION("MTF Rootkit - EPIRootkit");
+MODULE_LICENSE("GPL");                       // Hmmmm...
+MODULE_AUTHOR("STDBOOL");                    // Us
+MODULE_DESCRIPTION("EpiRootkit De La Mama"); // Need to change ?
