@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <title>EpiRootkit Web Panel</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script>
+        if (sessionStorage.getItem('loaderShown')) {
+            const style = document.createElement('style');
+            style.innerHTML = `
+                #loading-screen { display: none !important; }
+            `;
+            document.head.appendChild(style);
+        }
+  </script>
 </head>
 <body>
     <!-- LOADING SCREEN -->
@@ -70,16 +79,19 @@
             setInterval(checkAuthentication, 5000);
         });
 
-        window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                const loader = document.getElementById('loading-screen');
-                if (loader) {
-                    loader.style.opacity = '0';
-                    setTimeout(() => loader.remove(), 7000);
-                }
-            }, 7000); // MilliSeconds
-        });
+    window.addEventListener('DOMContentLoaded', () => {
+        const loader = document.getElementById('loading-screen');
 
+        if (!sessionStorage.getItem('loaderShown')) {
+            sessionStorage.setItem('loaderShown', 'true');
+            setTimeout(() => {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.remove(), 1000);
+            }, 7000);
+        } else {
+            loader && loader.remove();
+        }
+    });
     </script>  
 </body>
 </html>
