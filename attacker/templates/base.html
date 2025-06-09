@@ -6,6 +6,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+    <!-- LOADING SCREEN -->
+    <div id="loading-screen">
+        <div class="loading-content">
+            {% include 'partials/loading_logo.svg' %}
+        </div>
+    </div>
     <!-- TOP BAR -->
     {% include "partials/topbar.html" %}
 
@@ -63,6 +69,17 @@
             checkAuthentication();
             setInterval(checkAuthentication, 5000);
         });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const loader = document.getElementById('loading-screen');
+                if (loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.remove(), 7000);
+                }
+            }, 7000); // MilliSeconds
+        });
+
     </script>  
 </body>
 </html>

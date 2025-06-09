@@ -51,7 +51,7 @@
     --font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif;
 }
 
-* {
+html, body, div, p, span, h1, h2, h3, h4, h5, h6, ul, li, a, button, input, textarea {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -1017,3 +1017,26 @@ pre#textDisplay {
 #file-selector input[type="file"] {
     margin: 0;
 }
+
+#loading-screen {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 9999;
+    background-color: var(--dark-grey);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 1s ease;
+}
+
+.loading-content svg {
+    opacity: 1;
+    width: 800px;
+    height: auto;
+    max-width: 70vw;
+}
+
+.loading-content svg text {
+    fill: var(--light-grey);
+}
+
