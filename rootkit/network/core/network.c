@@ -174,7 +174,10 @@ int receive_from_server(char *buffer, size_t max_len) {
 
     // Statically sized temp buffers
     char header_buffer[10];
-    char payloadbuf[STD_BUFFER_SIZE];
+    char *payloadbuf = kzalloc(STD_BUFFER_SIZE, GFP_KERNEL);
+    if (!payloadbuf) {
+        return -ENOMEM;
+    }
     char padbuf[10];
 
     char *received = NULL;
@@ -316,6 +319,7 @@ int receive_from_server(char *buffer, size_t max_len) {
     return ret;
 
 cleanup:
+    kfree(payloadbuf);
     kfree(seen);
     vfree(received);
     return ret;
