@@ -5,6 +5,97 @@
 
 ## 2. 🤝 TCP
 
+## 2.1 🧠 Introductions à nos problématiques
+
+Dans un objectif de sécuriser nos communications réseau, nous avons fait le choix d'utiliser le chiffrement AES-128 pour toutes les données échangées entre le client et le serveur. Cependant, le défaut de cet algorithme est qu'il ne permet pas de transmettre des données de taille arbitraire. En effet, le chiffrement AES-128 produit un bloc de 16 octets, ce qui signifie que les données doivent être découpées en blocs de cette taille avant d'être chiffrées.
+
+Or, lors de la transmission de données via un socket, il est courant que les données soient de taille variable, ce qui pose un problème pour le chiffrement. Il en est bien sûr de même pour les données reçues, qui peuvent être de taille variable et ne pas correspondre à un multiple de 16 octets.
+
+Pour résoudre ce problème, nous avons mis en place un protocole personnalisé de transmission chunkée. Ce protocole permet de découper les données en chunks de taille fixe, chacun étant enrichi d'un en-tête (non-chiffré) pour l'identification, la reconstruction et la détection des erreurs. Ainsi, même si les données sont de taille variable, elles peuvent être découpées en chunks de taille fixe, ce qui permet de les chiffrer et de les transmettre de manière fiable.
+
+## 2.2 📦 Protocole personnalisé de transmission chunkée
+
+### Objectif
+
+Ce protocole personnalisé permet de transmettre de manière fiable des données de taille arbitraire (texte ou fichiers) entre un client et un serveur via un socket noyau. Les données sont **chiffrées** puis **découpées en chunks fixes**, chacun enrichi d’un en-tête pour l’identification, la reconstruction et la détection des erreurs.
+
+### Structure Générale d’un Chunk
+
+Chaque chunk est un buffer de taille constante `STD_BUFFER_SIZE` (de valeur 1024 par défaut) octets structuré comme suit :
+
+```
++-------------------+-------------------+-------------------+-------------------------------+------------+
+| total_chunks (4B) | chunk_index (4B)  | data_len (2B)     | payload (≤ BODY_SIZE, var.)   | EOT (1B)   |
++-------------------+-------------------+-------------------+-------------------------------+------------+
+```
+
+### Champs :
+
+| Champ         | Taille     | Description                                                                 |
+|---------------|------------|-----------------------------------------------------------------------------|
+| `total_chunks`| 4 octets   | Nombre total de chunks (big-endian)                                        |
+| `chunk_index` | 4 octets   | Index de ce chunk dans la séquence (big-endian)                            |
+| `data_len`    | 2 octets   | Longueur réelle des données dans le chunk (big-endian)                     |
+| `payload`     | variable   | Données chiffrées                                                          |
+| `EOT_CODE`    | 1 octet    | Code de fin de transmission pour le chunk (valide si positionné)           |
+| `padding`     | variable   | Remplissage pour atteindre `STD_BUFFER_SIZE`, ignoré à la réception        |
+
+> 🔒 **Toutes les données envoyées dans le payload sont chiffrées avant le découpage en chunks.**
+
+### Fonctionnement de l’Envoi
+
+1. **Chiffrement :** La donnée brute est chiffrée avec AES-128 via `encrypt_buffer`.
+2. **Découpage :** Le buffer chiffré est segmenté en chunks de `BODY_SIZE` (= `STD_BUFFER_SIZE - 11 (HEADER_SIZE + FOOTER_SIZE)`).
+3. **Encapsulation :** Chaque chunk est préfixé par un en-tête structuré contenant :
+  - Le nombre total de chunks
+  - L’index du chunk
+  - La longueur des données utiles
+  - Le marqueur `EOT_CODE` à la fin des données
+4. **Envoi :** Chaque chunk est envoyé via `kernel_sendmsg`.
+
+### Fonctionnement de la Réception
+
+1. **Lecture progressive :**
+  - Lecture de l'en-tête (10 octets).
+  - Lecture du `payload` + `EOT` (données utiles).
+  - Lecture des éventuels octets de padding.
+2. **Validation :**
+  - Vérifie les tailles.
+  - Vérifie la présence correcte du `EOT_CODE`.
+  - Assure la cohérence de `total_chunks` et `chunk_index`.
+3. **Assemblage :**
+  - Alloue un tampon de réception si c’est le premier chunk.
+  - Marque chaque chunk reçu comme `vu`.
+  - Recopie les données à la bonne position.
+  - Attend la réception de tous les chunks.
+4. **Déchiffrement :** Une fois tous les chunks reçus, assemble et déchiffre les données avec l'algorithme AES-128.
+5. **Dispatch :**
+  - Si la donnée commence par `exec`, la traite comme commande texte.
+  - Si un transfert de fichier est en cours, les données reçues sont gérées par la partie de transfert de fichiers.
+  - Sinon, elle est copiée vers le tampon utilisateur.
+
+### Points forts de ce protocole personnalisé
+
+- **Fiabilité :** Chaque chunk contient des méta-informations pour la vérification de cohérence.
+- **Idempotence :** Les chunks sont gérés de sorte à ce que les doublons ne posent pas de soucis (copie directe des données dans un tableau en utilisant l'index de chunk).
+- **Taille arbitraire :** Le protocole supporte des messages de taille importante.
+- **Sécurité :** Tous les transferts sont chiffrés.
+- **Flexibilité :** Gère à la fois les transferts de texte brut et de fichiers binaires.
+
+### Limitations
+
+- Le protocole ne gère pas les retransmissions : il suppose que les sockets sont fiables ou que les erreurs de transmission sont gérées par le protocole TCP sous-jacent.
+- Aucun checksum n’est intégré pour vérifier l'intégrité après chiffrement.
+- Le temps d’attente pour recevoir tous les chunks n’est pas limité (peut bloquer indéfiniment).
+
+### Constantes importantes
+
+| Constante         | Valeur par défaut  | Description                                |
+|------------------|------------------|--------------------------------------------|
+| `STD_BUFFER_SIZE`| 1024             | Taille fixe des buffers utilisés           |
+| `CHUNK_OVERHEAD` | 11               | 10 (header) + 1 (EOT_CODE)                 |
+| `EOT_CODE`       | `0x04`           | Code ASCII pour "End of Transmission"      |
+
 ## 3. 🧭 DNS
 
 Dans le cadre de ce projet, la communication principale utilisée pour l’échange de paquets entre les deux machines virtuelles repose naturellement sur le protocole TCP. Cependant, nous avons choisi de mettre en œuvre une méthode de communication alternative afin d’introduire un aspect furtif aux échanges. L’objectif est de démontrer comment envoyer des commandes à une machine cible via des requêtes DNS de type **TXT**, puis d’exfiltrer les résultats de ces commandes en les encapsulant dans des requêtes DNS de type **A**.
