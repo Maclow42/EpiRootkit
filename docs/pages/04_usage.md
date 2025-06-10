@@ -105,7 +105,7 @@ Une fois connecté et authentifié, le tableau de bord principal (dashboard) s�
 | **Launch Shell**    | Lance le shell distant sur le port défini.                                  |
 </div>
 
-> **Attention :** Le bouton *Launch Shell* ouvre un terminal sur la machine d'attaque. Par conséquent, le serveur web **et** le navigateur doivent être lancés dans la VM d'attaque pour que cette fonctionnalité fonctionne correctement.
+> **Attention :** Le bouton *Launch Shell* ouvre un terminal Kitty sur la machine d'attaque. Par conséquent, le serveur web **et** le navigateur doivent être lancés dans la VM d'attaque pour que cette fonctionnalité fonctionne correctement.
 
 #### 💾 Disque
 
