@@ -194,8 +194,11 @@ Le bouton *Download as .txt* permet de télécharger l’ensemble des frappes ca
 
 ---
 
-## 📜 Commandes rootkit
-### Liste des commandes
+## 📜 Liste des commandes
+
+La liste des commandes décrites ci-dessous sont des commandes propres à Epirootkit, qui peuvent être saisies dans le terminal de la machine attaquante après s’être connecté au rootkit. Beaucoup de ces commandes sont également accessibles de manière indirecte via l’interface web, que ce soit par des boutons ou des champs de saisie. Cela n'est cependant pas le cas de toutes les commandes, certaines étant réservées à un usage en ligne de commande (CLI) pour des raisons de sécurité ou de complexité et c'est pour cette usage que nous les décrivons ici.
+
+Voici la liste des commandes disponibles, regroupées par thème :
 
 | Thème                | Commandes                                                                                                                                                                                                                   |
 |----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
