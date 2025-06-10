@@ -27,6 +27,27 @@ SOFTWARE.
 
 */
 
+details > summary {
+    color: var(--page-foreground-color) !important;
+    cursor: pointer !important;
+}
+
+details > summary:hover {
+    color: var(--primary-color) !important;
+}
+
+details > summary::marker {
+    color: var(--page-secondary-foreground-color) !important;
+}
+
+details > *:not(summary) {
+    margin-left: 2em !important;
+}
+
+details {
+    margin: var(--spacing-large) 0;
+}
+
 html {
     /* primary theme color. This will affect the entire websites color scheme: links, arrows, labels, ... */
     --primary-color: #1779c4;

