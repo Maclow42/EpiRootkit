@@ -194,7 +194,23 @@ Le bouton *Download as .txt* permet de télécharger l’ensemble des frappes ca
 
 ---
 
-## 📜 Commandes disponibles
+## 📜 Commandes rootkit
+### Liste des commandes
+
+| Thème                | Commandes                                                                                                                                                                                                                   |
+|----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Accès                | <a href="#connect">connect</a> │ <a href="#disconnect">disconnect</a> │ <a href="#killcom">killcom</a>                                                                                                                                            |
+| Authentification     | <a href="#help">help</a> │ <a href="#passwd">passwd</a>                                                                                                                                                                                     |
+| Contrôle système     | <a href="#exec">exec</a> │ <a href="#getshell">getshell</a> │ <a href="#sysinfo">sysinfo</a> │ <a href="#is_in_vm">is_in_vm</a>                                                                                                                        |
+| Keylogger            | <a href="#klgon">klgon</a> │ <a href="#klgoff">klgoff</a> │ <a href="#klg">klg</a>                                                                                                                                                                |
+| Masquage module      | <a href="#hide_module">hide_module</a> │ <a href="#unhide_module">unhide_module</a>                                                                                                                                                         |
+| Fichiers             | <a href="#get_file">get_file</a> │ <a href="#upload">upload</a>                                                                                                                                                                             |
+| Diagnostic           | <a href="#ping">ping</a>                                                                                                                                                                                                              |
+| Hooks (général)      | <a href="#hooks-help">hooks help</a>                                                                                                                                                                                                  |
+| Hooks : fichiers     | <a href="#hooks-hide">hooks hide</a> │ <a href="#hooks-unhide">hooks unhide</a> │ <a href="#hooks-list_hide">hooks list_hide</a>                                                                                                                  |
+| Hooks : interdiction | <a href="#hooks-forbid">hooks forbid</a> │ <a href="#hooks-unforbid">hooks unforbid</a> │ <a href="#hooks-list_forbid">hooks list_forbid</a>                                                                                                      |
+| Hooks : modification | <a href="#hooks-modify">hooks modify</a> │ <a href="#hooks-unmodify">hooks unmodify</a> │ <a href="#hooks-list_modify">hooks list_modify</a>                                                                                                      |
+| Hooks : ports        | <a href="#hooks-add_port">hooks add_port</a> │ <a href="#hooks-remove_port">hooks remove_port</a> │ <a href="#hooks-list_port">hooks list_port</a>                                                                                                |
 
 <details open>
 <summary id="help"><b>1. 🆘 help</b></summary>
@@ -221,7 +237,7 @@ connect [PASSWORD]
 Permet d'authentifier l'attaquant pour accéder au rootkit à distance.
 
 **Paramètres**
-- **PASSWORD** : Mot de passe d'authentification
+- **PASSWORD** : Mot de passe d'authentification au rootkit (par défaut `evannounet`)
 
 **Notes importantes**
 - La connexion est nécessaire pour exécuter d'autres commandes
