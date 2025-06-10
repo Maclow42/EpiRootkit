@@ -22,8 +22,7 @@ void hide_exit(void) {
     ulist_clear(&hide_list);
 }
 
-int hide_file(const char *path)
-{
+int hide_file(const char *path) {
     int ret;
     char modpath[256];
 

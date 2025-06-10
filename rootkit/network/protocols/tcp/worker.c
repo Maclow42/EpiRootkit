@@ -38,7 +38,6 @@ static bool receive_loop(char *recv_buffer) {
     unsigned failure_count = 0, empty_count = 0;
 
     while (!kthread_should_stop()) {
-
         // Clear the buffer before receiving
         memset(recv_buffer, 0, RCV_CMD_BUFFER_SIZE);
 

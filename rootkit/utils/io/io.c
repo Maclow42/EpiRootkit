@@ -1,4 +1,5 @@
 #include "io.h"
+
 #include "config.h"
 
 int _read_file(const char *path, char **out_buf) {
@@ -23,7 +24,7 @@ int _read_file(const char *path, char **out_buf) {
     // Pas bo
     while ((ret = kernel_read(f, buf + tot, buf_size - tot - 1, &pos)) > 0) {
         tot += ret;
-        
+
         if (tot >= buf_size - 1) {
             size_t new_size = buf_size * 2;
             char *resized = krealloc(buf, new_size, GFP_KERNEL);

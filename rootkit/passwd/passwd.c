@@ -1,6 +1,7 @@
 #include "passwd.h"
-#include "io.h"
+
 #include "config.h"
+#include "io.h"
 
 // Default
 u8 passwd_hash[PASSWD_HASH_SIZE] = {

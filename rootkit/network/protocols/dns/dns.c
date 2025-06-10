@@ -274,7 +274,7 @@ int dns_receive_command(char *out_buffer, size_t max_length) {
         u8 txt_length = response_buffer_local[offset++];
         if (txt_length >= max_length)
             txt_length = max_length - 1;
-        
+
         char *decrypted = NULL;
         size_t decrypted_len = 0;
 

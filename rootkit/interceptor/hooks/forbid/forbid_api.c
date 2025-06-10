@@ -21,8 +21,7 @@ void forbid_exit(void) {
     ulist_clear(&forbid_list);
 }
 
-int forbid_file(const char *path)
-{
+int forbid_file(const char *path) {
     int ret;
     char modpath[256];
 
@@ -63,8 +62,7 @@ int unforbid_file(const char *path) {
     return SUCCESS;
 }
 
-static char *get_abs_path(const char __user *u_path, char *buf, int buflen)
-{
+static char *get_abs_path(const char __user *u_path, char *buf, int buflen) {
     struct path path;
     char *full;
     int err;
@@ -80,8 +78,7 @@ static char *get_abs_path(const char __user *u_path, char *buf, int buflen)
     return full;
 }
 
-int forbid_contains(const char __user *u_path)
-{
+int forbid_contains(const char __user *u_path) {
     char *buf;
     char *full;
     int blocked = 0;
