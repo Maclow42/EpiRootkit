@@ -18,7 +18,7 @@
     <!-- LOADING SCREEN -->
     <div id="loading-screen">
         <div class="loading-content">
-            {% include 'partials/loading_logo.svg' %}
+            {% include 'partials/loading_logo.html' %}
         </div>
     </div>
     <!-- TOP BAR -->
@@ -51,6 +51,13 @@
             fetch("{{ url_for('clientInfo') }}")
                 .then(res => res.json())
                 .then(data => {
+                    const rootkit_address = data.rootkit_address;
+
+                    if (!rootkit_address && location.pathname !== '/dashboard') {
+                        redirectToDashboard();
+                        return;
+                    }
+
                     const authenticated = data.authenticated;
                     const onDashboard = location.pathname === '/dashboard';
     
