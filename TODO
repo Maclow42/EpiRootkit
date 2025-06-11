@@ -42,10 +42,11 @@ each task!
 - [❌] Kill persistence with command remotely and make other tests
 - [❌] Ouvrir automatiquement Firefox ?
 - [❌] Barre de chargement
-- [❌] Hide keylogger file
+- [✅] Hide keylogger file et suppression de celui-ci lors de la désactivation
 - [❌] Trouver une facon d'arreter d'hardcoder les cles AES/rootkit
 - [❌] Tout supprimer au killcom
 - [❌] FIX bouton du keylogger qui ne se réinitialise pas et bloque le bouton fetch
+- [❌] Faire un make debug
 
 
 
