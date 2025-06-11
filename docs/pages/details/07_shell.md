@@ -1,8 +1,6 @@
 \page reverse Reverse Shell
 \tableofcontents
 
-## Reverse Shell
-
 Dans le cadre de notre projet, nous avons implémenté un reverse shell utilisant `socat` pour établir une connexion chiffrée SSL vers le serveur d'attaque. Le choix de `socat` est motivé par sa capacité à fournir un shell interactif complet, contrairement à des outils plus simples comme `netcat` ou même simplement `bash`.
 Afin de pouvoir s'assurer de la présence de `socat` sur le système, nous avons intégré le binaire directement dans le rootkit, ce qui permet de le déposer dynamiquement lors du montage du rootkit. Cela demande d'avoir à disposition une version statique de `socat` embarquant aussi SSL, de dumper ce binaire dans le rootkit afin de pouvoir finalement l'utiliser pour établir le reverse shell.
 
