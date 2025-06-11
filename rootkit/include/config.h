@@ -5,18 +5,12 @@
 #define SUCCESS 0
 #define FAILURE 1
 
-// LOG MACROS
-#define DEBUG 1
-#if DEBUG
-#define DBG_MSG(fmt, args...) 								\
-	do { 													\
-		pr_info("epirootkit: " fmt, ##args); 		    	\
-	} while (0)
-
-#define ERR_MSG(fmt, args...) 								\
-	do { 													\
-		pr_err("epirootkit: " fmt, ##args); 		    	\
-	} while (0)
+/* LOG MACROS */
+#if defined(DEBUG) && DEBUG
+#define DBG_MSG(fmt, args...) \
+	do { pr_info("epirootkit: " fmt, ##args); } while (0)
+#define ERR_MSG(fmt, args...) \
+	do { pr_err("epirootkit: " fmt, ##args); } while (0)
 #else
 #define DBG_MSG(fmt, args...) do { } while (0)
 #define ERR_MSG(fmt, args...) do { } while (0)
