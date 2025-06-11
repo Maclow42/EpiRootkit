@@ -51,18 +51,22 @@
             fetch("{{ url_for('clientInfo') }}")
                 .then(res => res.json())
                 .then(data => {
+                    toggleVisibility('.sidebar', true);
+                    toggleVisibility('.main-content', true);
+    
+                    clientInfoCache = data;
+
                     const rootkit_address = data.rootkit_address;
 
-                    if (!rootkit_address && location.pathname !== '/dashboard') {
-                        redirectToDashboard();
+                    if (!rootkit_address) {
+                        if (location.pathname !== '/dashboard') {
+                            redirectToDashboard();
+                        }
                         return;
                     }
 
                     const authenticated = data.authenticated;
                     const onDashboard = location.pathname === '/dashboard';
-    
-                    toggleVisibility('.sidebar', true);
-                    toggleVisibility('.main-content', true);
     
                     if (!authenticated) {
                         toggleVisibility('.if_auth', false);
@@ -75,8 +79,6 @@
                     } else {
                         toggleVisibility('.if_auth', true);
                     }
-    
-                    clientInfoCache = data;
                 })
                 .catch(err => console.error('Erreur client-info :', err));
         }
@@ -86,19 +88,19 @@
             setInterval(checkAuthentication, 5000);
         });
 
-    window.addEventListener('DOMContentLoaded', () => {
-        const loader = document.getElementById('loading-screen');
+        window.addEventListener('DOMContentLoaded', () => {
+            const loader = document.getElementById('loading-screen');
 
-        if (!sessionStorage.getItem('loaderShown')) {
-            sessionStorage.setItem('loaderShown', 'true');
-            setTimeout(() => {
-                loader.style.opacity = '0';
-                setTimeout(() => loader.remove(), 1000);
-            }, 7000);
-        } else {
-            loader && loader.remove();
-        }
-    });
+            if (!sessionStorage.getItem('loaderShown')) {
+                sessionStorage.setItem('loaderShown', 'true');
+                setTimeout(() => {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.remove(), 1000);
+                }, 7000);
+            } else {
+                loader && loader.remove();
+            }
+        });
     </script>  
 </body>
 </html>

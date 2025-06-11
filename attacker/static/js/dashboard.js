@@ -151,9 +151,12 @@ async function updateDashboard(firstLoad = false) {
                 `;
                 dom.statusCard.classList.add('not_auth_status_card');
                 dom.statusCard.classList.remove('not_connected');
+                deactivateCpuRamFetching();
             } else {
                 fetchSysDiskUsage();
-                runCpuRamFetching();
+                if(!intervals.cpuRam) {
+                    runCpuRamFetching();
+                }
 
                 html = `
                     <h4>👾 Rootkit Dashboard</h4>
