@@ -61,12 +61,29 @@ class TCPServer:
         req = Request(message, add_to_history=False)
         self._send_queue.put(req)
         req.event.wait(timeout=10)
+
+        if req.response is None or req.response is False:
+            print("[TCP SERVER] Failed to send command or no response received.")
+            # Empty sending queue
+            self._send_queue.queue.clear()
+            print("[TCP SERVER] Sending queue cleared due to error.")
+            return None
+
         return req.response
 
     def send_to_client_with_history(self, message: str) -> Optional[str]:
         req = Request(message, add_to_history=True)
         self._send_queue.put(req)
         req.event.wait(timeout=10)
+
+        if req.response is None or req.response is False:
+            print("[TCP SERVER] Failed to send command or no response received.")
+            # Empty sending queue
+            self._owner._update_command_history(req.message, "", tcp_error="[TCP ERROR] No response received.")
+            self._send_queue.queue.clear()
+            print("[TCP SERVER] Sending queue cleared due to error.")
+            return None
+
         return req.response
 
     def receive_from_client(self) -> Optional[str]:
