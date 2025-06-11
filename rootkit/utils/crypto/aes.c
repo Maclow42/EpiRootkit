@@ -5,7 +5,77 @@
 #include <linux/slab.h>
 
 #include "config.h"
+#include "io.h"
 #include "crypto.h"
+
+static char* AES_KEY = NULL; // AES key buffer
+static char* AES_IV = NULL;  // AES IV buffer
+
+#define _(a,b) ((a)^(b))
+
+static char* get_key(void) {
+    static char key[] = {
+        _(0x10, 0x21), // '1' = 0x31
+        _(0x13, 0x21), // '2' = 0x33
+        _(0x13, 0x20), // '3' = 0x33
+        _(0x14, 0x20), // '4' = 0x34
+        _(0x15, 0x20), // '5' = 0x35
+        _(0x16, 0x20), // '6' = 0x36
+        _(0x17, 0x20), // '7' = 0x37
+        _(0x18, 0x20), // '8' = 0x38
+        _(0x19, 0x20), // '9' = 0x39
+        0x30,          // '0'
+        _(0x03, 0x62), // 'a' = 0x61
+        _(0x00, 0x62), // 'b' = 0x62
+        _(0x02, 0x61), // 'c' = 0x63
+        _(0x00, 0x64), // 'd' = 0x64
+        _(0x00, 0x65), // 'e' = 0x65
+        _(0x00, 0x66), // 'f' = 0x66
+        0
+    };
+    return key;
+}
+
+static char* get_iv(void) {
+    static char iv[] = {
+        _(0x03, 0x62), // 'a' = 0x61
+        _(0x00, 0x62), // 'b' = 0x62
+        _(0x02, 0x61), // 'c' = 0x63
+        _(0x00, 0x64), // 'd' = 0x64
+        _(0x00, 0x65), // 'e' = 0x65
+        _(0x00, 0x66), // 'f' = 0x66
+        _(0x10, 0x21), // '1' = 0x31
+        _(0x13, 0x21), // '2' = 0x33
+        _(0x13, 0x20), // '3' = 0x33
+        _(0x14, 0x20), // '4' = 0x34
+        _(0x15, 0x20), // '5' = 0x35
+        _(0x16, 0x20), // '6' = 0x36
+        _(0x17, 0x20), // '7' = 0x37
+        _(0x18, 0x20), // '8' = 0x38
+        _(0x19, 0x20), // '9' = 0x39
+        0x30,          // '0'
+        0
+    };
+    return iv;
+}
+
+static int _load_eas_constants(void) {
+    // Load AES key
+    AES_KEY = get_key();
+    if (!AES_KEY) {
+        ERR_MSG("Failed to load AES key\n");
+        return -ENOMEM;
+    }
+
+    // Load AES IV
+    AES_IV = get_iv();
+    if (!AES_IV) {
+        ERR_MSG("Failed to load AES IV\n");
+        return -ENOMEM;
+    }
+
+    return 0;
+}
 
 /**
  * @brief Add PKCS#7 padding to a buffer
@@ -111,6 +181,15 @@ static int _crypt_buffer(bool encrypt, const char *in, size_t in_len,
     size_t padded_len = 0;        // Length of padded input
     int ret = 0;                  // Return value
     char iv[AES_BLOCK_SIZE];      // Initialization vector
+
+    // Load AES key and IV if not already loaded
+    if (!AES_KEY || !AES_IV) {
+        ret = _load_eas_constants();
+        if (ret != 0) {
+            ERR_MSG("Failed to load AES constants: %d\n", ret);
+            return ret;
+        }
+    }
 
     if (!in || !out || !out_len)
         return -EINVAL;
