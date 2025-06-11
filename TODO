@@ -46,7 +46,7 @@ each task!
 - [❌] Trouver une facon d'arreter d'hardcoder les cles AES/rootkit
 - [❌] Tout supprimer au killcom
 - [❌] FIX bouton du keylogger qui ne se réinitialise pas et bloque le bouton fetch
-- [❌] Faire un make debug
+- [✅] Faire un make debug
 
 
 
