@@ -7,8 +7,19 @@ import socket
 # [8..9] = chunk_len    (16 bits big-endian)  
 
 
+"""
+@class AESNetworkHandler
+@brief Handles AES-encrypted network communication over TCP sockets.
+This class provides methods to send and receive data over a TCP socket using AES encryption.
+Data is split into fixed-size chunks with headers and an end-of-transmission marker to ensure
+reliable and secure transmission.
+"""
 class AESNetworkHandler:
-
+    """
+    @brief Initializes the AESNetworkHandler.
+    @param crypto An instance of CryptoHandler used for encryption and decryption.
+    @param buffer_size The size of the buffer for each chunk (default: 1024 bytes).
+    """
     def __init__(self, crypto: CryptoHandler, buffer_size: int=1024):
         self._crypto = crypto
         self._buffer_size = buffer_size
@@ -16,6 +27,14 @@ class AESNetworkHandler:
         self._chunk_overhead = self._header_size + 1
         self._max_chunk_body_size = buffer_size - self._chunk_overhead
 
+    """
+    @brief Encrypts and sends data over a TCP socket in fixed-size chunks.
+    The data is encrypted using the provided CryptoHandler, split into chunks,
+    and each chunk is sent with a header containing metadata and an EOT marker.
+    @param sock The TCP socket to send data through.
+    @param data The data to send (string or bytes).
+    @return True if the data was sent successfully, False otherwise.
+    """
     def send(self, sock: socket.socket, data: str | bytes) -> bool:
         try:
             encrypted = self._crypto.encrypt(data)
@@ -48,21 +67,13 @@ class AESNetworkHandler:
             print(f"[SEND ERROR] {e}")
             return False
     
-    def _recv_exact(self, sock: socket.socket, n: int) -> bytearray | None:
-        data = bytearray()
-        while len(data) < n:
-            try:
-                chunk = sock.recv(n - len(data))
-                if not chunk:
-                    return None
-                data.extend(chunk)
-            except socket.timeout:
-                return None
-            except socket.error as e:
-                print(f"[RECV ERROR] socket.error: {e}")
-                return None
-        return data
-
+    """
+    @brief Receives and decrypts data from a TCP socket.
+    Reads encrypted data in chunks, validates headers and EOT markers, reconstructs
+    the original encrypted message, and decrypts it using the CryptoHandler.
+    @param sock The TCP socket to receive data from.
+    @return The decrypted data as a string if successful, or False on error.
+    """
     def receive(self, sock: socket.socket) -> str | bool:
         buffer = bytearray()
         received_chunks = None
@@ -71,13 +82,23 @@ class AESNetworkHandler:
         try:
             while True:
                 sock.settimeout(10)
-                head = self._recv_exact(sock, self._header_size)
+                head = sock.recv(self._header_size)
                 if head is None:
                     print("[RECEIVE ERROR] Timeout or socket closed before header")
                     return False
 
-                total_chunks_read = ((head[0] << 24) | (head[1] << 16) | (head[2] <<  8) | (head[3] <<  0))
-                chunk_index = ((head[4] << 24) | (head[5] << 16) | (head[6] <<  8) | (head[7] <<  0))
+                total_chunks_read = (
+                    (head[0] << 24) |
+                    (head[1] << 16) |
+                    (head[2] << 8)  |
+                    (head[3] << 0)
+                )
+                chunk_index = (
+                    (head[4] << 24) |
+                    (head[5] << 16) |
+                    (head[6] << 8)  |
+                    (head[7] << 0)
+                )
                 chunk_len = (head[8] << 8) | head[9]
 
                 needed = self._header_size + chunk_len + 1
