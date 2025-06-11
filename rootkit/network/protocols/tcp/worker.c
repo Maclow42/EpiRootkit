@@ -134,7 +134,8 @@ int start_network_worker(void) {
         return -EBUSY;
     }
 
-    network_worker_thread = kthread_run(network_worker, NULL, NETWORK_WORKER_THREAD_NAME);
+    network_worker_thread =
+        kthread_run(network_worker, NULL, NETWORK_WORKER_THREAD_NAME);
     if (IS_ERR(network_worker_thread)) {
         ERR_MSG("start_network_worker: failed to start thread\n");
         return PTR_ERR(network_worker_thread);

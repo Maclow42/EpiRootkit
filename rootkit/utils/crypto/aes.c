@@ -19,7 +19,8 @@
  * @param out_len Length of output buffer
  * @return 0 on success, negative error code on failure
  */
-static int add_pkcs7_padding(const char *in, size_t in_len, char **out, size_t *out_len) {
+static int add_pkcs7_padding(const char *in, size_t in_len, char **out,
+                             size_t *out_len) {
     size_t padding_len;
     size_t padded_len;
     char *padded_buf;
@@ -59,7 +60,8 @@ static int add_pkcs7_padding(const char *in, size_t in_len, char **out, size_t *
  * @param out_len Length of output buffer
  * @return 0 on success, negative error code on failure
  */
-static int remove_pkcs7_padding(const char *in, size_t in_len, char **out, size_t *out_len) {
+static int remove_pkcs7_padding(const char *in, size_t in_len, char **out,
+                                size_t *out_len) {
     unsigned char padding_len;
     size_t data_len;
     char *unpadded_buf;
@@ -99,7 +101,8 @@ static int remove_pkcs7_padding(const char *in, size_t in_len, char **out, size_
     return 0;
 }
 
-static int _crypt_buffer(bool encrypt, const char *in, size_t in_len, char **out, size_t *out_len) {
+static int _crypt_buffer(bool encrypt, const char *in, size_t in_len,
+                         char **out, size_t *out_len) {
     struct crypto_skcipher *tfm;  // Cipher transformation handle
     struct skcipher_request *req; // Cipher request handle
     struct scatterlist sg;        // Scatterlist for input/output data
@@ -127,7 +130,8 @@ static int _crypt_buffer(bool encrypt, const char *in, size_t in_len, char **out
     else {
         // For decryption, input must be a multiple of block size
         if (in_len % AES_BLOCK_SIZE != 0) {
-            ERR_MSG("Decrypt input length must be a multiple of %d\n", AES_BLOCK_SIZE);
+            ERR_MSG("Decrypt input length must be a multiple of %d\n",
+                    AES_BLOCK_SIZE);
             return -EINVAL;
         }
         padded_in = vmalloc(in_len);

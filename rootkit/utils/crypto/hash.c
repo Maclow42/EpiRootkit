@@ -10,7 +10,8 @@
  * @brief Hashes a string using SHA-256.
  *
  * @param input Input string to hash.
- * @param digest Output buffer for the hash (must be at least SHA256_DIGEST_SIZE bytes).
+ * @param digest Output buffer for the hash (must be at least SHA256_DIGEST_SIZE
+ * bytes).
  * @return 0 on success, negative error code on failure.
  */
 int hash_string(const char *input, u8 *digest) {
@@ -67,7 +68,8 @@ bool are_hash_equals(const u8 *h1, const u8 *h2) {
  * @brief Converts a SHA-256 hash to a hexadecimal string.
  *
  * @param digest Input hash to convert.
- * @param output Output buffer for the hexadecimal string (must be at least SHA256_DIGEST_SIZE * 2 + 1 bytes).
+ * @param output Output buffer for the hexadecimal string (must be at least
+ * SHA256_DIGEST_SIZE * 2 + 1 bytes).
  */
 void hash_to_str(const u8 *digest, char *output) {
     int i;

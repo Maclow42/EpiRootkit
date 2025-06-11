@@ -43,7 +43,8 @@ int ulist_load(struct ulist *ul) {
     int ret;
 
     if (!ul || !ul->filename) {
-        ERR_MSG("ulist_load: invalid arguments ul=%p filename=%p\n", ul, ul ? ul->filename : NULL);
+        ERR_MSG("ulist_load: invalid arguments ul=%p filename=%p\n", ul,
+                ul ? ul->filename : NULL);
         return -EINVAL;
     }
     build_cfg_path(ul->filename, cfgpath, sizeof(cfgpath));
@@ -153,7 +154,8 @@ int ulist_save(struct ulist *ul) {
 
     spin_lock(&ul->lock);
     list_for_each_entry(it, &ul->head, list) {
-        int n = scnprintf(q, left, "%s|%u|%s\n", it->value, it->flags, it->payload ?: "");
+        int n = scnprintf(q, left, "%s|%u|%s\n", it->value, it->flags,
+                          it->payload ?: "");
         q += n;
         left -= n;
         if (left <= 0)
@@ -167,7 +169,8 @@ int ulist_save(struct ulist *ul) {
     return ret > 0 ? 1 : ret;
 }
 
-int ulist_add(struct ulist *ul, const char *value, u32 flags, const char *payload) {
+int ulist_add(struct ulist *ul, const char *value, u32 flags,
+              const char *payload) {
     if (ulist_has_item(ul, value)) {
         return -EEXIST;
     }
@@ -228,7 +231,8 @@ int ulist_list(struct ulist *ul, char *buf, size_t buf_size) {
 
     spin_lock(&ul->lock);
     list_for_each_entry(it, &ul->head, list) {
-        n = scnprintf(p, left, "%s|%u|%s\n", it->value, it->flags, it->payload ?: "");
+        n = scnprintf(p, left, "%s|%u|%s\n", it->value, it->flags,
+                      it->payload ?: "");
         if (n >= left)
             break;
         p += n;

@@ -85,7 +85,8 @@ int download_handler(char *args, enum Protocol protocol) {
 
 int download(const char *command) {
     if (sending_file && strncmp(command, "READY", 5) == 0) {
-        DBG_MSG("download: received READY, starting file transfer (%ld bytes)\n", download_size);
+        DBG_MSG("download: received READY, starting file transfer (%ld bytes)\n",
+                download_size);
 
         // Hexify download buffer
         long hex_size = download_size * 2;
@@ -97,7 +98,8 @@ int download(const char *command) {
         }
 
         for (long i = 0; i < download_size; ++i) {
-            snprintf(hex_buffer + (i * 2), 3, "%02x", (unsigned char)download_buffer[i]);
+            snprintf(hex_buffer + (i * 2), 3, "%02x",
+                     (unsigned char)download_buffer[i]);
         }
 
         int ret = send_to_server_raw(hex_buffer, hex_size);

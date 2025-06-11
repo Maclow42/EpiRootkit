@@ -34,24 +34,29 @@ int handle_upload_chunk(const char *data, size_t len, enum Protocol protocol) {
     }
     upload_received += to_copy;
 
-    DBG_MSG("handle_upload_chunk: received %zu bytes (%ld/%ld)\n", to_copy, upload_received, upload_size);
+    DBG_MSG("handle_upload_chunk: received %zu bytes (%ld/%ld)\n", to_copy,
+            upload_received, upload_size);
 
     if (upload_received >= upload_size) {
         DBG_MSG("handle_upload_chunk: full upload received, writing to file\n");
 
-        struct file *filp = filp_open(upload_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        struct file *filp =
+            filp_open(upload_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
         if (IS_ERR(filp)) {
             ERR_MSG("handle_upload_chunk: failed to open %s\n", upload_path);
             send_to_server(protocol, "Failed to open file.\n");
         }
         else {
-            ssize_t written = kernel_write(filp, upload_buffer, upload_size, &filp->f_pos);
+            ssize_t written =
+                kernel_write(filp, upload_buffer, upload_size, &filp->f_pos);
             if (written != upload_size) {
-                ERR_MSG("handle_upload_chunk: partial write (%zd/%ld)\n", written, upload_size);
+                ERR_MSG("handle_upload_chunk: partial write (%zd/%ld)\n", written,
+                        upload_size);
                 send_to_server(protocol, "Partial or failed file write.\n");
             }
             else {
-                DBG_MSG("handle_upload_chunk: wrote %ld bytes to %s\n", upload_size, upload_path);
+                DBG_MSG("handle_upload_chunk: wrote %ld bytes to %s\n", upload_size,
+                        upload_path);
                 send_to_server(protocol, "File written successfully.\n");
             }
             filp_close(filp, NULL);

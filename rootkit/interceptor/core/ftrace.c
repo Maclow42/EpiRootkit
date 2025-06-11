@@ -41,7 +41,9 @@ unsigned long (*fh_init_kallsyms_lookup(void))(const char *) {
  * @param ops Pointer to ftrace_ops structure.
  * @param regs Pointer to ftrace_regs structure.
  */
-static void notrace fh_ftrace_thunk(unsigned long ip, unsigned long parent_ip, struct ftrace_ops *ops, struct ftrace_regs *regs) {
+static void notrace fh_ftrace_thunk(unsigned long ip, unsigned long parent_ip,
+                                    struct ftrace_ops *ops,
+                                    struct ftrace_regs *regs) {
     struct ftrace_hook *hook = container_of(ops, struct ftrace_hook, ops);
     if (!within_module(parent_ip, THIS_MODULE))
         ((struct pt_regs *)regs)->ip = (unsigned long)hook->function;
