@@ -96,8 +96,7 @@ Une fois connecté et authentifié, le tableau de bord principal (dashboard) s�
 | **Version OS**      | Détail de la distribution Linux et son build.                               |
 | **Virtual Env**     | Indique si la machine semble tourner dans une VM (ici `true`).              |
 </div>
-
-#### 💻 Shell
+#### 💻 Reverse shell {#reverse-shell}
 <div class="full_width_table">
 | Élément             | Description                                                                 |
 |:---------------------|:-----------------------------------------------------------------------------|

