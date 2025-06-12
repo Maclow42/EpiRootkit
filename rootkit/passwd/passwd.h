@@ -11,7 +11,7 @@
 
 #define PASSWD_HASH_SIZE SHA256_DIGEST_SIZE
 
-extern u8 passwd_hash[PASSWD_HASH_SIZE];
+extern u8 access_code_hash[PASSWD_HASH_SIZE];
 
 int passwd_load(void);
 int passwd_verify(const char *password);

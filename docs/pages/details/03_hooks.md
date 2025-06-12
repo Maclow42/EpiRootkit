@@ -1,7 +1,7 @@
 \page hooks Hooks
 \tableofcontents
 
-## 1. 🌐 Introduction
+## 1. 🌐 Introduction {#hooks-introduction}
 
 Ce document décrit de manière précise et détaillée le fonctionnement de l’architecture `interceptor` utilisée dans le rootkit pour intercepter, modifier et contrôler les appels système sous Linux. Le système `interceptor` repose sur l’infrastructure *ftrace*, où chaque *hook* est capable d’intervenir avant ou après l’exécution de la fonction native, de modifier ses arguments ou son résultat, et d’être activé ou désactivé dynamiquement en fonction de fichiers de configuration. L’organisation du code est structurée en deux modules principaux : le cœur (`core`), responsable de l’installation et de la gestion des hooks, et les modules spécifiques (`hooks`) qui implémentent des comportements tels que le masquage, l’interdiction ou la modification des fichiers et des ports réseau.
 
