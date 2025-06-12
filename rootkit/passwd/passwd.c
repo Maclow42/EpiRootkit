@@ -11,13 +11,13 @@ u8 access_code_hash[PASSWD_HASH_SIZE] = {
 };
 
 /*
-    * @brief Load the access code hash from the configuration file.
-    *
-    * Reads the hash from PASSWD_CFG_FILE, which should contain a single line
-    * with the hash in hexadecimal format. The hash is expected to be 64 hex
-    * characters long (representing 32 bytes).
-    * @return 0 on success, negative error code on failure.
-    *  
+ * @brief Load the access code hash from the configuration file.
+ *
+ * Reads the hash from PASSWD_CFG_FILE, which should contain a single line
+ * with the hash in hexadecimal format. The hash is expected to be 64 hex
+ * characters long (representing 32 bytes).
+ * @return 0 on success, negative error code on failure.
+ *
  */
 int passwd_load(void) {
     char *buf;
@@ -49,6 +49,11 @@ int passwd_load(void) {
     return SUCCESS;
 }
 
+/**
+ * @brief Verify the provided password against the stored hash.
+ * @param password The password to verify.
+ * @return 1 if the password is correct, 0 if incorrect, or negative error code on failure.
+ */
 int passwd_verify(const char *password) {
     u8 digest[PASSWD_HASH_SIZE];
     int err;
@@ -60,6 +65,11 @@ int passwd_verify(const char *password) {
     return are_hash_equals(digest, access_code_hash) ? 1 : 0;
 }
 
+/**
+ * @brief Set a new password by updating the stored hash.
+ * @param new_password The new password to set.
+ * @return 0 on success, negative error code on failure.
+ */
 int passwd_set(const char *new_password) {
     u8 digest[PASSWD_HASH_SIZE];
     char hexout[PASSWD_HASH_SIZE * 2 + 2];

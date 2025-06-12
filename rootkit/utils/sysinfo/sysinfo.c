@@ -10,6 +10,11 @@
 #include "epirootkit.h"
 #include "vanish.h"
 
+/**
+ * get_sysinfo - Retrieves system information and formats it as a JSON string.
+ * Return: A pointer to a dynamically allocated string containing the system information
+ *         in JSON format, or NULL on failure.
+ */
 char *get_sysinfo(void) {
     struct new_utsname *uts = utsname();
     char *info = kmalloc(STD_BUFFER_SIZE, GFP_KERNEL);

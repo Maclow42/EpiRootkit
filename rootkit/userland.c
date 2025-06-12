@@ -8,9 +8,6 @@
 /**
  * trim_leading_whitespace - Remove leading whitespace from a string
  * @str: Input string
- *
- * Skips past any leading spaces, tabs, or newline characters.
- *
  * Return: Pointer to the first non-whitespace character.
  */
 static char *trim_leading_whitespace(char *str) {
@@ -24,9 +21,6 @@ static char *trim_leading_whitespace(char *str) {
  * @cmd: Command string to parse
  * @redirect_stdout: Set to true if stdout is redirected
  * @redirect_stderr: Set to true if stderr is redirected
- *
- * Scans the command for presence of '>' and '2>' to determine
- * if stdout or stderr redirection is being used explicitly.
  */
 static void detect_redirections(const char *cmd, bool *redirect_stdout,
                                 bool *redirect_stderr) {
@@ -72,9 +66,6 @@ static char *build_timeout_prefix(int timeout) {
  * @catch_stds: True if we need to redirect output ourselves
  * @stdout_file: File to redirect stdout to (if needed)
  * @stderr_file: File to redirect stderr to (if needed)
- *
- * Builds a complete command string to be executed, including output redirection and timeout.
- *
  * Return: 0 on success, -EINVAL if the resulting command exceeds buffer size.
  */
 static int build_full_command(char *buffer, size_t buffer_size,
@@ -120,9 +111,6 @@ static int build_full_command(char *buffer, size_t buffer_size,
  * execute_command - Executes a shell command in usermode
  * @cmd_str: Full shell command string to execute
  * @envp: Array of environment variables
- *
- * Uses call_usermodehelper to execute the provided shell command.
- *
  * Return: Exit status of the command, or error code on failure.
  */
 static int execute_command(const char *cmd_str, char *envp[]) {

@@ -12,6 +12,14 @@
 #include "config.h"
 #include "io.h"
 
+/**
+ * ulist_has_item - Checks if a value exists in the ulist.
+ * @ul: Pointer to the ulist structure to search.
+ * @value: The string value to look for in the list.
+ * Note: Only the value field is compared; flags and payload are ignored.
+ *
+ * Return: true if the value is found in the list, false otherwise.
+ */
 static bool ulist_has_item(struct ulist *ul, const char *value) {
     struct ulist_item *it;
 
@@ -24,6 +32,10 @@ static bool ulist_has_item(struct ulist *ul, const char *value) {
     return false;
 }
 
+/**
+ * ulist_clear - Removes and frees all items from a ulist.
+ * @ul: Pointer to the ulist structure to clear.
+ */
 void ulist_clear(struct ulist *ul) {
     struct ulist_item *it, *tmp;
     spin_lock(&ul->lock);
@@ -36,6 +48,14 @@ void ulist_clear(struct ulist *ul) {
     spin_unlock(&ul->lock);
 }
 
+/**
+ * ulist_init - Initializes a ulist structure.
+ * @ul: Pointer to the ulist structure to initialize.
+ * @filename: Name of the configuration file for this ulist.
+ *
+ * Initializes the ulist structure, setting up the lock and list head,
+ * and storing the filename for later use in loading/saving.
+ */
 int ulist_load(struct ulist *ul) {
     char cfgpath[512];
     char *buf = NULL;
@@ -140,6 +160,14 @@ int ulist_load(struct ulist *ul) {
     return 0;
 }
 
+/**
+ * ulist_init - Initializes a ulist structure.
+ * @ul: Pointer to the ulist structure to initialize.
+ * @filename: Name of the configuration file for this ulist.
+ *
+ * Initializes the ulist structure, setting up the lock and list head,
+ * and storing the filename for later use in loading/saving.
+ */
 int ulist_save(struct ulist *ul) {
     char cfgpath[128];
     char *buf, *q;
@@ -169,6 +197,16 @@ int ulist_save(struct ulist *ul) {
     return ret > 0 ? 1 : ret;
 }
 
+/**
+ * ulist_add - Adds a new item to the ulist.
+ * @ul: Pointer to the ulist structure.
+ * @value: The string value to add.
+ * @flags: Flags associated with the item.
+ * @payload: Optional payload string (can be NULL).
+ *
+ * Returns 0 on success, -EEXIST if the item already exists,
+ * or -ENOMEM on memory allocation failure.
+ */
 int ulist_add(struct ulist *ul, const char *value, u32 flags,
               const char *payload) {
     if (ulist_has_item(ul, value)) {
@@ -190,6 +228,13 @@ int ulist_add(struct ulist *ul, const char *value, u32 flags,
     return SUCCESS;
 }
 
+/**
+ * ulist_remove - Removes an item from the ulist by value.
+ * @ul: Pointer to the ulist structure.
+ * @value: The string value to remove.
+ *
+ * Returns 0 on success, or -ENOENT if the item was not found.
+ */
 int ulist_remove(struct ulist *ul, const char *value) {
     struct ulist_item *it, *tmp;
     spin_lock(&ul->lock);
@@ -205,6 +250,13 @@ int ulist_remove(struct ulist *ul, const char *value) {
     return 0;
 }
 
+/**
+ * ulist_contains - Checks if a value exists in the ulist.
+ * @ul: Pointer to the ulist structure.
+ * @value: The string value to check for.
+ *
+ * Returns 1 if the value is found, 0 otherwise.
+ */
 int ulist_contains(struct ulist *ul, const char *value) {
     struct ulist_item *it;
     int found = 0;
@@ -220,6 +272,15 @@ int ulist_contains(struct ulist *ul, const char *value) {
     return found;
 }
 
+/**
+ * ulist_list - Lists all items in the ulist into a buffer.
+ * @ul: Pointer to the ulist structure.
+ * @buf: Buffer to store the list of items.
+ * @buf_size: Size of the buffer.
+ *
+ * Returns the number of bytes written to the buffer, or a negative error code
+ * on failure. The format is "value|flags|payload\n" for each item.
+ */
 int ulist_list(struct ulist *ul, char *buf, size_t buf_size) {
     struct ulist_item *it;
     size_t left = buf_size;

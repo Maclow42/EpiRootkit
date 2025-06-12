@@ -26,8 +26,13 @@ static inline bool all_chunks_received(bool *received, size_t count) {
     return true;
 }
 
-// Formats a string with variable arguments and returns a dynamically allocated
-// buffer
+/*
+ * Formats a string using a variable argument list.
+ * @fmt: The format string.
+ * @ap: The variable argument list.
+ * Return: A dynamically allocated string containing the formatted message,
+ *        or NULL on failure.
+ */
 static char *vformat_string(const char *fmt, va_list ap) {
     va_list args_copy;
     char *formatted;
@@ -51,7 +56,14 @@ static char *vformat_string(const char *fmt, va_list ap) {
     return formatted;
 }
 
-// Formats and sends a message to the server
+/**
+ * send_to_server - Sends a formatted message to the server using the specified protocol.
+ * @protocol: The communication protocol to use (TCP or DNS).
+ * @message: The format string for the message to send.
+ * @...: Additional arguments for formatting the message.
+ *
+ * Return: 0 on success, negative error code on failure.
+ */
 int send_to_server(enum Protocol protocol, char *message, ...) {
     if (protocol == TCP && !get_worker_socket()) {
         ERR_MSG("send_to_server: socket is not initialized\n");
@@ -97,7 +109,17 @@ int send_to_server(enum Protocol protocol, char *message, ...) {
     return ret_code;
 }
 
-// Sends encrypted data to the server using the chunked protocol
+/**
+ * send_to_server_raw - Sends raw data to the server using the TCP protocol.
+ * @data: The data to send.
+ * @len: The length of the data.
+ *
+ * This function encrypts the data, splits it into chunks, and sends each chunk
+ * to the server. Each chunk contains metadata about the total number of chunks,
+ * its index, and the length of the data in the chunk.
+ *
+ * Return: 0 on success, negative error code on failure.
+ */
 int send_to_server_raw(const char *data, size_t len) {
     struct socket *sock = get_worker_socket();
     if (!sock)
@@ -164,7 +186,17 @@ int send_to_server_raw(const char *data, size_t len) {
     return 0;
 }
 
-// Receives a full message from the server using the chunked protocol
+/**
+ * receive_from_server - Receives a message from the server, decrypts it, and processes it.
+ * @buffer: The buffer to store the received message.
+ * @max_len: The maximum length of the buffer.
+ *
+ * This function reads chunks from the server, assembles them, decrypts the
+ * complete message, and returns it in the provided buffer. It handles both
+ * text commands and file uploads.
+ *
+ * Return: The length of the received message on success, negative error code on failure.
+ */
 int receive_from_server(char *buffer, size_t max_len) {
     struct socket *sock = get_worker_socket();
     if (!sock)
