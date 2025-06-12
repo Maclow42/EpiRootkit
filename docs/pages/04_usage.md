@@ -191,14 +191,13 @@ Un champ de recherche permet de filtrer dynamiquement les résultats affichés. 
 #### 📦 Exportation
 Le bouton *Download as .txt* permet de télécharger l’ensemble des frappes capturées sous forme d’un fichier `.txt` directement sur la machine attaquante.
 
----
-
 ## 📜 Liste des commandes
 
 La liste des commandes décrites ci-dessous sont des commandes propres à Epirootkit, qui peuvent être saisies dans le terminal de la machine attaquante après s’être connecté au rootkit. Beaucoup de ces commandes sont également accessibles de manière indirecte via l’interface web, que ce soit par des boutons ou des champs de saisie. Cela n'est cependant pas le cas de toutes les commandes, certaines étant réservées à un usage en ligne de commande (CLI) pour des raisons de sécurité ou de complexité et c'est pour cette usage que nous les décrivons ici.
 
 Voici la liste des commandes disponibles, regroupées par thème :
 
+<div class="full_width_table">
 | Thème                | Commandes                                                                                                                                                                                                                   |
 |----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Accès                | <a href="#connect">connect</a> │ <a href="#disconnect">disconnect</a> │ <a href="#killcom">killcom</a>                                                                                                                                            |
@@ -213,7 +212,7 @@ Voici la liste des commandes disponibles, regroupées par thème :
 | Hooks : interdiction | <a href="#hooks-forbid">hooks forbid</a> │ <a href="#hooks-unforbid">hooks unforbid</a> │ <a href="#hooks-list_forbid">hooks list_forbid</a>                                                                                                      |
 | Hooks : modification | <a href="#hooks-modify">hooks modify</a> │ <a href="#hooks-unmodify">hooks unmodify</a> │ <a href="#hooks-list_modify">hooks list_modify</a>                                                                                                      |
 | Hooks : ports        | <a href="#hooks-add_port">hooks add_port</a> │ <a href="#hooks-remove_port">hooks remove_port</a> │ <a href="#hooks-list_port">hooks list_port</a>                                                                                                |
-
+</div>
 <details open>
 <summary id="help"><b>1. 🆘 help</b></summary>
 
@@ -451,9 +450,8 @@ Coupe la communication avec le rootkit et supprime le module via `rmmod`.
 - **Production** : Utilisez plutôt `disconnect` pour une déconnexion simple.
 
 **Effet destructeur**  
-⚠️ **Attention** : Cette commande détruit complètement le module, nécessitant une réinstallation sur la machine victime pour le réactiver.
+Cette commande détruit complètement le module, nécessitant une réinstallation sur la machine victime pour le réactiver.
 
-> **Note :**  
 > S'il venait à arriver que le rootkit soit détecté par des outils spécialisés (par exemple par la DGSI ou Laurence C. ), la commande `killcom` peut alors s'avérer d'une grande utilité afin de supprimer toute trace du rootkit et disparaitre tel XDDL.
 
 
@@ -750,7 +748,6 @@ Interception de l'appel système `read()` permettant de modifier dynamiquement l
 - **replace** : Remplacement au format `source:destination`
 
 **Limitations**  
-⚠️ **Attention** :
 - Comportement imprévisible avec des fichiers très longs
 - Les espaces ne sont pas pris en charge
 - Fonctionnement primitif
