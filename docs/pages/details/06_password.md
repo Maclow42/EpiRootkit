@@ -24,6 +24,7 @@ u8 access_code_hash[PASSWD_HASH_SIZE] = {
   0xb4, 0x2a, 0x99, 0x43, 0x11, 0xed, 0x09, 0x54, 0x99, 0x9d
 };
 ```
+
 > Le hash du mot de passe est stocké en mémoire et peut être ainsi directement utilisé pour la vérification. Il s'agit du hash SHA-256 du mot de passe par défaut `evannounet`.
 
 ```c
@@ -38,6 +39,7 @@ int passwd_verify(const char *password) {
   return are_hash_equals(digest, access_code_hash) ? 1 : 0;
 }
 ```
+
 > Lorsqu'un mot de passe est fourni, il est hashé puis comparé au hash de référence. L'accès est accordé uniquement si les deux valeurs correspondent.
 
 ```c
@@ -66,6 +68,7 @@ int passwd_set(const char *new_password) {
   return _write_file(cfgpath, hexout, len);
 }
 ```
+
 > Cette fonction permet de changer le mot de passe : le nouveau mot de passe est hashé, stocké en mémoire et sauvegardé dans le fichier de configuration sous forme hexadécimale.
 
 Pour plus d’informations sur la procédure d’authentification et l’utilisation du mot de passe lors de la connexion, consultez la section [Connexion](#connexion). Cette section détaille le processus d’accès à l’interface web, la saisie du mot de passe (`evannounet` par défaut), ainsi que les étapes nécessaires pour accéder au tableau de bord principal après authentification.

@@ -44,9 +44,6 @@ Le keylogger d’Epirootkit est implémenté sous forme de module noyau Linux, u
 4. **Export** : Le contenu peut être envoyé à un serveur via `epikeylog_send_to_server`.
 5. **Désactivation** : Le keylogger est désactivé via `epikeylog_exit`. Cette désactivation supprime le fichier debugfs et désenregistre le notifier clavier.
 
-> **Note** : Ce keylogger fonctionne au niveau noyau, ce qui le rend difficile à détecter par des outils utilisateurs classiques.
-
-
 <img 
   src="logo_no_text.png" 
   style="
