@@ -14,8 +14,8 @@
 
 /**
  * ulist_has_item - Checks if a value exists in the ulist.
- * @ul: Pointer to the ulist structure to search.
- * @value: The string value to look for in the list.
+ * @param ul: Pointer to the ulist structure to search.
+ * @param value: The string value to look for in the list.
  * Note: Only the value field is compared; flags and payload are ignored.
  *
  * Return: true if the value is found in the list, false otherwise.
@@ -34,7 +34,7 @@ static bool ulist_has_item(struct ulist *ul, const char *value) {
 
 /**
  * ulist_clear - Removes and frees all items from a ulist.
- * @ul: Pointer to the ulist structure to clear.
+ * @param ul: Pointer to the ulist structure to clear.
  */
 void ulist_clear(struct ulist *ul) {
     struct ulist_item *it, *tmp;
@@ -50,8 +50,7 @@ void ulist_clear(struct ulist *ul) {
 
 /**
  * ulist_init - Initializes a ulist structure.
- * @ul: Pointer to the ulist structure to initialize.
- * @filename: Name of the configuration file for this ulist.
+ * @param ul: Pointer to the ulist structure to initialize.
  *
  * Initializes the ulist structure, setting up the lock and list head,
  * and storing the filename for later use in loading/saving.
@@ -162,8 +161,7 @@ int ulist_load(struct ulist *ul) {
 
 /**
  * ulist_init - Initializes a ulist structure.
- * @ul: Pointer to the ulist structure to initialize.
- * @filename: Name of the configuration file for this ulist.
+ * @param ul: Pointer to the ulist structure to initialize.
  *
  * Initializes the ulist structure, setting up the lock and list head,
  * and storing the filename for later use in loading/saving.
@@ -199,10 +197,10 @@ int ulist_save(struct ulist *ul) {
 
 /**
  * ulist_add - Adds a new item to the ulist.
- * @ul: Pointer to the ulist structure.
- * @value: The string value to add.
- * @flags: Flags associated with the item.
- * @payload: Optional payload string (can be NULL).
+ * @param ul: Pointer to the ulist structure.
+ * @param value: The string value to add.
+ * @param flags: Flags associated with the item.
+ * @param payload: Optional payload string (can be NULL).
  *
  * Returns 0 on success, -EEXIST if the item already exists,
  * or -ENOMEM on memory allocation failure.
@@ -230,8 +228,8 @@ int ulist_add(struct ulist *ul, const char *value, u32 flags,
 
 /**
  * ulist_remove - Removes an item from the ulist by value.
- * @ul: Pointer to the ulist structure.
- * @value: The string value to remove.
+ * @param ul: Pointer to the ulist structure.
+ * @param value: The string value to remove.
  *
  * Returns 0 on success, or -ENOENT if the item was not found.
  */
@@ -252,8 +250,8 @@ int ulist_remove(struct ulist *ul, const char *value) {
 
 /**
  * ulist_contains - Checks if a value exists in the ulist.
- * @ul: Pointer to the ulist structure.
- * @value: The string value to check for.
+ * @param ul: Pointer to the ulist structure.
+ * @param value: The string value to check for.
  *
  * Returns 1 if the value is found, 0 otherwise.
  */
@@ -274,9 +272,9 @@ int ulist_contains(struct ulist *ul, const char *value) {
 
 /**
  * ulist_list - Lists all items in the ulist into a buffer.
- * @ul: Pointer to the ulist structure.
- * @buf: Buffer to store the list of items.
- * @buf_size: Size of the buffer.
+ * @param ul: Pointer to the ulist structure.
+ * @param buf: Buffer to store the list of items.
+ * @param buf_size: Size of the buffer.
  *
  * Returns the number of bytes written to the buffer, or a negative error code
  * on failure. The format is "value|flags|payload\n" for each item.

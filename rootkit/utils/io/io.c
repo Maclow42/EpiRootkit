@@ -4,8 +4,8 @@
 
 /**
  * _read_file - Reads the contents of a file into a dynamically allocated buffer.
- * @path: Path to the file to be read.
- * @out_buf: Pointer to a char pointer that will receive the allocated buffer containing the file contents.
+ * @param path: Path to the file to be read.
+ * @param out_buf: Pointer to a char pointer that will receive the allocated buffer containing the file contents.
  * Return: On success, returns the number of bytes read (excluding the null terminator).
  *         On failure, returns a negative error code.
  */
@@ -59,9 +59,9 @@ int _read_file(const char *path, char **out_buf) {
 
 /**
  * _write_file - Write a buffer to a file in the kernel space.
- * @path: Path to the file to write.
- * @buf: Pointer to the buffer containing data to write.
- * @len: Number of bytes to write from the buffer.
+ * @param path: Path to the file to write.
+ * @param buf: Pointer to the buffer containing data to write.
+ * @param len: Number of bytes to write from the buffer.
  * Return: Number of bytes written on success, or a negative error code on failure.
  */
 int _write_file(const char *path, const char *buf, size_t len) {
@@ -80,9 +80,9 @@ int _write_file(const char *path, const char *buf, size_t len) {
 
 /**
  * build_cfg_path - Constructs a full path for a configuration file in the hidden directory.
- * @fname: Name of the configuration file.
- * @out: Output buffer to store the full path.
- * @sz: Size of the output buffer.
+ * @param fname: Name of the configuration file.
+ * @param out: Output buffer to store the full path.
+ * @param sz: Size of the output buffer.
  */
 void build_cfg_path(const char *fname, char *out, size_t sz) {
     snprintf(out, sz, "%s/%s", HIDDEN_DIR_PATH, fname);

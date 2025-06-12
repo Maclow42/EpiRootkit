@@ -24,7 +24,7 @@ struct socket *get_worker_socket(void) {
 
 /**
  * set_worker_socket - Sets the worker socket.
- * @s: The socket to set as the worker socket.
+ * @param s: The socket to set as the worker socket.
  * Return: Pointer to the newly set worker socket.
  */
 struct socket *set_worker_socket(struct socket *s) {
@@ -53,7 +53,7 @@ int close_worker_socket(void) {
 
 /**
  * connect_worker_socket_to_server - Connects the worker socket to the server.
- * @addr: The server address to connect to.
+ * @param addr: The server address to connect to.
  * Return: 0 on success, or a negative error code on failure.
  */
 int connect_worker_socket_to_server(struct sockaddr_in *addr) {

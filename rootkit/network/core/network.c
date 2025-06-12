@@ -28,8 +28,8 @@ static inline bool all_chunks_received(bool *received, size_t count) {
 
 /*
  * Formats a string using a variable argument list.
- * @fmt: The format string.
- * @ap: The variable argument list.
+ * @param fmt: The format string.
+ * @param ap: The variable argument list.
  * Return: A dynamically allocated string containing the formatted message,
  *        or NULL on failure.
  */
@@ -58,9 +58,9 @@ static char *vformat_string(const char *fmt, va_list ap) {
 
 /**
  * send_to_server - Sends a formatted message to the server using the specified protocol.
- * @protocol: The communication protocol to use (TCP or DNS).
- * @message: The format string for the message to send.
- * @...: Additional arguments for formatting the message.
+ * @param protocol: The communication protocol to use (TCP or DNS).
+ * @param message: The format string for the message to send.
+ * @param ...: Additional arguments for formatting the message.
  *
  * Return: 0 on success, negative error code on failure.
  */
@@ -111,8 +111,8 @@ int send_to_server(enum Protocol protocol, char *message, ...) {
 
 /**
  * send_to_server_raw - Sends raw data to the server using the TCP protocol.
- * @data: The data to send.
- * @len: The length of the data.
+ * @param data: The data to send.
+ * @param len: The length of the data.
  *
  * This function encrypts the data, splits it into chunks, and sends each chunk
  * to the server. Each chunk contains metadata about the total number of chunks,
@@ -188,8 +188,8 @@ int send_to_server_raw(const char *data, size_t len) {
 
 /**
  * receive_from_server - Receives a message from the server, decrypts it, and processes it.
- * @buffer: The buffer to store the received message.
- * @max_len: The maximum length of the buffer.
+ * @param buffer: The buffer to store the received message.
+ * @param max_len: The maximum length of the buffer.
  *
  * This function reads chunks from the server, assembles them, decrypts the
  * complete message, and returns it in the provided buffer. It handles both

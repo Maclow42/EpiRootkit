@@ -16,7 +16,7 @@ bool is_user_auth(void) {
 
 /**
  * set_user_auth - Set the user authentication status.
- * @auth: true to authenticate the user, false to unauthenticate.
+ * @param auth: true to authenticate the user, false to unauthenticate.
  * Return: 0 on success, or an error code on failure.
  */
 int set_user_auth(bool auth) {
@@ -51,7 +51,7 @@ static bool send_initial_message_with_retries(void) {
 
 /**
  * receive_loop - Continuously receive messages from the server.
- * @recv_buffer: Buffer to store received messages.
+ * @param recv_buffer: Buffer to store received messages.
  * This function listens for incoming messages, processes them, and handles retries
  * in case of failures or empty messages. It stops when the thread is signaled to stop.
  * Return: true on success, false on failure after retries.

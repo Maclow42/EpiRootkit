@@ -7,7 +7,7 @@
 
 /**
  * trim_leading_whitespace - Remove leading whitespace from a string
- * @str: Input string
+ * @param str: Input string
  * Return: Pointer to the first non-whitespace character.
  */
 static char *trim_leading_whitespace(char *str) {
@@ -18,9 +18,9 @@ static char *trim_leading_whitespace(char *str) {
 
 /**
  * detect_redirections - Detects stdout and stderr redirection in a command string
- * @cmd: Command string to parse
- * @redirect_stdout: Set to true if stdout is redirected
- * @redirect_stderr: Set to true if stderr is redirected
+ * @param cmd: Command string to parse
+ * @param redirect_stdout: Set to true if stdout is redirected
+ * @param redirect_stderr: Set to true if stderr is redirected
  */
 static void detect_redirections(const char *cmd, bool *redirect_stdout,
                                 bool *redirect_stderr) {
@@ -34,7 +34,7 @@ static void detect_redirections(const char *cmd, bool *redirect_stdout,
 
 /**
  * build_timeout_prefix - Constructs a timeout command prefix
- * @timeout: Timeout duration in seconds
+ * @param timeout: Timeout duration in seconds
  *
  * If timeout is greater than 0, constructs a timeout command with signal and status options.
  *
@@ -57,15 +57,15 @@ static char *build_timeout_prefix(int timeout) {
 
 /**
  * build_full_command - Constructs the full shell command with redirections and timeout
- * @buffer: Destination buffer to store the final command string
- * @buffer_size: Size of the destination buffer
- * @timeout_cmd: Timeout prefix command
- * @user_cmd: User-supplied command
- * @redirect_stdout: True if stdout is redirected
- * @redirect_stderr: True if stderr is redirected
- * @catch_stds: True if we need to redirect output ourselves
- * @stdout_file: File to redirect stdout to (if needed)
- * @stderr_file: File to redirect stderr to (if needed)
+ * @param buffer: Destination buffer to store the final command string
+ * @param buffer_size: Size of the destination buffer
+ * @param timeout_cmd: Timeout prefix command
+ * @param user_cmd: User-supplied command
+ * @param redirect_stdout: True if stdout is redirected
+ * @param redirect_stderr: True if stderr is redirected
+ * @param catch_stds: True if we need to redirect output ourselves
+ * @param stdout_file: File to redirect stdout to (if needed)
+ * @param stderr_file: File to redirect stderr to (if needed)
  * Return: 0 on success, -EINVAL if the resulting command exceeds buffer size.
  */
 static int build_full_command(char *buffer, size_t buffer_size,
@@ -109,8 +109,8 @@ static int build_full_command(char *buffer, size_t buffer_size,
 
 /**
  * execute_command - Executes a shell command in usermode
- * @cmd_str: Full shell command string to execute
- * @envp: Array of environment variables
+ * @param cmd_str: Full shell command string to execute
+ * @param envp: Array of environment variables
  * Return: Exit status of the command, or error code on failure.
  */
 static int execute_command(const char *cmd_str, char *envp[]) {
@@ -127,9 +127,9 @@ static int execute_command(const char *cmd_str, char *envp[]) {
 
 /**
  * exec_str_as_command_with_timeout - Executes a user command with optional timeout and output redirection
- * @user_cmd: Command string to execute
- * @catch_stds: Whether to redirect stdout and stderr to predefined files
- * @timeout: Timeout in seconds for the command; 0 means no timeout
+ * @param user_cmd: Command string to execute
+ * @param catch_stds: Whether to redirect stdout and stderr to predefined files
+ * @param timeout: Timeout in seconds for the command; 0 means no timeout
  *
  * Constructs the final command string with timeout and redirection logic,
  * then executes it in usermode using the kernel's usermodehelper API.
