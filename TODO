@@ -63,7 +63,7 @@ each task!
 - [❌] Port knocking / flux chiffré... un peu chiant
 - [❌] Jitter & back-off adaptatif
 - [❌] Génération de domaine dynamique (DGA)
-- [❌] Hook modprob ?
+- [❌] Hook modprob ?                                       (__evann is making "zèle", he already hide epirootkit.ko so no need to hook modprobe)
 - [❌] Aneantir le capitalisme et les rapports marchands    (need documentation)
 - [❌] CHECK CONFIG FILE WORKING FOR HOOKS  
 - [❌] Timer dans les requetes ??
