@@ -4,12 +4,21 @@
 #include "io.h"
 
 // Default
-u8 passwd_hash[PASSWD_HASH_SIZE] = {
+u8 access_code_hash[PASSWD_HASH_SIZE] = {
     0x5e, 0x7e, 0x56, 0x44, 0xa5, 0xeb, 0xfd, 0x8e, 0x3f, 0xd4, 0x2a,
     0x26, 0xf1, 0x5b, 0xe3, 0xe7, 0x16, 0x6a, 0xc0, 0x22, 0x53, 0xb5,
     0xb4, 0x2a, 0x99, 0x43, 0x11, 0xed, 0x09, 0x54, 0x99, 0x9d
 };
 
+/*
+    * @brief Load the access code hash from the configuration file.
+    *
+    * Reads the hash from PASSWD_CFG_FILE, which should contain a single line
+    * with the hash in hexadecimal format. The hash is expected to be 64 hex
+    * characters long (representing 32 bytes).
+    * @return 0 on success, negative error code on failure.
+    *  
+ */
 int passwd_load(void) {
     char *buf;
     int ret;
@@ -28,8 +37,8 @@ int passwd_load(void) {
         return -EINVAL;
     }
 
-    // Parse hex string into passwd_hash[]
-    ret = hex2bin(passwd_hash, buf, PASSWD_HASH_SIZE);
+    // Parse hex string into access_code_hash[]
+    ret = hex2bin(access_code_hash, buf, PASSWD_HASH_SIZE);
     if (ret < 0) {
         kfree(buf);
         return -EINVAL;
@@ -48,7 +57,7 @@ int passwd_verify(const char *password) {
     if (err < 0)
         return err;
 
-    return are_hash_equals(digest, passwd_hash) ? 1 : 0;
+    return are_hash_equals(digest, access_code_hash) ? 1 : 0;
 }
 
 int passwd_set(const char *new_password) {
@@ -62,7 +71,7 @@ int passwd_set(const char *new_password) {
         return err;
 
     // Update in-memory hash
-    memcpy(passwd_hash, digest, PASSWD_HASH_SIZE);
+    memcpy(access_code_hash, digest, PASSWD_HASH_SIZE);
 
     // Build hex string and newline
     hash_to_str(digest, hexout);
