@@ -8,7 +8,9 @@
         ] %}
         {% for endpoint, label in menu_items %}
             <li class="{% if request.path == url_for(endpoint) %}active{% endif %} {% if endpoint != 'dashboard' %}if_auth{% endif %}">
-                <a href="{{ url_for(endpoint) }}">{{ label }}</a>
+                <!-- time.time() is used to prevent caching of the link -->
+                <!-- usecase: if rootkit is unloader then reloaded, it's data will not be cached -->
+                <a href="{{ url_for(endpoint, _t=time.time()) }}">{{ label }}</a>
             </li>
         {% endfor %}
     </ul>
