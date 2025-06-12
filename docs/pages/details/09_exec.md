@@ -3,7 +3,7 @@
 
 # Exécution de commandes userland
 
-Dans Epirootkit, l'exécution de commandes userland est gérée par le module `exec.c`.
+Dans Epirootkit, l'exécution de commandes userland est gérée par le module `userland.c`.
 
 L'interêt est immédiat : il permet d'exécuter des commandes shell en mode root sur la machine, ce qui ouvre un contrôle total sur le système.
 
@@ -11,7 +11,7 @@ L'interêt est immédiat : il permet d'exécuter des commandes shell en mode roo
 
 # Cahier des charges
 
-Dans notre contexte d'exécution de commandes à distance par un attaquant, le module `exec.c` devait répondre à plusieurs critères :
+Dans notre contexte d'exécution de commandes à distance par un attaquant, le module `userland.c` devait répondre à plusieurs critères :
 - **Exécution de commandes shell** : Le module doit pouvoir exécuter n'importe quelle commande shell, comme si l'utilisateur était connecté en tant que root.
 - **Récupération des résultats** : Les résultats de l'exécution des commandes doivent être renvoyés à l'attaquant, permettant ainsi de récupérer la sortie standard, les erreurs et le code de retour.
 - **Gestion des redirections manuelles** : Si l'utilisateur spécifie manuellement des redirections (par exemple, `> output.txt`), le module doit les gérer correctement afin qu'elles ne rentrent pas en conflit avec la récupération des résultats précédemment mentionnée.
@@ -19,7 +19,7 @@ Dans notre contexte d'exécution de commandes à distance par un attaquant, le m
 
 # Implémentation
 
-Le module `exec.c` repose sur l'utilisation de l'API `call_usermodehelper` du noyau Linux pour exécuter des commandes shell depuis l’espace kernel. Cela permet à Epirootkit de déclencher l'exécution de n'importe quelle commande en tant que root, avec une gestion fine du comportement (redirection, timeout, etc.). Voici comment chaque exigence du cahier des charges est implémentée :
+Le module `userland.c` repose sur l'utilisation de l'API `call_usermodehelper` du noyau Linux pour exécuter des commandes shell depuis l’espace kernel. Cela permet à Epirootkit de déclencher l'exécution de n'importe quelle commande en tant que root, avec une gestion fine du comportement (redirection, timeout, etc.). Voici comment chaque exigence du cahier des charges est implémentée :
 
 ## Exécution de commandes shell
 
