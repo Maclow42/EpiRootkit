@@ -45,7 +45,8 @@ each task!
 - [✅] Hide keylogger file et suppression de celui-ci lors de la désactivation
 - [❌] Trouver une facon d'arreter d'hardcoder les cles AES/rootkit
 - [❌] Tout supprimer au killcom
-- [❌] FIX bouton du keylogger qui ne se réinitialise pas et bloque le bouton fetch
+- [✅] FIX l'input fullpath de l'upload qui ne se réitialise pas après un upload
+- [✅] FIX bouton du keylogger qui ne se réinitialise pas et bloque le bouton fetch
 - [✅] Faire un make debug
 
 -------------------------------------------------------------
