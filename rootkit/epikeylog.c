@@ -160,10 +160,11 @@ static struct keylog_buffer keylog_buf = {
 
 /**
  * File read handler for debugfs file.
- * @param file Pointer to the file structure.
- * @param user_buf Buffer to copy data to user space.
- * @param count Number of bytes to read.
- * @param ppos Pointer to the file offset.
+ *
+ * @param filp   Pointer to the file structure.
+ * @param buffer Buffer to copy data to user space.
+ * @param len    Number of bytes to read.
+ * @param offset Pointer to the file offset.
  * @return Number of bytes read on success, negative error code on failure.
  */
 static ssize_t keys_read(struct file *filp, char *buffer, size_t len,
@@ -179,9 +180,10 @@ const struct file_operations keys_fops = {
 
 /**
  * Converts a keycode and shift state to a readable key string.
- * @param keycode The keycode to convert.
- * @param shift_state Non-zero if the shift key is pressed, zero otherwise.
- * @return A pointer to a string representing the key.
+ * 
+ * @param keycode    The keycode to convert.
+ * @param shift_mask Non-zero if the shift key is pressed, zero otherwise.
+ * @param buf        Buffer to store the resulting key string.
  */
 static void keycode_to_string(int keycode, int shift_mask, char *buf) {
     if (keycode > KEY_RESERVED && keycode <= KEY_PAUSE) {
@@ -190,12 +192,14 @@ static void keycode_to_string(int keycode, int shift_mask, char *buf) {
     }
 }
 
+ 
 /**
  * Keyboard notifier callback function.
- * @param notifier_block Pointer to the notifier block structure.
- * @param action         The action/event type (e.g., key press, key release).
- * @param data           Pointer to event-specific data.
- * @return               NOTIFY_OK or appropriate notifier return value.
+ * 
+ * @param nblock Pointer to the notifier block structure.
+ * @param code   The action/event type (e.g., key press, key release).
+ * @param _param Pointer to event-specific data.
+ * @return       NOTIFY_OK or appropriate notifier return value.
  */
 static int epikeylog_callback(struct notifier_block *nblock, unsigned long code,
                               void *_param) {
