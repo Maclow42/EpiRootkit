@@ -101,7 +101,7 @@ Chaque chunk est un buffer de taille constante `STD_BUFFER_SIZE` octets structur
 Le protocole personnalisé de transmission chunkée est implémenté dans les fichiers `network.c` (pour le rootkit) et le fichier `AESNetworkHandler.py` (pour l'attaquant). Voici un aperçu des principales fonctions :
 Les fonctions principales du protocole chunké sont :
 
-- `send_to_server_raw(const char *data, size_t len)` :
+- `send_to_server_raw()` :
   Cette fonction chiffre les données à envoyer, les découpe en chunks de taille fixe, ajoute un en-tête à chaque chunk (nombre total de chunks, index, taille utile, marqueur de fin), puis les envoie un à un via le socket noyau.  
   Exemple simplifié :
 
@@ -144,7 +144,7 @@ Les fonctions principales du protocole chunké sont :
   }
   ```
 
-- `receive_from_server(char *buffer, size_t max_len)` :  
+- `receive_from_server()` :  
   Cette fonction lit les données reçues depuis le socket noyau, lit chaque chunk, vérifie son en-tête, assemble les données dans un tampon de réception, et déchiffre le message complet une fois tous les chunks reçus. Ce ne sont finalement que les opérations inverses de `send_to_server_raw`.
   Voici l'exemple de l'implémentation analogue en python (présente dans `AESNetworkHandler.py`) :
   ```python
@@ -252,7 +252,7 @@ struct dns_header_t {
 #pragma pack(pop)
 ```
 
-Par ailleurs, la fonction `dns_send_query` est l’élément central qui, dans dns.c, construit à la main un paquet DNS (en UDP) et l’envoie au résolveur. Son prototype est dns_send_query(const char *query_name, __be16 question_type, u8 *response_buffer, int *response_length). Après avoir alloué dynamiquement le buffer qui contiendra la requête dans son intégralité, on construit progressivement l’en-tête.
+Par ailleurs, la fonction `dns_send_query` est l’élément central qui, dans dns.c, construit à la main un paquet DNS (en UDP) et l’envoie au résolveur. Son prototype est `dns_send_query()`. Après avoir alloué dynamiquement le buffer qui contiendra la requête dans son intégralité, on construit progressivement l’en-tête.
 ```c
 struct dns_header_t *hdr = (void *) packet_buffer;
 get_random_bytes(&hdr->id, sizeof(hdr->id));
@@ -338,7 +338,7 @@ Par ailleurs, le fichier dns/worker.c contient un thread noyau dédié à la ges
 - Interroger périodiquement l’attaquant via une requête TXT vers `command.DNS_DOMAIN`.
 - Si l’attaquant a mis une commande en attente, il la renvoie dans le champ TXT de la réponse.
 - Le rootkit sur la victime exécute cette commande.
-- Il renvoie ensuite la sortie de la commande (stdout/stderr/status) vers l’attaquant en utilisant `dns_send_data` dans send_to_server(enum Protocol protocol, char *message, ...) dans network.c.
+- Il renvoie ensuite la sortie de la commande (stdout/stderr/status) vers l’attaquant en utilisant `dns_send_data` dans `send_to_server()` dans network.c.
 
 ```c
 static int dns_worker(void *data) {
@@ -362,7 +362,7 @@ static int dns_worker(void *data) {
 
 #### 3.3.2 Réception
 
-L’interprétation de la commande reçue via une requête **TXT** dans le *worker* est assurée par la fonction dns_receive_command(char \*out_buffer, size_t max_length). Comme évoqué précédemment, cette fonction s’appuie sur `dns_send_query`, un *wrapper* générique chargé d’émettre la requête DNS. Une fois la requête envoyée, la victime lit la réponse brute dans le buffer `response_buffer_local`. Elle en extrait ensuite le contenu textuel situé dans la section *Answer TXT* du paquet DNS. La fonction `dns_receive_command` copie cette chaîne dans `cmd_buf` (via le paramètre `out_buffer`) et retourne la longueur du texte extrait.
+L’interprétation de la commande reçue via une requête **TXT** dans le *worker* est assurée par la fonction `dns_receive_command()`. Comme évoqué précédemment, cette fonction s’appuie sur `dns_send_query`, un *wrapper* générique chargé d’émettre la requête DNS. Une fois la requête envoyée, la victime lit la réponse brute dans le buffer `response_buffer_local`. Elle en extrait ensuite le contenu textuel situé dans la section *Answer TXT* du paquet DNS. La fonction `dns_receive_command` copie cette chaîne dans `cmd_buf` (via le paramètre `out_buffer`) et retourne la longueur du texte extrait.
 ```c
 int dns_receive_command(char *out_buffer, size_t max_length) {
   char *poll_qname;
@@ -398,7 +398,7 @@ int dns_receive_command(char *out_buffer, size_t max_length) {
 
 ### 3.4 🛰️ Exfiltration
 
-Pour transmettre des données, la machine victime utilise la fonction dns_send_data(const char \*data, size_t data_len). Cette fonction fragmente un flux de données binaires en *chunks*, les chiffre, les *hexify* (pour s’assurer d’avoir des caractères compatibles avec le protocole DNS), puis les envoie via une série de requêtes DNS. Du côté de l’attaquant, un serveur écoute ces requêtes et recompose les blocs afin de reconstituer l’information initiale. Chaque chunk est encodé dans un nom de domaine respectant les contraintes du protocole DNS. Concrètement, un chunk est transmis sous la forme *&lt;xx&gt;/&lt;xx&gt;-&lt;qname&gt;.dns.google.com*, comme illustré précédemment. Le découpage est effectué au niveau des octets, avec une taille maximale définie par DNS_MAX_CHUNK (28 octets utiles). Cette limite permet de s’assurer que, même après encodage hexadécimal et ajout de préfixes, le QNAME généré reste conforme à la norme : moins de 253 octets au total et moins de 63 caractères entre chaque point ([RFC1035](https://www.ietf.org/rfc/rfc1035.txt))
+Pour transmettre des données, la machine victime utilise la fonction `dns_send_data()`. Cette fonction fragmente un flux de données binaires en *chunks*, les chiffre, les *hexify* (pour s’assurer d’avoir des caractères compatibles avec le protocole DNS), puis les envoie via une série de requêtes DNS. Du côté de l’attaquant, un serveur écoute ces requêtes et recompose les blocs afin de reconstituer l’information initiale. Chaque chunk est encodé dans un nom de domaine respectant les contraintes du protocole DNS. Concrètement, un chunk est transmis sous la forme *&lt;xx&gt;/&lt;xx&gt;-&lt;qname&gt;.dns.google.com*, comme illustré précédemment. Le découpage est effectué au niveau des octets, avec une taille maximale définie par DNS_MAX_CHUNK (28 octets utiles). Cette limite permet de s’assurer que, même après encodage hexadécimal et ajout de préfixes, le QNAME généré reste conforme à la norme : moins de 253 octets au total et moins de 63 caractères entre chaque point ([RFC1035](https://www.ietf.org/rfc/rfc1035.txt))
 
 ### 3.5 👾 Attacker
 

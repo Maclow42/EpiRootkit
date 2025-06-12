@@ -9,7 +9,7 @@ Dans un premier temps, nous expliquerons comment interagir avec l’interface we
 
 ## 🌐 Interface Web
 
-### 1. Connexion
+### 1. Connexion {#connexion}
 
 Normalement, à ce stade, vous devriez avoir les deux machines virtuelles ouvertes, avec le serveur Python en cours d’exécution, ainsi que l’interface web si vous avez choisi cette option. Vous devriez alors voir un écran similaire à celui présenté ci-dessous. Le rootkit est détecté et connecté, mais une authentification est nécessaire pour accéder à l’ensemble des fonctionnalités et contrôler la machine victime à distance. Cliquez ensuite sur Authenticate et saisissez le mot de passe `evannounet`. Après quelques instants, le tableau de bord principal de l’application devrait s’afficher.
 \htmlonly
@@ -42,6 +42,8 @@ Normalement, à ce stade, vous devriez avoir les deux machines virtuelles ouvert
   </figcaption>
 </figure>
 \endhtmlonly
+
+> Pour plus d’informations techniques concernant la gestion du mot de passe, voir [Gestion du mot de passe](#gestion-du-mot-de-passe).
 
 ### 2. Dashboard {#dashboard}
 
@@ -193,7 +195,7 @@ Le bouton *Download as .txt* permet de télécharger l’ensemble des frappes ca
 
 ---
 
-## 📜 Liste des commandes
+## 📜 Liste des commandes {#liste-des-commandes}
 
 La liste des commandes décrites ci-dessous sont des commandes propres à Epirootkit, qui peuvent être saisies dans le terminal de la machine attaquante après s’être connecté au rootkit. Beaucoup de ces commandes sont également accessibles de manière indirecte via l’interface web, que ce soit par des boutons ou des champs de saisie. Cela n'est cependant pas le cas de toutes les commandes, certaines étant réservées à un usage en ligne de commande (CLI) pour des raisons de sécurité ou de complexité et c'est pour cette usage que nous les décrivons ici.
 
