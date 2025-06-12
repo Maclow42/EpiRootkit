@@ -54,10 +54,16 @@
 
   function updateInputPath(fullpath = false) {
     const onclickHandler = () => {
+      if (remotePathInput.disabled || remotePathInput.value === '' || fileInput.files.length === 0) {
+        return; // Do nothing if the input is disabled or empty
+      }
       curr_pathPre.style.display = 'none';
       updateInputPath(true);
       remotePathInput.focus();
     };
+    
+    // Remove the previous click event listener to avoid multiple bindings
+    curr_pathPre.removeEventListener('click', onclickHandler);
 
     if (fileInput.files.length > 0) {
       // update input field with the selected file name
@@ -69,8 +75,8 @@
       const basePath = curr_pathPre.textContent.trim() || '/';
       remotePathInput.value = fullpath ? basePath + filename : filename;
     } else {
+      remotePathInput.value = '';
       remotePathInput.disabled = true;
-      curr_pathPre.removeEventListener('click', onclickHandler);
     }
 
     updateErrorMessage(null);
@@ -127,7 +133,7 @@
     })
     .finally(() => {
       document.getElementById('upload-btn').disabled = false;
-      fileInput.value = ''; // Clear the file input
+      fileInput.value = ''; // Clear the file input 
       updateInputPath(false); // Reset the remote path input
       loadDirectory();
     });
