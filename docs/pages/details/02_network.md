@@ -102,7 +102,7 @@ Chaque chunk est un buffer de taille constante `STD_BUFFER_SIZE` octets structur
 Le protocole personnalisé de transmission chunkée est implémenté dans les fichiers `network.c` (pour le rootkit) et le fichier `AESNetworkHandler.py` (pour l'attaquant). Voici un aperçu des principales fonctions :
 Les fonctions principales du protocole chunké sont :
 
-- send_to_server_raw(const char *data, size_t len)
+- `send_to_server_raw(const char *data, size_t len)` :
   Cette fonction chiffre les données à envoyer, les découpe en chunks de taille fixe, ajoute un en-tête à chaque chunk (nombre total de chunks, index, taille utile, marqueur de fin), puis les envoie un à un via le socket noyau.  
   Exemple simplifié :
 
@@ -145,7 +145,7 @@ Les fonctions principales du protocole chunké sont :
   }
   ```
 
-- receive_from_server(char *buffer, size_t max_len) 
+- `receive_from_server(char *buffer, size_t max_len)` :  
   Cette fonction lit les données reçues depuis le socket noyau, lit chaque chunk, vérifie son en-tête, assemble les données dans un tampon de réception, et déchiffre le message complet une fois tous les chunks reçus. Ce ne sont finalement que les opérations inverses de `send_to_server_raw`.
   Voici l'exemple de l'implémentation analogue en python (présente dans `AESNetworkHandler.py`) :
   ```python

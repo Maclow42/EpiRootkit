@@ -193,17 +193,7 @@ Un champ de recherche permet de filtrer dynamiquement les résultats affichés. 
 #### 📦 Exportation
 Le bouton *Download as .txt* permet de télécharger l’ensemble des frappes capturées sous forme d’un fichier `.txt` directement sur la machine attaquante.
 
-<<<<<<< HEAD
-## 📜 Liste des commandes
-||||||| ac796d5
----
-
-## 📜 Liste des commandes
-=======
----
-
 ## 📜 Liste des commandes {#liste-des-commandes}
->>>>>>> 7aa2409cf2fd9e4991c38cf28f433e0308544fd9
 
 La liste des commandes décrites ci-dessous sont des commandes propres à Epirootkit, qui peuvent être saisies dans le terminal de la machine attaquante après s’être connecté au rootkit. Beaucoup de ces commandes sont également accessibles de manière indirecte via l’interface web, que ce soit par des boutons ou des champs de saisie. Cela n'est cependant pas le cas de toutes les commandes, certaines étant réservées à un usage en ligne de commande (CLI) pour des raisons de sécurité ou de complexité et c'est pour cette usage que nous les décrivons ici.
 
