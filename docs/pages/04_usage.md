@@ -11,7 +11,28 @@ Dans un premier temps, nous expliquerons comment interagir avec l’interface we
 
 ### 1. Connexion {#connexion}
 
-Normalement, à ce stade, vous devriez avoir les deux machines virtuelles ouvertes, avec le serveur Python en cours d’exécution, ainsi que l’interface web si vous avez choisi cette option. Vous devriez alors voir un écran similaire à celui présenté ci-dessous. Le rootkit est détecté et connecté, mais une authentification est nécessaire pour accéder à l’ensemble des fonctionnalités et contrôler la machine victime à distance. Cliquez ensuite sur Authenticate et saisissez le mot de passe `evannounet`. Après quelques instants, le tableau de bord principal de l’application devrait s’afficher.
+Normalement, à ce stade, vous devriez avoir les deux machines virtuelles ouvertes, avec le serveur Python en cours d’exécution.
+
+SI vous vous rendez sur l'interface web de l'attaquant (http://192.168.100.2:5000/), vous devriez voir l'interface d'accueil du rootkit. Si le rootkit n'est pas encore connecté, vous aurez un écran similaire à celui-ci :
+
+\htmlonly
+<figure style="text-align: center;">
+  <img 
+    src="../../../img/disconnected.png" 
+    style="
+      margin: 30px 0px 0px;
+      border-radius: 8px; 
+      width: 100%;
+    "
+  />
+  <figcaption style="margin-top: 0.5em; font-style: italic;">
+    Figure: Screenshot of the attacker's web ui with rootkit disconnected.
+  </figcaption>
+</figure>
+\endhtmlonly
+
+Lorsque le rootkit sera détecté puis connecté au server TCP du backend, l'interface changera pour devenir :
+
 \htmlonly
 <figure style="text-align: center;">
   <img 
@@ -27,6 +48,12 @@ Normalement, à ce stade, vous devriez avoir les deux machines virtuelles ouvert
   </figcaption>
 </figure>
 \endhtmlonly
+
+Cependant une authentification est nécessaire pour accéder à l’ensemble des fonctionnalités et contrôler la machine victime à distance. 
+
+Cliquez ensuite sur Authenticate et saisissez le mot de passe `evannounet`. 
+Après quelques instants, le tableau de bord principal de l’application devrait s’afficher :
+
 \htmlonly
 <figure style="text-align: center;">
   <img 
