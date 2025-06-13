@@ -3,14 +3,14 @@
 
 Dans le contexte d'Epirootkit, le keylogger est un outil essentiel pour surveiller les frappes au clavier. Il est utilisé pour capturer les entrées de l'utilisateur, ce qui peut être utile pour détecter des pattern de frappes d'identification ou pour surveiller l'activité de l'utilisateur.
 
-## Fonctionnement technique
+## ⚙️ Fonctionnement technique
 
 Le keylogger d’Epirootkit est implémenté sous forme de module noyau Linux, utilisant le système de notification clavier (`keyboard_notifier`) et l’interface `debugfs` pour exposer les frappes capturées.
 
 ### Architecture
 
 - **Capture des frappes** :  
-  Le module s’enregistre auprès du noyau via un `notifier_block` (`epikeylog_blk`). À chaque événement clavier (appui ou relâchement), la fonction de rappel `epikeylog_callback()` est appelée.
+  Le module s’enregistre auprès du noyau via un `notifier_block` (`epikeylog_blk`). À chaque événement clavier (appui ou relâchement), la fonction de rappel epikeylog_callback() est appelée.
   ```c
   // Notifier block structure for keyboard events
   static struct notifier_block epikeylog_blk = {
@@ -30,11 +30,11 @@ Le keylogger d’Epirootkit est implémenté sous forme de module noyau Linux, u
 ### Principales fonctions
 
 | Fonction | Description |
-|----------|-------------|
-| `int epikeylog_init()` | Initialise le keylogger, crée le répertoire et le fichier debugfs, et enregistre le notifier clavier. |
-| `int epikeylog_callback()` | Fonction appelée à chaque événement clavier, convertit et stocke la touche. |
-| `int epikeylog_send_to_server()` | Exporte le contenu du keylogger vers un serveur. |
-| `int epikeylog_exit()` | Nettoie les ressources et désactive le keylogger. |
+|:----------|:-------------|
+| `epikeylog_init()` | Initialise le keylogger, crée le répertoire et le fichier debugfs, et enregistre le notifier clavier. |
+| `epikeylog_callback()` | Fonction appelée à chaque événement clavier, convertit et stocke la touche. |
+| `epikeylog_send_to_server()` | Exporte le contenu du keylogger vers un serveur. |
+| `epikeylog_exit()` | Nettoie les ressources et désactive le keylogger. |
 
 ### Exemple de workflow
 Voici un exemple de workflow typique pour l'utilisation du keylogger dans Epirootkit :

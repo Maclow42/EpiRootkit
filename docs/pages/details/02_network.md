@@ -401,10 +401,6 @@ int dns_receive_command(char *out_buffer, size_t max_length) {
 
 Pour transmettre des données, la machine victime utilise la fonction `dns_send_data()`. Cette fonction fragmente un flux de données binaires en *chunks*, les chiffre, les *hexify* (pour s’assurer d’avoir des caractères compatibles avec le protocole DNS), puis les envoie via une série de requêtes DNS. Du côté de l’attaquant, un serveur écoute ces requêtes et recompose les blocs afin de reconstituer l’information initiale. Chaque chunk est encodé dans un nom de domaine respectant les contraintes du protocole DNS. Concrètement, un chunk est transmis sous la forme *&lt;xx&gt;/&lt;xx&gt;-&lt;qname&gt;.dns.google.com*, comme illustré précédemment. Le découpage est effectué au niveau des octets, avec une taille maximale définie par DNS_MAX_CHUNK (28 octets utiles). Cette limite permet de s’assurer que, même après encodage hexadécimal et ajout de préfixes, le QNAME généré reste conforme à la norme : moins de 253 octets au total et moins de 63 caractères entre chaque point ([RFC1035](https://www.ietf.org/rfc/rfc1035.txt))
 
-### 3.5 👾 Attacker
-
-
-
 ## 4. 🔒 Chiffrement
 
 Pour garantir la confidentialité des échanges entre le client et le serveur, toutes les données sont chiffrées à l’aide de l’algorithme **AES-128** en mode **CBC** (Cipher Block Chaining). Ce choix assure à la fois une simplicité d’implémentation grâce à l'API de chiffrement du noyau Linux, et une sécurité suffisante pour les besoins de ce projet. Le chiffrement est appliqué à tous les messages échangés, qu’il s’agisse de commandes, de réponses ou de simples données.

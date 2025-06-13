@@ -15,13 +15,14 @@ each task!
 - [✅] Executing commands: 5 points
 - [✅] Password: 1 point
 - [✅] Hide the module in userspace
-- [✅] Upload: 1.5 points  								(yols)
-- [✅] Download: 1.5 points 								(yols)
+- [✅] Upload: 1.5 points
+- [✅] Download: 1.5 points
 - [✅] Hide the rootkit from the module list: 1 point
 - [✅] Hide a line from a file in userland: 2 points 	(done but need to improve ergonomy lol)
 - [✅] Hide a directory / files from userland: 2 points
 - [✅] Cipher the data on the network: 1 point
 - [❌] Documentation  (Push Doxygen for Jules ???)       (created doxygen, need to document and add @... above functions)
+- [❌] Check Archi finale dans docu (demain, pour etre sur des fichiers lol)
 - [✅] Get a personal directory at startup to put files
 - [✅] Filtrage des logs... (only DEBUG flag)
 - [❌] Auto-update rootkit								(maclow)
@@ -35,12 +36,11 @@ each task!
 - [✅] Alerte visuelle comme quoi le rootkit est connecte/deconnecte
 - [✅] Reconnexion du rootkit apres deconnexion par l'attaquant
 - [✅] Ajout cacher ports dynamiquement !!!
-- [❌] Add tests and security parsing for all commands ? (hook also)
 - [✅] API to detect VMs
 - [❌] Hide PID Socat
 - [✅] Command to activate DEBUG or not remotely
 - [❌] Kill persistence with command remotely and make other tests
-- [❌] Ouvrir automatiquement Firefox ?
+- [❌] Ouvrir automatiquement Firefox ? hmmmm
 - [❌] Barre de chargement
 - [✅] Hide keylogger file et suppression de celui-ci lors de la désactivation
 - [❌] Trouver une facon d'arreter d'hardcoder les cles AES/rootkit
@@ -66,10 +66,9 @@ each task!
 - [❌] Génération de domaine dynamique (DGA)
 - [❌] Hook modprob ?                                       (__evann is making "zèle", he already hide epirootkit.ko so no need to hook modprobe)
 - [❌] Aneantir le capitalisme et les rapports marchands    (need documentation)
-- [❌] CHECK CONFIG FILE WORKING FOR HOOKS  
 - [❌] Timer dans les requetes ??
 - [❌] Chiffrer fichiers de config ?
-- [❌] Rene Bojolais
+- [❌] Rene Bojolais (the boss)
 
 -------------------------------------------------------------
 2. 📝 Documentation
