@@ -35,4 +35,8 @@ The team is composed of three students from EPITA:
 2. 📂 Documentation
 =============================================================
 
-... Doxygen
+Simply run `make doc` to generate the documentation.
+
+Then, open it using Firefox with `firefox ./docs/html/index.html`.
+
+Enjoy !
