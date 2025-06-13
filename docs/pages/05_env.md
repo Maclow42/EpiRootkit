@@ -2,7 +2,7 @@
 
 \tableofcontents
 
-## 1. 🖥️ Machines virtuelles
+## 1. 🖥️ Machines virtuelles {#virtual-machines}
 
 La configuration, à la fois pédagogique et destinée à faciliter les tests, est un peu particulière : les deux machines virtuelles ("rooktit" et "serveur attaquant") tournent sur un même hôte et doivent communiquer entre elles, avec l’hôte lui-même, et avec Internet. Pour cela, nous avons mis en place un dispositif de réseau virtuel, résumé sur le schéma ci-dessous.
 

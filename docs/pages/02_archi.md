@@ -11,6 +11,7 @@
 ├── docs
 ├── rootkit
 ├── AUTHORS
+├── Makefile
 ├── README
 └── TODO
 ```
@@ -21,6 +22,7 @@ Ci-dessus se trouve l'architecture globale du dépôt Git. Il contient à la foi
 - `docs` regroupe les fichiers de configuration utilisés pour générer la présente documentation.
 - `rootkit` contient le code source du rootkit.
 - `AUTHORS` répertorie les auteurs du projet.
+- `Makefile` contient l'ensemble des commandes d'installation et de manipulation du lab
 - `README` explique simplement comment générer la documentation.
 - `TODO` est un fichier utilitaire destiné au suivi et au développement du projet.
 
