@@ -4,6 +4,7 @@ ROOT_PATH="./"
 if [ -n "$1" ]; then
   ROOT_PATH="$1"
 fi
+
 BASE_DIR="$ROOT_PATH/vms"
 BRIDGE_NAME="br0"
 BRIDGE_IP="192.168.100.1/24"
@@ -11,18 +12,6 @@ BRIDGE_IP="192.168.100.1/24"
 # Ensure the script is run as root.
 if [ "$(id -u)" -ne 0 ]; then
     echo "[ERROR] This script must be run as root."
-    exit 1
-fi
-
-# Determine the non-root user.
-if [ -n "$SUDO_USER" ]; then
-    NON_ROOT_USER="$SUDO_USER"
-else
-    read -p "Enter a non-root username to own the TAP device and disk images: " NON_ROOT_USER
-fi
-
-if ! id "$NON_ROOT_USER" &>/dev/null; then
-    echo "[ERROR] User '$NON_ROOT_USER' does not exist."
     exit 1
 fi
 
@@ -72,10 +61,8 @@ else
     echo "[DEBUG] Attacker disk image already unzipped."
 fi
 
-# 4. Fix permissions so non-root user can access the disk images.
-chown "$NON_ROOT_USER":"$NON_ROOT_USER" "$ATTACKER_DISK" "$VICTIM_DISK"
+# 4. Permissions... need to test again
 chmod 664 "$ATTACKER_DISK" "$VICTIM_DISK"
-echo "[DEBUG] Disk images ownership set to $NON_ROOT_USER."
 
 # 5. Create and configure the bridge (br0).
 if ip link show "$BRIDGE_NAME" &>/dev/null; then
@@ -112,16 +99,16 @@ iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o "$IFACE" -j MASQUERADE
 if ip link show tap0 &>/dev/null; then
     echo "[DEBUG] TAP interface tap0 already exists."
 else
-    echo "[DEBUG] Creating TAP interface tap0 for user $NON_ROOT_USER..."
-    ip tuntap add dev tap0 mode tap user "$NON_ROOT_USER" || { echo "[ERROR] Error creating TAP interface tap0."; exit 1; }
+    echo "[DEBUG] Creating TAP interface tap0..."
+    ip tuntap add dev tap0 mode tap || { echo "[ERROR] Error creating TAP interface tap0."; exit 1; }
 fi
 
 # 8. Create TAP interface tap1 for the victim VM if it does not exist.
 if ip link show tap1 &>/dev/null; then
     echo "[DEBUG] TAP interface tap1 already exists."
 else
-    echo "[DEBUG] Creating TAP interface tap1 for user $NON_ROOT_USER..."
-    ip tuntap add dev tap1 mode tap user "$NON_ROOT_USER" || { echo "[ERROR] Error creating TAP interface tap1."; exit 1; }
+    echo "[DEBUG] Creating TAP interface tap1..."
+    ip tuntap add dev tap1 mode tap || { echo "[ERROR] Error creating TAP interface tap1."; exit 1; }
 fi
 
 # 9. Attach both TAP interfaces to the bridge.
