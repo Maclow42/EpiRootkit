@@ -1,20 +1,16 @@
 \page password Password
 \tableofcontents
 
-## Gestion du mot de passe {#gestion-du-mot-de-passe}
+## Gestion {#gestion-du-mot-de-passe}
 
-Une fois que le rootkit est connecté au serveur d'attaque, il est nécessaire de s'authentifier en entrant un mot de passe afin de pouvoir exécuter des commandes.  
-
-L'implémentation du mot de passe utilise un hashage SHA-256 afin d'éviter de stocker le mot de passe en clair ou de l'hardcoder dans le code source.  
-Le hash du mot de passe est comparé à une valeur de référence, et seul un mot de passe correct permet l'accès aux fonctionnalités sensibles.
-
+Une fois que le rootkit est connecté au serveur d'attaque, il est nécessaire de s'authentifier en entrant un mot de passe afin de pouvoir exécuter des commandes. L'implémentation du mot de passe utilise un hashage SHA-256 afin d'éviter de stocker le mot de passe en clair ou de l'hardcoder dans le code source. Le hash du mot de passe est comparé à une valeur de référence, et seul un mot de passe correct permet l'accès aux fonctionnalités sensibles.
 - Le hash du mot de passe est stocké sous forme hexadécimale dans un fichier de configuration persistant, nommé `passwd.cfg`. Si ce fichier n'existe pas, le mot de passe par défaut est utilisé, en l'occurrence `evannounet`.
 - Lors de la vérification, le mot de passe fourni est hashé avec SHA-256 puis comparé au hash stocké.
 - La modification du mot de passe met à jour le hash dans le fichier de configuration, toujours sans jamais stocker le mot de passe en clair.
 
 Cette approche renforce la sécurité en évitant l'exposition directe du mot de passe dans le code ou sur le disque.
 
-## Exemple de code et explications
+## Exemple
 
 ```c
 // Hash SHA-256 du mot de passe par défaut (exemple)
