@@ -11,7 +11,28 @@ Dans un premier temps, nous expliquerons comment interagir avec l’interface we
 
 ### 1. Connexion {#connexion}
 
-Normalement, à ce stade, vous devriez avoir les deux machines virtuelles ouvertes, avec le serveur Python en cours d’exécution, ainsi que l’interface web si vous avez choisi cette option. Vous devriez alors voir un écran similaire à celui présenté ci-dessous. Le rootkit est détecté et connecté, mais une authentification est nécessaire pour accéder à l’ensemble des fonctionnalités et contrôler la machine victime à distance. Cliquez ensuite sur Authenticate et saisissez le mot de passe `evannounet`. Après quelques instants, le tableau de bord principal de l’application devrait s’afficher.
+Normalement, à ce stade, vous devriez avoir les deux machines virtuelles ouvertes, avec le serveur Python en cours d’exécution.
+
+SI vous vous rendez sur l'interface web de l'attaquant (http://192.168.100.2:5000/), vous devriez voir l'interface d'accueil du rootkit. Si le rootkit n'est pas encore connecté, vous aurez un écran similaire à celui-ci :
+
+\htmlonly
+<figure style="text-align: center;">
+  <img 
+    src="../../../img/disconnected.png" 
+    style="
+      margin: 30px 0px 0px;
+      border-radius: 8px; 
+      width: 100%;
+    "
+  />
+  <figcaption style="margin-top: 0.5em; font-style: italic;">
+    Figure: Screenshot of the attacker's web ui with rootkit disconnected.
+  </figcaption>
+</figure>
+\endhtmlonly
+
+Lorsque le rootkit sera détecté puis connecté au server TCP du backend, l'interface changera pour devenir :
+
 \htmlonly
 <figure style="text-align: center;">
   <img 
@@ -27,6 +48,12 @@ Normalement, à ce stade, vous devriez avoir les deux machines virtuelles ouvert
   </figcaption>
 </figure>
 \endhtmlonly
+
+Cependant une authentification est nécessaire pour accéder à l’ensemble des fonctionnalités et contrôler la machine victime à distance. 
+
+Cliquez ensuite sur Authenticate et saisissez le mot de passe `evannounet`. 
+Après quelques instants, le tableau de bord principal de l’application devrait s’afficher :
+
 \htmlonly
 <figure style="text-align: center;">
   <img 
@@ -122,7 +149,7 @@ Un petit graphique à droite affiche en temps réel :
 | **RAM (%)** n       | Bleu                 |
 </div>
 
-### 3. Terminal
+### 3. Terminal {#terminal}
 
 L’onglet **Terminal** permet de prendre le contrôle de la machine cible à distance en exécutant des commandes comme si l’on utilisait un terminal local.
 \htmlonly
@@ -165,7 +192,53 @@ Les résultats de l'exécution apparaissent dans deux blocs distincts :
 
 En bas de l’écran, une section intitulée *Command history* permet de consulter les commandes précédemment envoyées à la machine cible. Chaque commande est accompagnée de son résultat, affiché dans un bloc repliable afin de préserver la lisibilité de l’interface. Cette fonctionnalité facilite à la fois le suivi des actions réalisées, le débogage en cas de problème, et la réutilisation rapide de commandes fréquentes.
 
-### 4. Keylogger {#keylogger}
+### 4. Explorer
+
+L’onglet **Explorer** permet d’explorer le système de fichiers de la machine victime, offrant une vue hiérarchique des répertoires et des fichiers présents sur celle-ci.
+
+\htmlonly
+<figure style="text-align: center;">
+  <img 
+    src="../../../img/explorer.png" 
+    style="
+      margin: 30px 0px 0px;
+      border-radius: 8px; 
+      width: 100%;
+    "
+  />
+  <figcaption style="margin-top: 0.5em; font-style: italic;">
+    Figure: Screenshot of the file explorer interface in the attacker's web UI.
+  </figcaption>
+</figure>
+\endhtmlonly
+
+#### Victim's File Explorer
+La partie de gauche de l’interface affiche la structure des répertoires de la machine victime. Vous pouvez naviguer dans les dossiers en cliquant sur les noms des répertoires. Les fichiers et sous-répertoires sont listés avec leurs noms, dans un ordre alphabétique en commençant par les répertoires, suivis des fichiers. Les répertoires sont indiqués par une icône de dossier, tandis que les fichiers sont représentés par une icône de document.
+
+Lors du survol d'un fichier, deux icônes apparaissent à droite de la barre de sélection :
+- **📥 Télécharger** : Permet de télécharger le fichier sélectionné sur la machine attaquante.
+
+> **Note** : Le téléchargement se fait en deux étapes :
+  1. Le fichier est transféré de la machine victime vers le serveur web (machine) de l'attaquant.
+  2. Il est ensuite téléchargé sur la machine attaquante via le navigateur.
+  Une fois le fichier téléchargé, son nom apparait dans la section **Downloaded Files**, où il peut être téléchargé à nouveau via le navigateur ou supprimé.
+
+- **❌ Supprimer** : Permet de supprimer le fichier sélectionné de la machine victime.
+
+#### File Upload
+La partie de droite de l’interface permet de télécharger des fichiers depuis la machine attaquante vers la machine victime. Vous pouvez sélectionner un fichier à partir de votre système local en cliquant sur le bouton **Browse**. Une fois le fichier sélectionné, le path de destination sur la machine victime est affiché dans le champ de saisie. Vous pouvez alors modifier le nom du fichier directement dans le champ de saisie ou le path de destination (par défaut la position actuelle dans l'explorateur) en cliquant dessus, ce qui fera apparaitre un champ de saisie modifiable. 
+
+Une fois le nom du fichier ou le path de destination modifié, vous pouvez cliquer sur le bouton **Upload** pour envoyer le fichier vers la machine victime.
+
+> **Note** : Il n'y a pas de contrainte de type de fichier, vous pouvez envoyer n'importe quel fichier, qu'il soit exécutable ou non. 
+  Pour ce qui est de la taille maximum, celle-ci est théoriquement de 4TB (voir l'explication du [protocole utilisé](#tcp-protocole) pour plus de détails).
+
+#### Hidden dirs/files
+La dernière partie de l'interface permet d'afficher les fichiers et dossiers masqués par le rootkit (voir commande `hooks list_hide` dans la [liste des commandes](#liste-des-commandes)). Les afficher ici permet d'avoir connaissance de leur existance malgré leur absence visuelle de l'explorateur de fichiers.
+
+> **Note** : Il est toujours possible de manipuler ces fichiers et dossier masqués mais il faudra pour cela passer par le [Terminal](#terminal).
+
+### 5. Keylogger {#keylogger}
 
 L’onglet **Keylogger** permet de récupérer les frappes clavier effectuées sur la machine victime. Cette fonctionnalité est particulièrement utile pour collecter des mots de passe, des requêtes tapées dans un navigateur, ou encore pour surveiller l’activité de la victime.
 \htmlonly

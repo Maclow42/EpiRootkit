@@ -1,6 +1,10 @@
 #!/bin/bash
 
-BASE_DIR="./vms"
+ROOT_PATH="./"
+if [ -n "$1" ]; then
+  ROOT_PATH="$1"
+fi
+BASE_DIR="$ROOT_PATH/vms"
 ATTACKER_DISK="$BASE_DIR/attacker_disk.qcow2"
 VICTIM_DISK="$BASE_DIR/victim_disk.qcow2"
 bridge_info="bridge: br0, ip: 192.168.100.1/24"

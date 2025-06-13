@@ -36,16 +36,14 @@ Le keylogger d’Epirootkit est implémenté sous forme de module noyau Linux, u
 | `int epikeylog_send_to_server()` | Exporte le contenu du keylogger vers un serveur. |
 | `int epikeylog_exit()` | Nettoie les ressources et désactive le keylogger. |
 
-### Exemple de flux
+### Exemple de workflow
+Voici un exemple de workflow typique pour l'utilisation du keylogger dans Epirootkit :
 
 1. **Activation** : Le keylogger est activé et `epikeylog_init` est appelé.
 2. **Capture** : À chaque frappe, `epikeylog_callback` enregistre la touche dans le tampon.
-3. **Consultation** : Un utilisateur autorisé peut lire `/sys/kernel/debug/stdbool_bypassed_ngl_klg/keys` pour voir les frappes.
+3. **Consultation** : L'attaquant peut lire `/sys/kernel/debug/stdbool_bypassed_ngl_klg/keys` pour voir les frappes capturées.
 4. **Export** : Le contenu peut être envoyé à un serveur via `epikeylog_send_to_server`.
 5. **Désactivation** : Le keylogger est désactivé via `epikeylog_exit`. Cette désactivation supprime le fichier debugfs et désenregistre le notifier clavier.
-
-> **Note** : Ce keylogger fonctionne au niveau noyau, ce qui le rend difficile à détecter par des outils utilisateurs classiques.
-
 
 <img 
   src="logo_no_text.png" 

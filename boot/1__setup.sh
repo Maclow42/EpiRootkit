@@ -1,6 +1,10 @@
 #!/bin/bash
 
-BASE_DIR="vms"
+ROOT_PATH="./"
+if [ -n "$1" ]; then
+  ROOT_PATH="$1"
+fi
+BASE_DIR="$ROOT_PATH/vms"
 BRIDGE_NAME="br0"
 BRIDGE_IP="192.168.100.1/24"
 

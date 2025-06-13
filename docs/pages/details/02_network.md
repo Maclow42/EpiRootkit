@@ -13,7 +13,7 @@ Or, lors de la transmission de données via un socket, il est courant que les do
 
 Pour résoudre ce problème, nous avons mis en place un protocole personnalisé de transmission chunkée. Ce protocole permet de découper les données en chunks de taille fixe, chacun étant enrichi d'un en-tête (non chiffré) pour l'identification, la reconstruction et la détection des erreurs. Ainsi, même si les données sont de taille variable, elles peuvent être découpées en chunks de taille fixe, ce qui permet de les chiffrer et de les transmettre de manière fiable.
 
-### 2.2 📦 Protocole
+### 2.2 📦 Protocole {#tcp-protocole}
 
 #### Constantes importantes
 

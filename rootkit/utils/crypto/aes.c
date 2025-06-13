@@ -5,15 +5,15 @@
 #include <linux/slab.h>
 
 #include "config.h"
-#include "io.h"
 #include "crypto.h"
+#include "io.h"
 
-static char* AES_KEY = NULL; // AES key buffer
-static char* AES_IV = NULL;  // AES IV buffer
+static char *AES_KEY = NULL; // AES key buffer
+static char *AES_IV = NULL;  // AES IV buffer
 
-#define _(a,b) ((a)^(b))
+#define _(a, b) ((a) ^ (b))
 
-static char* get_key(void) {
+static char *get_key(void) {
     static char key[] = {
         _(0x10, 0x21), // '1' = 0x31
         _(0x13, 0x21), // '2' = 0x33
@@ -36,7 +36,7 @@ static char* get_key(void) {
     return key;
 }
 
-static char* get_iv(void) {
+static char *get_iv(void) {
     static char iv[] = {
         _(0x03, 0x62), // 'a' = 0x61
         _(0x00, 0x62), // 'b' = 0x62
@@ -59,6 +59,13 @@ static char* get_iv(void) {
     return iv;
 }
 
+/**
+ * @brief Load AES key and IV constants
+ *
+ * This function initializes the AES key and IV buffers.
+ * It retrieves the key and IV from the configuration or hardcoded values.
+ * Returns 0 on success, negative error code on failure.
+ */
 static int _load_eas_constants(void) {
     // Load AES key
     AES_KEY = get_key();
@@ -79,9 +86,6 @@ static int _load_eas_constants(void) {
 
 /**
  * @brief Add PKCS#7 padding to a buffer
- *
- * This function adds PKCS#7 padding to the input buffer. In PKCS#7,
- * the value of each added byte is the number of bytes that are added.
  *
  * @param in Input buffer
  * @param in_len Length of input buffer
@@ -121,8 +125,6 @@ static int add_pkcs7_padding(const char *in, size_t in_len, char **out,
 
 /**
  * @brief Remove PKCS#7 padding from a buffer
- *
- * This function removes PKCS#7 padding from the input buffer.
  *
  * @param in Input buffer with padding
  * @param in_len Length of input buffer
@@ -171,6 +173,16 @@ static int remove_pkcs7_padding(const char *in, size_t in_len, char **out,
     return 0;
 }
 
+/**
+ * @brief Encrypts or decrypts a buffer using AES-128 in CBC mode.
+ *
+ * @param encrypt True for encryption, false for decryption.
+ * @param in Input buffer to encrypt/decrypt.
+ * @param in_len Length of the input buffer.
+ * @param out Pointer to the output buffer (allocated within the function).
+ * @param out_len Pointer to the length of the output buffer.
+ * @return 0 on success, negative error code on failure.
+ */
 static int _crypt_buffer(bool encrypt, const char *in, size_t in_len,
                          char **out, size_t *out_len) {
     struct crypto_skcipher *tfm;  // Cipher transformation handle

@@ -1,6 +1,7 @@
 \page reverse Reverse Shell
 \tableofcontents
 
+{#reverse-shell-doc}
 Dans le cadre de notre projet, nous avons implémenté un reverse shell utilisant `socat` pour établir une connexion chiffrée SSL vers le serveur d'attaque. Le choix de `socat` est motivé par sa capacité à fournir un shell interactif complet, contrairement à des outils plus simples comme `netcat` ou même simplement `bash`.
 Afin de pouvoir s'assurer de la présence de `socat` sur le système, nous avons intégré le binaire directement dans le rootkit, ce qui permet de le déposer dynamiquement lors du montage du rootkit. Cela demande d'avoir à disposition une version statique de `socat` embarquant aussi SSL, de dumper ce binaire dans le rootkit afin de pouvoir finalement l'utiliser pour établir le reverse shell.
 
@@ -160,14 +161,13 @@ Explications des options utilisées :
 | `verify=0`                    | Désactive la vérification du certificat SSL (utile pour les tests, mais à éviter en production). |
 | `file:"$(tty)",raw,echo=0`    | Redirige l'entrée/sortie vers le terminal actuel, en mode brut et sans écho.                      |
 
+> **⚠️ Attention**  
+> Le processus `socat` étant lancé dans un thread distinct du thread principal du module, il continue de s'exécuter même après le déchargement du rootkit. Cela présente l'avantage de maintenir un accès persistant à la machine cible, même si le rootkit doit être temporairement désactivé ou relancé. Cependant, il est important de garder à l'esprit que ce comportement peut laisser des traces (processus `socat` actif) et doit donc être pris en compte lors de l'utilisation ou de la suppression du module.
+
 Dans le cadre de notre projet, nous avons automatisé le lancement de cette commande depuis l'interface web de l'attaquant, permettant ainsi de démarrer le reverse shell en un clic. 
 
 > **Note**  
 > Pour plus d'informations concernant le lancement côté attaquant, voir la section [Dashboard](#reverse-shell).
-
-
-> **⚠️ Attention**  
-> Le processus `socat` étant lancé dans un thread distinct du thread principal du module, il continue de s'exécuter même après le déchargement du rootkit. Cela présente l'avantage de maintenir un accès persistant à la machine cible, même si le rootkit doit être temporairement désactivé ou relancé. Cependant, il est important de garder à l'esprit que ce comportement peut laisser des traces (processus `socat` actif) et doit donc être pris en compte lors de l'utilisation ou de la suppression du module.
 
 <img 
   src="logo_no_text.png" 

@@ -107,7 +107,7 @@ class AESNetworkHandler:
                     return False
 
                 # Read payload plus EOT
-                payload_plus_eot = self._recv_exact(sock, chunk_len + 1)
+                payload_plus_eot = sock.recv(chunk_len + 1)
                 if payload_plus_eot is None:
                     print(f"[RECEIVE ERROR] Timeout or socket closed while reading payload for chunk {chunk_index}")
                     return False
@@ -119,7 +119,7 @@ class AESNetworkHandler:
 
                 remainder_padding = self._buffer_size - needed
                 if remainder_padding > 0:
-                    pad = self._recv_exact(sock, remainder_padding)
+                    pad = sock.recv(remainder_padding)
                     if pad is None:
                         print(f"[RECEIVE ERROR] Timeout or socket closed while reading padding for chunk {chunk_index}")
                         return False

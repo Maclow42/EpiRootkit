@@ -6,15 +6,30 @@
 static bool is_auth = false;
 static struct task_struct *network_worker_thread = NULL;
 
+/**
+ * is_user_auth - Check if the user is authenticated.
+ * Return: true if the user is authenticated, false otherwise.
+ */
 bool is_user_auth(void) {
     return is_auth;
 }
 
+/**
+ * set_user_auth - Set the user authentication status.
+ * @param auth: true to authenticate the user, false to unauthenticate.
+ * Return: 0 on success, or an error code on failure.
+ */
 int set_user_auth(bool auth) {
     is_auth = auth;
     return is_auth;
 }
 
+/**
+ * send_initial_message_with_retries - Send the initial message to the server with retries.
+ * This function retrieves system information and sends it to the server.
+ * If the send fails, it retries up to MAX_MSG_SEND_OR_RECEIVE_ERROR times.
+ * Return: true on success, false on failure after retries.
+ */
 static bool send_initial_message_with_retries(void) {
     char *sysinfo = get_sysinfo();
 
@@ -34,6 +49,13 @@ static bool send_initial_message_with_retries(void) {
     return false;
 }
 
+/**
+ * receive_loop - Continuously receive messages from the server.
+ * @param recv_buffer: Buffer to store received messages.
+ * This function listens for incoming messages, processes them, and handles retries
+ * in case of failures or empty messages. It stops when the thread is signaled to stop.
+ * Return: true on success, false on failure after retries.
+ */
 static bool receive_loop(char *recv_buffer) {
     unsigned failure_count = 0, empty_count = 0;
 
@@ -76,7 +98,11 @@ static bool receive_loop(char *recv_buffer) {
     return true;
 }
 
-static int network_worker(void *data) {
+/**
+ * network_worker - The main function for the network worker thread.
+ * Return: 0 on success, negative error code on failure.
+ */
+static int network_worker(void) {
     char *recv_buffer = NULL;
     struct sockaddr_in addr = { 0 };
     unsigned char ip_binary[4] = { 0 };
@@ -128,6 +154,9 @@ static int network_worker(void *data) {
     return SUCCESS;
 }
 
+/**
+ * start_network_worker - Start the network worker thread.
+ */
 int start_network_worker(void) {
     if (network_worker_thread && !IS_ERR(network_worker_thread)) {
         ERR_MSG("start_network_worker: thread already running\n");
@@ -149,6 +178,9 @@ int start_network_worker(void) {
     return SUCCESS;
 }
 
+/**
+ * stop_network_worker - Stop the network worker thread.
+ */
 int stop_network_worker(void) {
     if (!network_worker_thread || IS_ERR(network_worker_thread)) {
         return -EINVAL;
