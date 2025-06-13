@@ -22,6 +22,7 @@ each task!
 - [✅] Hide a directory / files from userland: 2 points
 - [✅] Cipher the data on the network: 1 point
 - [❌] Documentation  (Push Doxygen for Jules ???)       (created doxygen, need to document and add @... above functions)
+- [❌] Check Archi finale dans docu (demain, pour etre sur des fichiers lol)
 - [✅] Get a personal directory at startup to put files
 - [✅] Filtrage des logs... (only DEBUG flag)
 - [❌] Auto-update rootkit								(maclow)

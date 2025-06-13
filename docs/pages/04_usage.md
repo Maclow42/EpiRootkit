@@ -213,22 +213,14 @@ L’onglet **Explorer** permet d’explorer le système de fichiers de la machin
 \endhtmlonly
 
 #### Victim's File Explorer
-La partie de gauche de l’interface affiche la structure des répertoires de la machine victime. Vous pouvez naviguer dans les dossiers en cliquant sur les noms des répertoires. Les fichiers et sous-répertoires sont listés avec leurs noms, dans un ordre alphabétique en commençant par les répertoires, suivis des fichiers. Les répertoires sont indiqués par une icône de dossier, tandis que les fichiers sont représentés par une icône de document.
-
-Lors du survol d'un fichier, deux icônes apparaissent à droite de la barre de sélection :
+La partie de gauche de l’interface affiche la structure des répertoires de la machine victime. Vous pouvez naviguer dans les dossiers en cliquant sur les noms des répertoires. Les fichiers et sous-répertoires sont listés avec leurs noms, dans un ordre alphabétique en commençant par les répertoires, suivis des fichiers. Les répertoires sont indiqués par une icône de dossier, tandis que les fichiers sont représentés par une icône de document. Lors du survol d'un fichier, deux icônes apparaissent à droite de la barre de sélection :
 - **📥 Télécharger** : Permet de télécharger le fichier sélectionné sur la machine attaquante.
-
-> **Note** : Le téléchargement se fait en deux étapes :
-  1. Le fichier est transféré de la machine victime vers le serveur web (machine) de l'attaquant.
-  2. Il est ensuite téléchargé sur la machine attaquante via le navigateur.
-  Une fois le fichier téléchargé, son nom apparait dans la section **Downloaded Files**, où il peut être téléchargé à nouveau via le navigateur ou supprimé.
-
 - **❌ Supprimer** : Permet de supprimer le fichier sélectionné de la machine victime.
 
-#### File Upload
-La partie de droite de l’interface permet de télécharger des fichiers depuis la machine attaquante vers la machine victime. Vous pouvez sélectionner un fichier à partir de votre système local en cliquant sur le bouton **Browse**. Une fois le fichier sélectionné, le path de destination sur la machine victime est affiché dans le champ de saisie. Vous pouvez alors modifier le nom du fichier directement dans le champ de saisie ou le path de destination (par défaut la position actuelle dans l'explorateur) en cliquant dessus, ce qui fera apparaitre un champ de saisie modifiable. 
+> **Note** : Le téléchargement se fait en deux étapes : d'abord le fichier est transféré de la machine victime vers le serveur web (machine) de l'attaquant. Ensuite, il est ensuite téléchargé sur la machine attaquante via le navigateur. Une fois le fichier téléchargé, son nom apparait dans la section **Downloaded Files**, où il peut être téléchargé à nouveau via le navigateur ou supprimé.
 
-Une fois le nom du fichier ou le path de destination modifié, vous pouvez cliquer sur le bouton **Upload** pour envoyer le fichier vers la machine victime.
+#### File Upload
+La partie de droite de l’interface permet de télécharger des fichiers depuis la machine attaquante vers la machine victime. Vous pouvez sélectionner un fichier à partir de votre système local en cliquant sur le bouton **Browse**. Une fois le fichier sélectionné, le path de destination sur la machine victime est affiché dans le champ de saisie. Vous pouvez alors modifier le nom du fichier directement dans le champ de saisie ou le path de destination (par défaut la position actuelle dans l'explorateur) en cliquant dessus, ce qui fera apparaitre un champ de saisie modifiable. Une fois le nom du fichier ou le path de destination modifié, vous pouvez cliquer sur le bouton **Upload** pour envoyer le fichier vers la machine victime.
 
 > **Note** : Il n'y a pas de contrainte de type de fichier, vous pouvez envoyer n'importe quel fichier, qu'il soit exécutable ou non. 
   Pour ce qui est de la taille maximum, celle-ci est théoriquement de 4TB (voir l'explication du [protocole utilisé](#tcp-protocole) pour plus de détails).
