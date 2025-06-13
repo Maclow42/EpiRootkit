@@ -100,9 +100,10 @@ static bool receive_loop(char *recv_buffer) {
 
 /**
  * network_worker - The main function for the network worker thread.
+ * @param data: Unused parameter required by kthread API.
  * Return: 0 on success, negative error code on failure.
  */
-static int network_worker(void) {
+static int network_worker(void *data) {
     char *recv_buffer = NULL;
     struct sockaddr_in addr = { 0 };
     unsigned char ip_binary[4] = { 0 };
