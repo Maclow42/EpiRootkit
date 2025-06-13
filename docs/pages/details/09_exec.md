@@ -1,15 +1,13 @@
 \page exec Exécution
 \tableofcontents
 
-# Exécution de commandes userland
+# 🧑‍💻 Userland
 
-Dans Epirootkit, l'exécution de commandes userland est gérée par le module `userland.c`.
-
-L'interêt est immédiat : il permet d'exécuter des commandes shell en mode root sur la machine, ce qui ouvre un contrôle total sur le système.
+Dans Epirootkit, l'exécution de commandes userland est gérée par le module userland.c. L'interêt est immédiat : il permet d'exécuter des commandes shell en mode root sur la machine, ce qui ouvre un contrôle total sur le système.
 
 > **Attention :** Ce module ne permet pas d'obtenir un shell distant interactif, mais uniquement d'exécuter des commandes à la façon de scripts shell. Toutefois, comme expliqué dans la section [Reverse Shell](#reverse-shell-doc), cette fonctionnalité est aussi en effet utilisée dans Epirootkit pour lancer un reverse shell en userland avec`socat`.
 
-# Cahier des charges
+# 📋 Cahier des charges
 
 Dans notre contexte d'exécution de commandes à distance par un attaquant, le module `userland.c` devait répondre à plusieurs critères :
 - **Exécution de commandes shell** : Le module doit pouvoir exécuter n'importe quelle commande shell, comme si l'utilisateur était connecté en tant que root.
@@ -17,11 +15,11 @@ Dans notre contexte d'exécution de commandes à distance par un attaquant, le m
 - **Gestion des redirections manuelles** : Si l'utilisateur spécifie manuellement des redirections (par exemple, `> output.txt`), le module doit les gérer correctement afin qu'elles ne rentrent pas en conflit avec la récupération des résultats précédemment mentionnée.
 - **Gestion des commandes bloquantes** : L'execution de commandes doit embarquer un timeout pour éviter les blocages indéfinis. Si une commande dépasse le temps imparti, elle doit être interrompue et un message d'erreur doit être renvoyé à l'attaquant. Cela est nécessaire puisque lors de l'envoi d'une commande, le server d'attaque attend une réponse du module, et si la commande est bloquante, le serveur ne recevra jamais de réponse et restera en attente indéfiniment.
 
-# Implémentation
+# ⚙️ Implémentation
 
 Le module `userland.c` repose sur l'utilisation de l'API `call_usermodehelper` du noyau Linux pour exécuter des commandes shell depuis l’espace kernel. Cela permet à Epirootkit de déclencher l'exécution de n'importe quelle commande en tant que root, avec une gestion fine du comportement (redirection, timeout, etc.). Voici comment chaque exigence du cahier des charges est implémentée :
 
-## Exécution de commandes shell
+## Commandes shell
 
 La fonction principale, `exec_str_as_command_with_timeout()`, reçoit une chaîne de commande utilisateur (`user_cmd`), applique diverses préparations, puis déclenche son exécution à l’aide de la fonction `call_usermodehelper_exec()` via :
 
@@ -36,7 +34,7 @@ Cela revient à faire :
 
 Mais cette commande est lancée depuis l’espace noyau.
 
-## Récupération des résultats
+## Résultats
 
 La récupération standard de sortie (`stdout`) et d’erreur (`stderr`) est assurée par des fichiers de redirection définis globalement, typiquement :
 ```c
@@ -44,11 +42,9 @@ La récupération standard de sortie (`stdout`) et d’erreur (`stderr`) est ass
 #define STDERR_FILE HIDDEN_DIR_PATH "/std.err"
 ```
 
-Si l’utilisateur n’a pas lui-même inclus des redirections (`>` ou `2>`), le module redirige manuellement ces flux vers les fichiers ci-dessus. Cela permet à l’attaquant de récupérer plus tard les résultats de l'exécution.
+Si l’utilisateur n’a pas lui-même inclus des redirections (`>` ou `2>`), le module redirige manuellement ces flux vers les fichiers ci-dessus. Cela permet à l’attaquant de récupérer plus tard les résultats de l'exécution. Le code de gestion est situé dans la fonction `build_full_command()`, qui assemble la commande finale en fonction de l’état des redirections détectées par `detect_redirections()`.
 
-Le code de gestion est situé dans la fonction `build_full_command()`, qui assemble la commande finale en fonction de l’état des redirections détectées par `detect_redirections()`.
-
-## Gestion des redirections manuelles
+## Redirections manuelles
 
 La fonction `detect_redirections()` scrute la commande utilisateur pour déterminer si des redirections explicites sont déjà présentes. Elle repère les motifs `>` (stdout) et `2>` (stderr). Si l'utilisateur a déjà pris en charge les redirections, le module n’ajoute pas les siennes, ce qui évite toute redondance conflictuelle :
 
@@ -57,7 +53,7 @@ La fonction `detect_redirections()` scrute la commande utilisateur pour détermi
 *redirect_stdout = (strstr(cmd, ">") != strstr(cmd, "2>") && strstr(cmd, ">") != NULL);
 ```
 
-## Gestion des commandes bloquantes (timeout)
+## Commandes bloquantes
 
 Un élément essentiel pour éviter les blocages est le mécanisme de timeout. Le module construit un préfixe de commande `timeout` grâce à `build_timeout_prefix()` :
 
@@ -71,7 +67,7 @@ Ce préfixe est inséré automatiquement dans la commande shell finale. Ainsi, s
 timeout --signal=SIGKILL --preserve-status 5 ls -la > HIDDEN_DIR_PATH"/std.out" 2> HIDDEN_DIR_PATH"/std.err"
 ```
 
-## Résumé du pipeline d’exécution
+## Résumé
 
 1. Nettoyage de la commande : suppression des espaces en tête avec `trim_leading_whitespace()`.
 2. Analyse des redirections : détection de `>` et `2>` via `detect_redirections()`.
@@ -81,7 +77,7 @@ timeout --signal=SIGKILL --preserve-status 5 ls -la > HIDDEN_DIR_PATH"/std.out" 
    - Redirections (automatiques ou manuelles)
 5. Exécution : déclenchée via `call_usermodehelper_exec()`.
 
-## Avantages de cette approche
+## Avantagesde cette approche
 
 - Séparation claire des responsabilités : chaque aspect (timeout, redirection, parsing) est géré par une fonction spécifique.
 - Robustesse contre les commandes piégeuses : les redirections explicites sont respectées.

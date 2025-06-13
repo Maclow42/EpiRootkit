@@ -3,14 +3,14 @@
 
 Dans le contexte d'Epirootkit, le keylogger est un outil essentiel pour surveiller les frappes au clavier. Il est utilisé pour capturer les entrées de l'utilisateur, ce qui peut être utile pour détecter des pattern de frappes d'identification ou pour surveiller l'activité de l'utilisateur.
 
-## Fonctionnement technique
+## ⚙️ Fonctionnement technique
 
 Le keylogger d’Epirootkit est implémenté sous forme de module noyau Linux, utilisant le système de notification clavier (`keyboard_notifier`) et l’interface `debugfs` pour exposer les frappes capturées.
 
 ### Architecture
 
 - **Capture des frappes** :  
-  Le module s’enregistre auprès du noyau via un `notifier_block` (`epikeylog_blk`). À chaque événement clavier (appui ou relâchement), la fonction de rappel `epikeylog_callback()` est appelée.
+  Le module s’enregistre auprès du noyau via un `notifier_block` (`epikeylog_blk`). À chaque événement clavier (appui ou relâchement), la fonction de rappel epikeylog_callback() est appelée.
   ```c
   // Notifier block structure for keyboard events
   static struct notifier_block epikeylog_blk = {
