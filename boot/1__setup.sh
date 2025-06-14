@@ -30,7 +30,7 @@ fi
 # 2. Get the disk images zip for the attacker and victim VMs.
 if [ ! -f "$BASE_DIR/victim_disk.zip" ] && [ ! -f "$BASE_DIR/victim_disk.qcow2" ]; then
     echo "[DEBUG] Getting victim disk image…" 
-    wget http://109.30.250.114/victim_disk.zip -P "./$BASE_DIR"
+    wget http://109.30.250.114/victim_disk.zip -P "$BASE_DIR"
     echo "[DEBUG] victim_disk.zip complete"
 else
     echo "[DEBUG] victim_disk.zip already exists."
@@ -38,7 +38,7 @@ fi
 
 if [ ! -f "$BASE_DIR/attacker_disk.zip" ] && [ ! -f "$BASE_DIR/attacker_disk.qcow2" ]; then
     echo "[DEBUG] Getting attacker disk image…" 
-    wget http://109.30.250.114/attacker_disk.zip -P "./$BASE_DIR"
+    wget http://109.30.250.114/attacker_disk.zip -P "$BASE_DIR"
     echo "[DEBUG] attacker_disk.zip complete"
 else
     echo "[DEBUG] attacker_disk.zip already exists."
