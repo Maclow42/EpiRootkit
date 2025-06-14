@@ -45,6 +45,12 @@ stop_epirootkit:
 	ssh victim@192.168.100.3 'sudo -S rmmod epirootkit'
 
 doc:
+	@if ! command -v doxygen >/dev/null 2>&1; then \
+		echo "Doxygen not found. Installing..."; \
+		sudo apt-get update && sudo apt-get install -y doxygen; \
+	else \
+		echo "Doxygen is already installed."; \
+	fi
 	@echo "Generating documentation..."
 	@cd $(ROOT_DIR)/docs && doxygen Doxyfile > /dev/null 2>&1
 	@echo "Documentation generated successfully."
