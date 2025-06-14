@@ -24,7 +24,7 @@ update_attacker:
 
 launch_attacker:
 	@echo "Launching attacking web server..."
-	ssh attacker@192.168.100.2 'exec sudo -S python3 ~/attacker/main.py'
+	ssh attacker@192.168.100.2 'sudo sh -c "pamac install --no-confirm kitty && python3 /home/attacker/attacker/main.py"'
 
 update_victim:
 	@echo "Updating victim files..."
