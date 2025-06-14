@@ -115,7 +115,7 @@ int download(const char *command) {
 ## 4. 🗂️ Explorateur de fichiers
 
 La page `/explorer` de l’interface web permet de naviguer à distance dans le **système de fichiers de la victime**, en s’appuyant sur des commandes `ls` successives envoyées via le rootkit.  
-L’exploration n’est pas persistante : à chaque requête, une commande est envoyée au rootkit pour lister le contenu du répertoire actuel. C’est uniquement lorsqu’on utilise le **reverse shell** que l'envoi de commande devient persistant.
+L’exploration n’est pas persistante : à chaque requête, une commande est envoyée au rootkit pour lister le contenu du répertoire actuel. C’est uniquement lorsqu’on utilise le **reverse shell** que l'envoi de commandes devient persistant.
 
 Le chemin courant est maintenu côté interface (frontend) afin de reconstituer une expérience de navigation cohérente. Chaque clic sur un dossier envoie une nouvelle commande `ls <chemin>` au rootkit, qui retourne la liste des fichiers ou sous-dossiers présents à cet emplacement.
 
@@ -128,7 +128,7 @@ Un historique des tranferts successifs des fichiers est également disponible.
 
 ## 5. 🔐 Sécurité
 
-Tous les échanges réseau se font via le canal TCP déjà chiffré (AES-128 CBC).  
+Tous les échanges réseau se font via le canal TCP déjà chiffré (AES).  
 L’utilisation d’un format hexadécimal permet d’éviter les problèmes de transport binaire tout en simplifiant le traitement côté rootkit.  
 Les transferts sont atomiques : un seul fichier à la fois, avec contrôle de taille, accusé de réception et gestion mémoire stricte.
 
