@@ -53,5 +53,5 @@ Cette documentation a été générée avec Doxygen. Elle est organisée en plus
 
 | Previous                          | Next                               |
 |:----------------------------------|-----------------------------------:|
-|                                   | [Mise en place](02_install.md)      |
+|                                   | [Architecture](02_archi.md)      |
 </div>

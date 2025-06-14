@@ -28,11 +28,9 @@ sudo usermod -aG libvirt,kvm $USER
 sudo systemctl enable --now libvirtd
 ```
 
-## 2. ⚙️ Mise en place et utilisation du lab
+## 2. ⚙️ Mise en place
 
-Commencez par cloner le dépôt Git du projet, disponible à l'adresse suivante : [epita-apprentissage-wlkom-apping-2027-STDBOOL.git](epita-apprentissage-wlkom-apping-2027-STDBOOL.git).
-
-Une fois le dépôt cloné, vous trouverez l'arborescence suivante à la racine :
+Commencez par cloner le dépôt Git du projet, disponible à l'adresse suivante : [epita-apprentissage-wlkom-apping-2027-STDBOOL.git](epita-apprentissage-wlkom-apping-2027-STDBOOL.git). Une fois le dépôt cloné, vous trouverez l'arborescence suivante à la racine :
 ```
 epita-apprentissage-wlkom-apping-2027-STDBOOL
 ├── AUTHORS
@@ -47,7 +45,7 @@ epita-apprentissage-wlkom-apping-2027-STDBOOL
 
 <div class="full_width_table">
 | Élément      | Description                                                                                   |
-|--------------|----------------------------------------------------------------------------------------------|
+|:--------------|:----------------------------------------------------------------------------------------------|
 | **AUTHORS**  | Liste des auteurs du projet                                                                  |
 | **README**   | Fichier d'explications basiques du projet                                                    |
 | **TODO**     | Fichier TODO du projet, contient l'ensemble des tâches effectuées ou prévues                 |
@@ -58,25 +56,24 @@ epita-apprentissage-wlkom-apping-2027-STDBOOL
 | **Makefile** | Makefile d'installation et d'utilisation du lab                                              |
 </div>
 
-{#Makefile}
 Toutes les opérations sont centralisées dans le Makefile. Voici les principales commandes disponibles (à utiliser avec make) :
 
 <div class="full_width_table">
 | Commande                | Description                                                                                                         |
-|-------------------------|---------------------------------------------------------------------------------------------------------------------|
+|:-------------------------|:---------------------------------------------------------------------------------------------------------------------|
 | **prepare**             | Crée toutes les interfaces réseau et règles iptables nécessaires                                                    |
-| **start**               | Démarre les deux machines virtuelles du projet (une pour l'attaquant, l'autre pour la victime)                     |
+| **start**               | Démarre les deux machines virtuelles du projet (attaquante et victime)                     |
 | **update_attacker**     | Téléverse le dossier `attacker` vers la machine d'attaque                                                          |
 | **launch_attacker**     | Démarre le service web d'attaque depuis la machine d'attaque                                                       |
 | **update_victim**       | Téléverse le dossier `rootkit` vers la machine victime                                                             |
 | **launch_victim**       | Compile le code du rootkit sur la machine victime et insère le rootkit avec `insmod`                               |
 | **launch_debug_victim** | Même opération que précédemment, mais le rootkit est compilé avec le flag DEBUG                                    |
-| **stop_epirootkit**     | Tente de retirer le rootkit avec `rmmod` (uniquement si le rootkit a été compilé avec le flag DEBUG)               |
+| **stop_epirootkit**     | Tente de 'rmmod' le rootkit (uniquement si rootkit compilé avec le flag DEBUG)               |
 | **doc**                 | Génère la documentation HTML dans le dossier `docs/html`                                                           |
 | **clean**               | Nettoie l'ensemble des configurations réseau effectuées par `prepare`                                              |
 </div>
 
-## 2.1 Préparation des machines virtuelles (VMs)
+### 2.1 Préparation des VMs
 
 Afin de permettre aux VMs de communiquer entre elles, nous allons tout d'abord mettre en place la configuration réseau détaillée dans la section [Environnement](#virtual-machines). Pour cela, il suffit de se placer à la racine du projet et de lancer :
 
@@ -95,23 +92,21 @@ make start
 ```
 Le démarrage des deux machines virtuelles peut prendre un peu de temps, mais vous n'avez rien d'autre à faire que d'attendre et de siffloter le thème de *Star Wars* sur l'air de *Jurassic Park*.
 
-## 2.2 Chargement du serveur web et du rootkit
+### 2.2 Serveur web et rootkit
 
-Une fois les machines démarrées :
-
-Envoyez le code du serveur web d’attaque à la machine attaquante :
+Une fois les machines démarrées, vous pouvez envoyez le code du serveur web d’attaque à la machine attaquante avec la commande ci-dessous.
 ```bash
 make update_attacker
 ```
 
-Envoyez le code du rootkit à la machine victime :
+Puis envoyez ensuite le code du rootkit à la machine victime.
 ```bash
 make update_victim
 ```
 
-## 2.3 Démarrage de l'attaque
+### 2.3 Démarrage de l'attaque
 
-Vous pouvez finalement, dans un premier terminal, démarrer le serveur web d'attaque :
+Vous pouvez finalement, dans un premier terminal, démarrer le serveur web d'attaque.
 
 ```bash
 make launch_attacker
@@ -139,11 +134,11 @@ make launch_victim
 
 ## 3. 🔌 Connexion aux machines
 
-Voici l'ensemble des informations relatives aux deux machines virtuelles, notamment leurs identifiants de connexion :
+Voici l'ensemble des informations relatives aux deux machines virtuelles, notamment leurs identifiants de connexion.
 
 <div class="full_width_table">
 |                  | Victim             | Attacker           |
-|------------------|--------------------|--------------------|
+|------------------|:--------------------|:--------------------|
 | Username         | `victim`           | `attacker`         |
 | Password         | `victim`           | `attacker`         |
 | IP Address       | 192.168.100.3      | 192.168.100.2      |
@@ -151,27 +146,23 @@ Voici l'ensemble des informations relatives aux deux machines virtuelles, notamm
 | TAP              | `tap1`             | `tap0`             |
 </div>
 
-Ainsi, la connexion à la machine victime en SSH est par exemple possible en lançant dans un terminal :
+Ainsi, la connexion à la machine victime en SSH est par exemple possible en lançant dans un terminal la commande ci-dessous.
 ```bash
 ssh victim@192.168.100.3
 ```
-Un accès SSH peut être utile afin de lancer les commandes du [Makefile]{#Makefile} directement depuis les machines concernées.
+Un accès SSH peut être utile afin de lancer les commandes du [Makefile]{#Makefile} directement depuis les machines concernées. Voici ci-dessous les équivalents.
 
-Voici les équivalents :
-
-### machine d'attaque
-
+### Machine d'attaque
 <div class="full_width_table">
 | Action                        | Commande                                 |
-|-------------------------------|------------------------------------------|
+|:-------------------------------|:------------------------------------------|
 | Démarrer le serveur web       | `sudo python3 ~/attacker/main.py`        |
 </div>
 
-### machine victime
-
+### Machine victime
 <div class="full_width_table">
 | Action                                 | Commande                                         |
-|-----------------------------------------|--------------------------------------------------|
+|:-----------------------------------------|:--------------------------------------------------|
 | Compiler le rootkit (mode DEBUG)        | `sudo make -f ~/rootkit/Makefile debug`          |
 | Insérer le rootkit                      | `sudo insmod ~/rootkit/epirootkit.ko`            |
 | Supprimer le module du kernel           | `sudo rmmod epirootkit`                          |
@@ -196,5 +187,5 @@ Ce script vous proposera de supprimer le dossier `boot/vms/` et supprimera égal
 
 | Previous                          | Next                               |
 |:----------------------------------|-----------------------------------:|
-| [Overview](01_main.md)            | [Architecture](03_archi.md)        |
+| [Architecture](02_archi.md)            | [Utilisation](04_usage.md)        |
 </div>

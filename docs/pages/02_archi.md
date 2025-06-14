@@ -187,5 +187,5 @@ docs
 
 | Previous                          | Next                               |
 |:----------------------------------|-----------------------------------:|
-| [Mise en place](02_install.md)    | [Utilisation](04_usage.md)         |
+| [Overview](01_main.md)    | [Mise en place](03_install.md)         |
 </div>

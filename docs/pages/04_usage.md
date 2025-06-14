@@ -11,9 +11,7 @@ Dans un premier temps, nous expliquerons comment interagir avec l’interface we
 
 ### 1. Connexion {#connexion}
 
-Normalement, à ce stade, vous devriez avoir les deux machines virtuelles ouvertes, avec le serveur Python en cours d’exécution.
-
-SI vous vous rendez sur l'interface web de l'attaquant (http://192.168.100.2:5000/), vous devriez voir l'interface d'accueil du rootkit. Si le rootkit n'est pas encore connecté, vous aurez un écran similaire à celui-ci :
+Normalement, à ce stade, vous devriez avoir les deux machines virtuelles ouvertes, avec le serveur Python en cours d’exécution. Si vous vous rendez sur l'interface web de l'attaquant (http://192.168.100.2:5000/), vous devriez voir l'interface d'accueil du rootkit. Si le rootkit n'est pas encore connecté, vous aurez un écran similaire à celui-ci :
 
 \htmlonly
 <figure style="text-align: center;">
@@ -49,10 +47,7 @@ Lorsque le rootkit sera détecté puis connecté au server TCP du backend, l'int
 </figure>
 \endhtmlonly
 
-Cependant une authentification est nécessaire pour accéder à l’ensemble des fonctionnalités et contrôler la machine victime à distance. 
-
-Cliquez ensuite sur Authenticate et saisissez le mot de passe `evannounet`. 
-Après quelques instants, le tableau de bord principal de l’application devrait s’afficher :
+Cependant une authentification est nécessaire pour accéder à l’ensemble des fonctionnalités et contrôler la machine victime à distance. Cliquez ensuite sur Authenticate et saisissez le mot de passe `evannounet`. Après quelques instants, le tableau de bord principal de l’application devrait s’afficher :
 
 \htmlonly
 <figure style="text-align: center;">
@@ -928,5 +923,5 @@ Affiche la liste complète de tous les ports actuellement masqués.
 
 | Previous                          | Next                               |
 |:----------------------------------|-----------------------------------:|
-| [Architecture](03_archi.md)       |[Environnement](05_env.md)          |
+| [Mise en place](03_install.md)       |[Environnement](05_env.md)          |
 </div>
