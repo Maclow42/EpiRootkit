@@ -152,7 +152,7 @@ ssh victim@192.168.100.3
 ```
 Un accès SSH peut être utile afin de lancer les commandes du [Makefile]{#Makefile} directement depuis les machines concernées. Voici ci-dessous les équivalents.
 
-### Machine d'attaque
+### Machine d'attaque {#equivalents-attaque}
 <div class="full_width_table">
 | Action                        | Commande                                 |
 |:-------------------------------|:------------------------------------------|

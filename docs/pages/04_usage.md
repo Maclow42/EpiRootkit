@@ -9,6 +9,8 @@ Dans un premier temps, nous expliquerons comment interagir avec l’interface we
 
 ## 🌐 Interface Web
 
+> **Remarque :** L’interface web fonctionne généralement de manière fiable. Toutefois, des performances insuffisantes sur la machine d’attaque peuvent entraîner des dysfonctionnements, notamment lors de la gestion de nombreuses requêtes réseau ou d’opérations coûteuses (transfert de fichiers, exécution de commandes complexes, etc.). Cela peut se traduire par des affichages incorrects ou des erreurs lors de l’utilisation de certaines fonctionnalités. Si cela arrive, la meilleure solution est toujours de redémarrer le serveur web. Ainsi, avant de signaler un problème, assurez-vous que votre machine dispose de ressources suffisantes et relisez ce paragraphe afin d'être certain que vous l'avez bien lu et pris en considération. Merci.
+
 ### 1. Connexion {#connexion}
 
 Normalement, à ce stade, vous devriez avoir les deux machines virtuelles ouvertes, avec le serveur Python en cours d’exécution. Si vous vous rendez sur l'interface web de l'attaquant (http://192.168.100.2:5000/), vous devriez voir l'interface d'accueil du rootkit. Si le rootkit n'est pas encore connecté, vous aurez un écran similaire à celui-ci :
@@ -128,7 +130,8 @@ Une fois connecté et authentifié, le tableau de bord principal (dashboard) s�
 | **Launch Shell**    | Lance le shell distant sur le port défini.                                  |
 </div>
 
-> **Attention :** Le bouton *Launch Shell* ouvre un terminal Kitty sur la machine d'attaque. Par conséquent, le serveur web **et** le navigateur doivent être lancés dans la VM d'attaque pour que cette fonctionnalité fonctionne correctement.
+> **Attention :** Le bouton *Launch Shell* ouvre un terminal Kitty sur la machine d'attaque. Par conséquent, le serveur web **et** le navigateur doivent être lancés directement depuis la VM d'attaque pour que cette fonctionnalité fonctionne correctement (voir [équivalent des commandes](#equivalents-attaque)).
+> De plus, le bouton démarre un shell Kitty et attend quelques secondes avant d'envoyer l'instruction de connexion à la victime. Cependant, une machine hôte avec de faibles performances peut entrainer un démarrage trop long du shell, ce qui ne le rendra pas disponible à temps pour recevoir la connexion du rootkit. Dans ce cas, il est recommandé d'essayer de se déconnecter-reconnecter du rootkit afin de réessayer (oui cela peut fonctionner) ou de lancer le shell manuellement en effectuant la procédure décrite dans la section [Reverse Shell](#reverse-shell-reception).
 
 #### 💾 Disque
 
