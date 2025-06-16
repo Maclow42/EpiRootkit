@@ -556,16 +556,19 @@ Opération inverse de [`hide_module`](#hide_module). Rétablit le module précé
 </details>
 
 <details open>
-<summary id="get_file"><b>14. 📥 get_file</b></summary>
+<summary id="get_file"><b>14. 📥 download</b></summary>
 
 **Syntaxe**
-```bash
-get_file ######### TODO #########
+```bash 
+download [PATH]
 ```
 
 **Description**  
 - Permet de transférer un fichier de la machine victime vers la machine attaquante.
 - Fonctionne de manière sécurisée en utilisant le protocole TCP+SSL.
+
+**Paramètres**
+- **PATH** : Chemin absolu du fichier sur le rootkit
 
 **Fonctionnalités probables**
 - Exfiltration de données
@@ -577,12 +580,16 @@ get_file ######### TODO #########
 
 **Syntaxe**
 ```bash
-upload ######### TODO #########
+upload [PATH] [SIZE]
 ```
 
 **Description**  
 - Permet de transférer un fichier de la machine attaquante vers la machine victime.
 - Fonctionne de manière sécurisée en utilisant le protocole TCP+SSL.
+
+**Paramètres**
+- **PATH** : Chemin absolu du fichier sur la machine attaquante
+- **SIZE** : Taille du fichier en octets (lol, je ne suis pas responsable)
 
 **Fonctionnalités probables**
 - Déploiement d'outils supplémentaires

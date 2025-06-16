@@ -38,8 +38,7 @@ download("READY");
 
 ### 2.1 Interface web
 
-La partie upload du système de transfert de fichiers permet de choisir un fichier local et de spécifier son chemin cible sur la victime.  
-Une fois validé, l’interface web Flask :
+La partie upload du système de transfert de fichiers permet de choisir un fichier local et de spécifier son chemin cible sur la victime. Une fois validé, l’interface web Flask :
 - lit le fichier en mémoire,
 - prépare une commande `upload <remote_path> <size>`,
 - envoie le fichier en **chunks successifs** dès réception du mot-clé `READY` du rootkit.
@@ -75,8 +74,7 @@ int handle_upload_chunk(const char *data, size_t len, enum Protocol protocol) {
 
 ### 3.1 Interface web
 
-Le téléversement inversé (download) est déclenché depuis l’interface graphique à travers l'explorateur de fichiers.  
-Une fois lancée :
+Le téléversement inversé (download) est déclenché depuis l’interface graphique à travers l'explorateur de fichiers. Une fois lancée :
 - le rootkit envoie un message `SIZE <octets>`,
 - l’interface répond `READY`,
 - le fichier est reçu et enregistré dans un dossier sécurisé (`downloads`).
