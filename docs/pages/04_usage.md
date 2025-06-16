@@ -269,6 +269,7 @@ Voici la liste des commandes disponibles, regroupées par thème :
 | Masquage module      | <a href="#hide_module">hide_module</a> │ <a href="#unhide_module">unhide_module</a>                                                                                                                                                         |
 | Fichiers             | <a href="#get_file">get_file</a> │ <a href="#upload">upload</a>                                                                                                                                                                             |
 | Diagnostic           | <a href="#ping">ping</a>                                                                                                                                                                                                              |
+| Chiffrement          | <a href="#cipher">cipher</a> │ <a href="#uncipher">uncipher</a>                                                                                                                                                                         |
 | Hooks (général)      | <a href="#hooks-help">hooks help</a>                                                                                                                                                                                                  |
 | Hooks : fichiers     | <a href="#hooks-hide">hooks hide</a> │ <a href="#hooks-unhide">hooks unhide</a> │ <a href="#hooks-list_hide">hooks list_hide</a>                                                                                                                  |
 | Hooks : interdiction | <a href="#hooks-forbid">hooks forbid</a> │ <a href="#hooks-unforbid">hooks unforbid</a> │ <a href="#hooks-list_forbid">hooks list_forbid</a>                                                                                                      |
@@ -651,7 +652,47 @@ is_in_vm
 </details>
 
 <details open>
-<summary id="hooks"><b>18. 🪝 Hooks</b></summary>
+<summary id="cipher"><b>18. 🛡️ cipher</b></summary>
+
+**Syntaxe**
+```bash
+cipher [FILENAME]
+```
+
+**Description**
+Chiffre un fichier sur la machine victime en utilisant l'algorithme de chiffrement AES-128.
+
+**Paramètres**
+- **FILENAME** : Chemin absolu du fichier à chiffrer
+
+**Fonctionnement**
+- Utilise la clé de chiffrement stockée dans le module rootkit
+- Le fichier est chiffré en place, remplaçant le contenu original
+
+</details>
+
+<details open>
+<summary id="uncipher"><b>19. 🛡️ uncipher</b></summary>
+
+**Syntaxe**
+```bash
+uncipher [FILENAME]
+```
+
+**Description**
+Déchiffre un fichier sur la machine victime en utilisant l'algorithme AES-128.
+
+**Paramètres**
+- **FILENAME** : Chemin absolu du fichier à déchiffrer
+
+**Fonctionnement**
+- Utilise la clé de chiffrement stockée dans le module rootkit
+- Le fichier est déchiffré en place, remplaçant le contenu originalement chiffré
+
+</details>
+
+<details open>
+<summary id="hooks"><b>20. 🪝 Hooks</b></summary>
 
 **Vue d'ensemble des Hooks**
 
