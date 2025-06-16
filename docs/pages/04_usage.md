@@ -131,7 +131,7 @@ Une fois connecté et authentifié, le tableau de bord principal (dashboard) s�
 </div>
 
 > **Attention :** Le bouton *Launch Shell* ouvre un terminal Kitty sur la machine d'attaque. Par conséquent, le serveur web **et** le navigateur doivent être lancés directement depuis la VM d'attaque pour que cette fonctionnalité fonctionne correctement (voir [équivalent des commandes](#equivalents-attaque)).
-> De plus, le bouton démarre un shell Kitty et attend quelques secondes avant d'envoyer l'instruction de connexion à la victime. Cependant, une machine hôte avec de faibles performances peut entrainer un démarrage trop long du shell, ce qui ne le rendra pas disponible à temps pour recevoir la connexion du rootkit. Dans ce cas, il est recommandé d'essayer de se déconnecter-reconnecter du rootkit afin de réessayer (oui cela peut fonctionner) ou de lancer le shell manuellement en effectuant la procédure décrite dans la section [Reverse Shell](#reverse-shell-reception).
+> De plus, le bouton démarre un shell Kitty et attend 2 secondes avant d'envoyer l'instruction de connexion à la victime. Cependant, une machine hôte avec de faibles performances peut entrainer un démarrage trop long du shell, ce qui ne le rendra pas disponible à temps pour recevoir la connexion du rootkit. Dans ce cas, il est recommandé d'essayer de se déconnecter-reconnecter du rootkit afin de réessayer (oui cela peut fonctionner) ou de lancer le shell manuellement en effectuant la procédure décrite dans la section [Reverse Shell](#reverse-shell-reception).
 
 #### 💾 Disque
 
