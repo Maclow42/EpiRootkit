@@ -67,6 +67,15 @@ class AESNetworkHandler:
             print(f"[SEND ERROR] {e}")
             return False
     
+    def _recv_all(self, sock, n: int) -> bytes | None:
+        buf = b''
+        while len(buf) < n:
+            chunk = sock.recv(n - len(buf))
+            if not chunk:
+                return None
+            buf += chunk
+        return buf
+    
     """
     @brief Receives and decrypts data from a TCP socket.
     Reads encrypted data in chunks, validates headers and EOT markers, reconstructs
@@ -82,7 +91,7 @@ class AESNetworkHandler:
         try:
             while True:
                 sock.settimeout(10)
-                head = sock.recv(self._header_size)
+                head = self._recv_all(sock, self._header_size)
                 if head is None:
                     print("[RECEIVE ERROR] Timeout or socket closed before header")
                     return False
@@ -107,7 +116,7 @@ class AESNetworkHandler:
                     return False
 
                 # Read payload plus EOT
-                payload_plus_eot = sock.recv(chunk_len + 1)
+                payload_plus_eot = self._recv_all(sock, chunk_len + 1)
                 if payload_plus_eot is None:
                     print(f"[RECEIVE ERROR] Timeout or socket closed while reading payload for chunk {chunk_index}")
                     return False
@@ -119,7 +128,7 @@ class AESNetworkHandler:
 
                 remainder_padding = self._buffer_size - needed
                 if remainder_padding > 0:
-                    pad = sock.recv(remainder_padding)
+                    pad = self._recv_all(sock, remainder_padding)
                     if pad is None:
                         print(f"[RECEIVE ERROR] Timeout or socket closed while reading padding for chunk {chunk_index}")
                         return False

