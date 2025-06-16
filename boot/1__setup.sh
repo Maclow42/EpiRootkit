@@ -63,7 +63,7 @@ fi
 
 # 4. Permissions... need to test again
 chmod 777 "$BASE_DIR"
-chmod 777 "$BASE_DIR/*"
+chmod 777 "$BASE_DIR"/*
 
 # 5. Create and configure the bridge (br0).
 if ip link show "$BRIDGE_NAME" &>/dev/null; then
