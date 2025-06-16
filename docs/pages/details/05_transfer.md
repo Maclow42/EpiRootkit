@@ -1,14 +1,9 @@
-\page transfer Transfert de fichiers
+\page transfer Transfert
 \tableofcontents
 
-Le rootkit Epirootkit by Stdbool intègre un mécanisme complet de **transfert de fichiers** entre la machine attaquante (via une interface web Flask) et la machine victime (noyau).  
-Ce système permet d’exfiltrer et d’injecter des fichiers de manière rapide, simple et discrète, à l’aide d’un protocole réseau léger basé sur TCP.
-
-Deux fonctionnalités sont proposées :
+Le rootkit intègre un mécanisme complet de **transfert de fichiers** entre la machine attaquante et la machine victime. Ce système permet d’exfiltrer et d’injecter des fichiers de manière rapide, simple et discrète. L’ensemble est contrôlable en quelques clics depuis l’interface graphique. Deux fonctionnalités sont proposées :
 - *download* : exfiltration d’un fichier depuis la victime
 - *upload* : injection d’un fichier depuis l’attaquant vers la victime
-
-L’ensemble est contrôlable en quelques clics depuis l’interface graphique, sans aucune interaction manuelle avec la machine ciblée.
 
 ## 1. 🛠️ Présentation
 
@@ -39,7 +34,7 @@ download("READY");
 // => Contenu envoyé en hexadécimal
 ```
 
-## 2. 📤 Téléversement (upload)
+## 2. 📤 Téléversement
 
 ### 2.1 Interface web
 
@@ -76,7 +71,7 @@ int handle_upload_chunk(const char *data, size_t len, enum Protocol protocol) {
 }
 ```
 
-## 3. 📥 Téléchargement (download)
+## 3. 📥 Téléchargement
 
 ### 3.1 Interface web
 
@@ -114,8 +109,7 @@ int download(const char *command) {
 
 ## 4. 🗂️ Explorateur de fichiers
 
-La page `/explorer` de l’interface web permet de naviguer à distance dans le **système de fichiers de la victime**, en s’appuyant sur des commandes `ls` successives envoyées via le rootkit.  
-L’exploration n’est pas persistante : à chaque requête, une commande est envoyée au rootkit pour lister le contenu du répertoire actuel. C’est uniquement lorsqu’on utilise le **reverse shell** que l'envoi de commandes devient persistant.
+La page `/explorer` de l’interface web permet de naviguer à distance dans le **système de fichiers de la victime**, en s’appuyant sur des commandes `ls` successives envoyées via le rootkit. L’exploration n’est pas persistante : à chaque requête, une commande est envoyée au rootkit pour lister le contenu du répertoire actuel. C’est uniquement lorsqu’on utilise le **reverse shell** que l'envoi de commandes devient persistant.
 
 Le chemin courant est maintenu côté interface (frontend) afin de reconstituer une expérience de navigation cohérente. Chaque clic sur un dossier envoie une nouvelle commande `ls <chemin>` au rootkit, qui retourne la liste des fichiers ou sous-dossiers présents à cet emplacement.
 
@@ -128,9 +122,7 @@ Un historique des tranferts successifs des fichiers est également disponible.
 
 ## 5. 🔐 Sécurité
 
-Tous les échanges réseau se font via le canal TCP déjà chiffré (AES).  
-L’utilisation d’un format hexadécimal permet d’éviter les problèmes de transport binaire tout en simplifiant le traitement côté rootkit.  
-Les transferts sont atomiques : un seul fichier à la fois, avec contrôle de taille, accusé de réception et gestion mémoire stricte.
+Tous les échanges réseau se font via le canal TCP déjà chiffré (AES). L’utilisation d’un format hexadécimal permet d’éviter les problèmes de transport binaire tout en simplifiant le traitement côté rootkit. Les transferts sont atomiques : un seul fichier à la fois, avec contrôle de taille, accusé de réception et gestion mémoire stricte.
 
 ## 6. 💡 Pistes d’amélioration
 

@@ -61,13 +61,14 @@ class TCPServer:
         req = Request(message, add_to_history=False)
         self._send_queue.put(req)
         req.event.wait(timeout=10)
-
+        """
         if req.response is None or req.response is False:
             print("[TCP SERVER] Failed to send command or no response received.")
             # Empty sending queue
             self._send_queue.queue.clear()
             print("[TCP SERVER] Sending queue cleared due to error.")
             return None
+        """
 
         return req.response
 
@@ -75,7 +76,7 @@ class TCPServer:
         req = Request(message, add_to_history=True)
         self._send_queue.put(req)
         req.event.wait(timeout=10)
-
+        """
         if req.response is None or req.response is False:
             print("[TCP SERVER] Failed to send command or no response received.")
             # Empty sending queue
@@ -83,6 +84,7 @@ class TCPServer:
             self._send_queue.queue.clear()
             print("[TCP SERVER] Sending queue cleared due to error.")
             return None
+        """
 
         return req.response
 
