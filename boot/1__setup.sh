@@ -63,7 +63,7 @@ fi
 
 # 4. Permissions... need to test again
 chmod 777 "$BASE_DIR"
-chmod 777 "$BASE_DIR/*
+chmod 777 "$BASE_DIR/*"
 
 # 5. Create and configure the bridge (br0).
 if ip link show "$BRIDGE_NAME" &>/dev/null; then
@@ -123,8 +123,8 @@ ip link set tap1 up
 
 echo "================================================="
 echo "Project Directory   : $BASE_DIR"
-echo "Attacker Disk Image : victim_disk.qcow2 (10G)"
-echo "Victim Disk Image   : attacker_disk.qcow2 (10G)"
+echo "Attacker Disk Image : attacker_disk.qcow2 (10G)"
+echo "Victim Disk Image   : victim_disk.qcow2 (10G)"
 echo "Bridge              : $BRIDGE_NAME with IP $BRIDGE_IP"
 echo "TAP Interface       : tap0, tap1 attached to $BRIDGE_NAME"
 echo "================================================="
