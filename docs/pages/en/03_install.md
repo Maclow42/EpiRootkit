@@ -5,7 +5,8 @@
 ## 1. 📋 Prerequisites
 
 - Download the Git repository (otherwise, we'll quickly run into issues...)
-- Computer running Ubuntu 24.10 with QEMU/KVM and virtualization enabled
+- Computer running **Ubuntu 24.10** (tested and recommended) with QEMU/KVM and virtualization enabled
+- **Two QEMU VMs prepared in advance** (see section 2.1)
 - Choupa Chups lollipops
 - A bit of good mood, it always does good!
 
@@ -75,15 +76,84 @@ All operations are centralized in the Makefile. Here are the main available comm
 
 ### 2.1 VM Preparation
 
-To allow VMs to communicate with each other, we'll first set up the network configuration detailed in the [Environment](#virtual-machines) section. To do this, simply go to the project root and run:
+#### Creating Virtual Machines
+
+**Important**: You must prepare two QEMU virtual machines in advance. The project has been tested with **Ubuntu 24.10**.
+
+**Minimum VM specifications:**
+- **OS**: A Linux 6 kernel based distribution (tested on Ubuntu 24.10)
+- **Disk format**: QCOW2
+- **RAM**: 2GB minimum (4GB recommended)
+- **Disk size**: 10GB minimum
+
+**Required VM files:**
+You need to create two QEMU disk images and place them in the `boot/vms/` directory:
+- `attacker_disk.qcow2` - Attacker VM disk
+- `victim_disk.qcow2` - Victim VM disk
+
+**Network configuration inside VMs:**
+Both VMs must be configured with static IP addresses:
+- **Attacker VM**: 
+  - IP: 192.168.100.2/24
+  - Gateway: 192.168.100.1
+  - MAC: 52:54:00:AA:BB:CC
+- **Victim VM**:
+  - IP: 192.168.100.3/24
+  - Gateway: 192.168.100.1
+  - MAC: 52:54:00:DD:EE:FF
+
+To configure static IPs on Ubuntu 24.10, edit `/etc/netplan/01-netcfg.yaml`:
+
+**Attacker VM** (`/etc/netplan/01-netcfg.yaml`):
+```yaml
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    ens3:
+      addresses:
+        - 192.168.100.2/24
+      routes:
+        - to: default
+          via: 192.168.100.1
+      nameservers:
+        addresses: [8.8.8.8, 8.8.4.4]
+```
+
+**Victim VM** (`/etc/netplan/01-netcfg.yaml`):
+```yaml
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    ens3:
+      addresses:
+        - 192.168.100.3/24
+      routes:
+        - to: default
+          via: 192.168.100.1
+      nameservers:
+        addresses: [8.8.8.8, 8.8.4.4]
+```
+
+Apply the configuration with:
+```bash
+sudo netplan apply
+```
+
+#### Network Setup
+
+Once your VMs are ready and placed in `boot/vms/`, set up the network configuration by running:
 
 ```bash
 make prepare
 ```
 
-Since this script modifies your network configuration, it will ask for your root password.
-
-> **Note**: If this is the first installation, the script will also download the disks for both VMs, which may take some time.
+Since this script modifies your network configuration, it will ask for your root password. The script will:
+- Verify that VM disk images exist in `boot/vms/`
+- Create a Linux bridge (br0) with IP 192.168.100.1/24
+- Create TAP interfaces (tap0, tap1) for both VMs
+- Configure iptables rules for network forwarding
 
 Once this is done, you can perform the first machine boot by running:
 

@@ -18,6 +18,27 @@ fi
 echo "================================================="
 echo "            Privileged Setup Phase               "
 echo "================================================="
+echo ""
+echo "IMPORTANT: You must prepare QEMU VMs in advance!"
+echo ""
+echo "Required VM specifications:"
+echo "  - OS: A Linux 6 kernel based distribution (tested on Ubuntu 24.10)"
+echo "  - Disk format: QCOW2"
+echo "  - Minimum specs:"
+echo "    * RAM: 2GB (4GB recommended)"
+echo "    * Disk: 10GB minimum"
+echo ""
+echo "Required files in '$BASE_DIR':"
+echo "  - attacker_disk.qcow2 (Attacker VM disk)"
+echo "  - victim_disk.qcow2 (Victim VM disk)"
+echo ""
+echo "Network configuration:"
+echo "  - Bridge: br0 (192.168.100.1/24)"
+echo "  - Attacker IP: 192.168.100.2"
+echo "  - Victim IP: 192.168.100.3"
+echo ""
+echo "================================================="
+echo ""
 
 # 1. Create the project directory.
 if [ ! -d "$BASE_DIR" ]; then
@@ -27,45 +48,30 @@ else
     echo "[DEBUG] Project directory already exists at $BASE_DIR."
 fi
 
-# 2. Get the disk images zip for the attacker and victim VMs.
-if [ ! -f "$BASE_DIR/victim_disk.zip" ] && [ ! -f "$BASE_DIR/victim_disk.qcow2" ]; then
-    echo "[DEBUG] Getting victim disk image…" 
-    wget http://109.30.250.114/victim_disk.zip -P "$BASE_DIR"
-    echo "[DEBUG] victim_disk.zip complete"
-else
-    echo "[DEBUG] victim_disk.zip already exists."
-fi
-
-if [ ! -f "$BASE_DIR/attacker_disk.zip" ] && [ ! -f "$BASE_DIR/attacker_disk.qcow2" ]; then
-    echo "[DEBUG] Getting attacker disk image…" 
-    wget http://109.30.250.114/attacker_disk.zip -P "$BASE_DIR"
-    echo "[DEBUG] attacker_disk.zip complete"
-else
-    echo "[DEBUG] attacker_disk.zip already exists."
-fi
-
-# 3. Unzip the disk images.
+# 2. Check if VM disk images exist
 if [ ! -f "$BASE_DIR/victim_disk.qcow2" ]; then
-    echo "[DEBUG] Unzipping victim disk image…" 
-    unzip -o "$BASE_DIR/victim_disk.zip" -d "$BASE_DIR" || { echo "[ERROR] Error unzipping victim disk image."; exit 1; }
-    rm -f "$BASE_DIR/victim_disk.zip"
-else
-    echo "[DEBUG] Victim disk image already unzipped."
+    echo "[ERROR] victim_disk.qcow2 not found in $BASE_DIR!"
+    echo "[ERROR] Please create or place your victim VM disk image in this directory."
+    echo "[ERROR] The VM should be running Ubuntu 24.10 with static IP 192.168.100.3"
+    exit 1
 fi
 
 if [ ! -f "$BASE_DIR/attacker_disk.qcow2" ]; then
-    echo "[DEBUG] Unzipping attacker disk image…" 
-    unzip -o "$BASE_DIR/attacker_disk.zip" -d "$BASE_DIR" || { echo "[ERROR] Error unzipping attacker disk image."; exit 1; }
-    rm -f "$BASE_DIR/attacker_disk.zip"
-else
-    echo "[DEBUG] Attacker disk image already unzipped."
+    echo "[ERROR] attacker_disk.qcow2 not found in $BASE_DIR!"
+    echo "[ERROR] Please create or place your attacker VM disk image in this directory."
+    echo "[ERROR] The VM should be running Ubuntu 24.10 with static IP 192.168.100.2"
+    exit 1
 fi
 
-# 4. Permissions... need to test again
-chmod 777 "$BASE_DIR"
-chmod 777 "$BASE_DIR"/*
+echo "[DEBUG] VM disk images found:"
+echo "  - $BASE_DIR/victim_disk.qcow2"
+echo "  - $BASE_DIR/attacker_disk.qcow2"
 
-# 5. Create and configure the bridge (br0).
+# 3. Set permissions
+chmod 777 "$BASE_DIR"
+chmod 666 "$BASE_DIR"/*.qcow2
+
+# 4. Create and configure the bridge (br0).
 if ip link show "$BRIDGE_NAME" &>/dev/null; then
     echo "[DEBUG] Bridge $BRIDGE_NAME already exists."
 else
@@ -77,7 +83,7 @@ fi
 ip link set "$BRIDGE_NAME" up
 echo "[DEBUG] Bridge $BRIDGE_NAME is up."
 
-# 6. Set up iptables rules to allow traffic on the bridge.
+# 5. Set up iptables rules to allow traffic on the bridge.
 echo "[DEBUG] Setting up iptables rules..."
 iptables -A INPUT -i br0 -p tcp --dport 4242 -j ACCEPT
 iptables -I INPUT  -p udp --dport 53 -j ACCEPT
@@ -96,7 +102,7 @@ iptables -A FORWARD -i "$IFACE" -o br0 -m state --state RELATED,ESTABLISHED -j A
 iptables -A FORWARD -i br0 -o "$IFACE" -j ACCEPT
 iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o "$IFACE" -j MASQUERADE
 
-# 7. Create TAP interface tap0 for the attacker VM if it does not exist.
+# 6. Create TAP interface tap0 for the attacker VM if it does not exist.
 if ip link show tap0 &>/dev/null; then
     echo "[DEBUG] TAP interface tap0 already exists."
 else
@@ -104,7 +110,7 @@ else
     ip tuntap add dev tap0 mode tap || { echo "[ERROR] Error creating TAP interface tap0."; exit 1; }
 fi
 
-# 8. Create TAP interface tap1 for the victim VM if it does not exist.
+# 7. Create TAP interface tap1 for the victim VM if it does not exist.
 if ip link show tap1 &>/dev/null; then
     echo "[DEBUG] TAP interface tap1 already exists."
 else
@@ -112,12 +118,12 @@ else
     ip tuntap add dev tap1 mode tap || { echo "[ERROR] Error creating TAP interface tap1."; exit 1; }
 fi
 
-# 9. Attach both TAP interfaces to the bridge.
+# 8. Attach both TAP interfaces to the bridge.
 echo "[DEBUG] Attaching tap0/1 to bridge $BRIDGE_NAME..."
 ip link set tap0 master "$BRIDGE_NAME"
 ip link set tap1 master "$BRIDGE_NAME"
 
-# 10. Bring up the TAP interfaces.
+# 9. Bring up the TAP interfaces.
 ip link set tap0 up
 ip link set tap1 up
 

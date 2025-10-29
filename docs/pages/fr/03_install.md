@@ -5,7 +5,8 @@
 ## 1. 📋 Prérequis
 
 - Téléchargement du dépôt Git (sinon, on risque d'être rapidement embêtés...)
-- Ordinateur sous Ubuntu 24.10 avec QEMU/KVM et virtualisation activée
+- Ordinateur sous **Ubuntu 24.10** (testé et recommandé) avec QEMU/KVM et virtualisation activée
+- **Deux VMs QEMU préparées à l'avance** (voir section 2.1)
 - Des sucettes Choupa Choups
 - Un peu de bonne humeur, ça fait toujours du bien !
 
@@ -75,15 +76,84 @@ Toutes les opérations sont centralisées dans le Makefile. Voici les principale
 
 ### 2.1 Préparation des VMs
 
-Afin de permettre aux VMs de communiquer entre elles, nous allons tout d'abord mettre en place la configuration réseau détaillée dans la section [Environnement](#virtual-machines). Pour cela, il suffit de se placer à la racine du projet et de lancer :
+#### Création des machines virtuelles
+
+**Important** : Vous devez préparer deux machines virtuelles QEMU à l'avance. Le projet a été testé avec **Ubuntu 24.10**.
+
+**Spécifications minimales des VMs :**
+- **OS** : Distribution Linux basée sur le noyau 6 (testé sur Ubuntu 24.10)
+- **Format de disque** : QCOW2
+- **RAM** : 2GB minimum (4GB recommandé)
+- **Taille de disque** : 10GB minimum
+
+**Fichiers requis :**
+Vous devez créer deux images disque QEMU et les placer dans le répertoire `boot/vms/` :
+- `attacker_disk.qcow2` - Disque de la VM attaquante
+- `victim_disk.qcow2` - Disque de la VM victime
+
+**Configuration réseau dans les VMs :**
+Les deux VMs doivent être configurées avec des adresses IP statiques :
+- **VM Attaquante** :
+  - IP : 192.168.100.2/24
+  - Passerelle : 192.168.100.1
+  - MAC : 52:54:00:AA:BB:CC
+- **VM Victime** :
+  - IP : 192.168.100.3/24
+  - Passerelle : 192.168.100.1
+  - MAC : 52:54:00:DD:EE:FF
+
+Pour configurer les IPs statiques sur Ubuntu 24.10, éditez `/etc/netplan/01-netcfg.yaml` :
+
+**VM Attaquante** (`/etc/netplan/01-netcfg.yaml`) :
+```yaml
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    ens3:
+      addresses:
+        - 192.168.100.2/24
+      routes:
+        - to: default
+          via: 192.168.100.1
+      nameservers:
+        addresses: [8.8.8.8, 8.8.4.4]
+```
+
+**VM Victime** (`/etc/netplan/01-netcfg.yaml`) :
+```yaml
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    ens3:
+      addresses:
+        - 192.168.100.3/24
+      routes:
+        - to: default
+          via: 192.168.100.1
+      nameservers:
+        addresses: [8.8.8.8, 8.8.4.4]
+```
+
+Appliquez la configuration avec :
+```bash
+sudo netplan apply
+```
+
+#### Configuration réseau
+
+Une fois vos VMs prêtes et placées dans `boot/vms/`, mettez en place la configuration réseau en lançant :
 
 ```bash
 make prepare
 ```
 
-Étant donné que ce script modifie votre configuration réseau, il vous demandera votre mot de passe root.
-
-> **Note** : S'il s'agit de la première installation, le script va aussi télécharger les disques des deux VMs, ce qui peut prendre un peu de temps.
+Étant donné que ce script modifie votre configuration réseau, il vous demandera votre mot de passe root. Le script va :
+- Vérifier que les images disque des VMs existent dans `boot/vms/`
+- Créer un pont Linux (br0) avec l'IP 192.168.100.1/24
+- Créer des interfaces TAP (tap0, tap1) pour les deux VMs
+- Configurer les règles iptables pour le forwarding réseau
 
 Une fois ceci effectué, vous pouvez effectuer le premier démarrage des machines en lançant :
 
