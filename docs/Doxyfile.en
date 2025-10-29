@@ -1,0 +1,71 @@
+#---------------------------------------------------------------------------
+# Project Metadata
+#---------------------------------------------------------------------------
+PROJECT_NAME           = "EpiRootkit"
+PROJECT_BRIEF          = "By STDBOOL"
+PROJECT_LOGO           = img/logo_no_text.png
+OUTPUT_DIRECTORY       = html/en
+CREATE_SUBDIRS         = YES
+MARKDOWN_SUPPORT       = YES
+USE_MDFILE_AS_MAINPAGE = pages/en/01_main.md
+
+#---------------------------------------------------------------------------
+# Input
+#---------------------------------------------------------------------------
+RECURSIVE              = YES
+IMAGE_PATH             = img
+INPUT                  = ../rootkit                                        \
+                         ../attacker                                       \
+                         pages/en
+
+#---------------------------------------------------------------------------
+# Build configuration
+#---------------------------------------------------------------------------
+FILE_PATTERNS          = *.c *.h *.md *.py *.sh
+EXTENSION_MAPPING      = py=Python
+EXTRACT_ALL            = YES
+EXTRACT_STATIC         = YES
+EXTRACT_PRIVATE        = YES
+HIDE_SCOPE_NAMES       = YES
+EXTRACT_LOCAL_METHODS  = YES
+HIDE_UNDOC_MEMBERS     = NO
+HIDE_UNDOC_CLASSES     = YES
+HIDE_UNDOC_NAMESPACES  = YES
+GENERATE_LATEX         = NO
+GENERATE_HTML          = YES
+GENERATE_MAN           = NO
+FULL_SIDEBAR           = NO
+DISABLE_INDEX          = NO
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = YES
+SHOW_NAMESPACES        = NO 
+ALPHABETICAL_INDEX     = NO
+MACRO_EXPANSION = YES
+
+#---------------------------------------------------------------------------
+# Graphs
+#---------------------------------------------------------------------------
+HAVE_DOT               = YES
+DOT_GRAPH_MAX_NODES    = 100
+INTERACTIVE_SVG        = YES
+DOT_IMAGE_FORMAT       = svg
+FULL_PATH_NAMES        = NO
+
+#---------------------------------------------------------------------------
+# HTML options
+#---------------------------------------------------------------------------
+GENERATE_TREEVIEW      = YES
+HTML_HEADER            = layout/en/header.html
+HTML_FOOTER            = layout/en/footer.html
+HTML_STYLESHEET        = 
+HTML_EXTRA_STYLESHEET  = css/doxygen-awesome.css
+HTML_COLORSTYLE        = LIGHT
+HTML_EXTRA_FILES       = ext/doxygen-awesome-interactive-toc.js            \
+                         ext/doxygen-awesome-darkmode-toggle.js
+                         
+
+#---------------------------------------------------------------------------
+# Misc
+#---------------------------------------------------------------------------
+QUIET                  = YES
+WARNINGS               = YES

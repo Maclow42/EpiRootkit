@@ -36,5 +36,5 @@ The team is composed of three students from EPITA:
 =============================================================
 
 Simply run `make doc` to generate the documentation. Then, 
-open it using Firefox with `firefox ./docs/html/index.html`.
+open it using Firefox with `firefox ./docs/html/en/html/index.html`.
 Enjoy !

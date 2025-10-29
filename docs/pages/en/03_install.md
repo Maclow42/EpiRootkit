@@ -1,0 +1,191 @@
+# Setup
+
+\tableofcontents
+
+## 1. 📋 Prerequisites
+
+- Download the Git repository (otherwise, we'll quickly run into issues...)
+- Computer running Ubuntu 24.10 with QEMU/KVM and virtualization enabled
+- Choupa Chups lollipops
+- A bit of good mood, it always does good!
+
+### Virtualization
+
+Here's a quick guide to install QEMU/KVM on Ubuntu 24.10 and enable virtualization. First, enable virtualization in your BIOS. Then update the package list.
+```bash
+sudo apt update
+```
+
+Then install QEMU, KVM, and Libvirt (optional: `virt-manager` for a GUI) as shown below. 
+```bash
+sudo apt install -y qemu-kvm libvirt-daemon-system libvirt-clients
+sudo apt install -y bridge-utils build-essential linux-headers-$(uname -r)
+```
+
+Add your user to the groups, then log out/log in for the change to take effect. Then enable and start the libvirt service.
+```bash
+sudo usermod -aG libvirt,kvm $USER
+sudo systemctl enable --now libvirtd
+```
+
+## 2. ⚙️ Setup
+
+Start by cloning the project's Git repository, available at the following address: [epita-apprentissage-wlkom-apping-2027-STDBOOL.git](epita-apprentissage-wlkom-apping-2027-STDBOOL.git). Once the repository is cloned, you'll find the following structure at the root:
+```
+epita-apprentissage-wlkom-apping-2027-STDBOOL
+├── AUTHORS
+├── README
+├── TODO
+├── boot
+├── attacker
+├── rootkit
+├── docs
+└── Makefile
+```
+
+<div class="full_width_table">
+| Element      | Description                                                                                   |
+|:--------------|:----------------------------------------------------------------------------------------------|
+| **AUTHORS**  | List of project authors                                                                       |
+| **README**   | Basic project explanation file                                                                |
+| **TODO**     | Project TODO file, contains all completed or planned tasks                                    |
+| **boot**     | Folder containing virtual machine setup scripts                                               |
+| **attacker** | Folder containing all web service used by the attacker                                        |
+| **rootkit**  | Folder containing all rootkit code                                                            |
+| **docs**     | Folder containing this documentation in markdown and HTML format                              |
+| **Makefile** | Lab installation and usage Makefile                                                           |
+</div>
+
+All operations are centralized in the Makefile. Here are the main available commands (to use with make):
+
+<div class="full_width_table">
+| Command                | Description                                                                                                         |
+|:-------------------------|:---------------------------------------------------------------------------------------------------------------------|
+| **prepare**             | Creates all necessary network interfaces and iptables rules                                                          |
+| **start**               | Starts the two project virtual machines (attacker and victim)                                                        |
+| **update_attacker**     | Uploads the `attacker` folder to the attack machine                                                                  |
+| **launch_attacker**     | Starts the attack web service from the attack machine                                                                |
+| **update_victim**       | Uploads the `rootkit` folder to the victim machine                                                                   |
+| **launch_victim**       | Compiles the rootkit code on the victim machine and inserts the rootkit with `insmod`                               |
+| **launch_debug_victim** | Same operation as previous, but rootkit is compiled with the DEBUG flag                                              |
+| **stop_epirootkit**     | Attempts to 'rmmod' the rootkit (only if rootkit compiled with DEBUG flag)                                          |
+| **doc**                 | Generates HTML documentation in the `docs/html` folder                                                              |
+| **clean**               | Cleans all network configurations made by `prepare`                                                                 |
+</div>
+
+### 2.1 VM Preparation
+
+To allow VMs to communicate with each other, we'll first set up the network configuration detailed in the [Environment](#virtual-machines) section. To do this, simply go to the project root and run:
+
+```bash
+make prepare
+```
+
+Since this script modifies your network configuration, it will ask for your root password.
+
+> **Note**: If this is the first installation, the script will also download the disks for both VMs, which may take some time.
+
+Once this is done, you can perform the first machine boot by running:
+
+```bash
+make start
+```
+Starting both virtual machines may take some time, but you don't have to do anything other than wait and whistle the *Star Wars* theme to the tune of *Jurassic Park*.
+
+### 2.2 Web Server and Rootkit
+
+Once the machines are started, you can send the attack web server code to the attacking machine with the command below.
+```bash
+make update_attacker
+```
+
+Then send the rootkit code to the victim machine.
+```bash
+make update_victim
+```
+
+### 2.3 Starting the Attack
+
+You can finally, in a first terminal, start the attack web server.
+
+```bash
+make launch_attacker
+```
+
+It will then be accessible at [http://192.168.100.2:5000](http://192.168.100.2:5000), both from the attack machine and from the host. To access it, simply open a browser like firefox (present by default on the attack VM) and enter the mentioned address in the search bar.
+
+> **Note**: As mentioned in the [Reverse Shell](#reverse-shell) section, it is necessary to access the web service directly from the attack machine if you want to benefit from the reverse shell.
+
+For the victim machine, you can use a second terminal to compile and insert the rootkit. Two modes are available:
+- DEBUG mode: the rootkit will produce logs visible from the victim machine's journals and will not be invisible by default (it can therefore be removed with `rmmod`). This mode is launched with:
+
+```bash
+make launch_debug_victim
+``` 
+
+- normal mode: the rootkit produces no logs and is invisible by default:
+
+```bash
+make launch_victim
+```
+
+> **Note**: If the rootkit is launched in DEBUG mode, you can then deactivate it by running `make stop_epirootkit`, which will remove it from the victim machine with `rmmod`.
+
+
+## 3. 🔌 Connecting to Machines
+
+Here is all the information related to both virtual machines, including their login credentials.
+
+<div class="full_width_table">
+|                  | Victim             | Attacker           |
+|------------------|:--------------------|:--------------------|
+| Username         | `victim`           | `attacker`         |
+| Password         | `victim`           | `attacker`         |
+| IP Address       | 192.168.100.3      | 192.168.100.2      |
+| MAC Address      | 52:54:00:DD:EE:FF  | 52:54:00:AA:BB:CC  |
+| TAP              | `tap1`             | `tap0`             |
+</div>
+
+Thus, SSH connection to the victim machine is for example possible by running in a terminal the command below.
+```bash
+ssh victim@192.168.100.3
+```
+SSH access can be useful to run [Makefile]{#Makefile} commands directly from the concerned machines. Here are the equivalents below.
+
+### Attack Machine {#equivalents-attack}
+<div class="full_width_table">
+| Action                        | Command                                  |
+|:-------------------------------|:------------------------------------------|
+| Start web server              | `sudo python3 ~/attacker/main.py`        |
+</div>
+
+### Victim Machine
+<div class="full_width_table">
+| Action                                 | Command                                         |
+|:-----------------------------------------|:--------------------------------------------------|
+| Compile rootkit (DEBUG mode)           | `sudo make -f ~/rootkit/Makefile debug`          |
+| Insert rootkit                         | `sudo insmod ~/rootkit/epirootkit.ko`            |
+| Remove module from kernel              | `sudo rmmod epirootkit`                          |
+</div>
+
+## 4. 🧹 Cleanup
+
+To clean the environment after use, please `make clean`. 
+This script will offer to delete the `boot/vms/` folder and will also remove TAP interfaces and the network bridge.
+
+<img 
+  src="logo_no_text.png" 
+  style="
+    display: block;
+    margin: 100px auto;
+    width: 30%;
+    overflow: hidden;
+  "
+/>
+
+<div class="section_buttons">
+
+| Previous                          | Next                               |
+|:----------------------------------|-----------------------------------:|
+| [Architecture](02_archi.md)            | [Usage](04_usage.md)        |
+</div>

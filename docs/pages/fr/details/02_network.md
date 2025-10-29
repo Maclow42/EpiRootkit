@@ -2,6 +2,10 @@
 \tableofcontents
 
 ## 1. 🌐 Introduction
+Le rootkit implémente deux canaux de communication réseau principaux entre la machine attaquante et la machine victime :
+- Un canal **TCP** chiffré pour l’échange de commandes et de données.
+- Un canal **DNS** furtif pour l’envoi de commandes et la réception de résultats via des requêtes DNS.
+Ces deux canaux utilisent le chiffrement AES-128 pour sécuriser les données échangées. Le canal TCP est le canal principal, tandis que le canal DNS est utilisé comme méthode de communication de secours ou furtive.
 
 ## 2. 🤝 TCP
 

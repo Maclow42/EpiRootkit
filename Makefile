@@ -44,18 +44,39 @@ stop_epirootkit:
 	@echo "Trying to rmmod epirootkit... (available only if rootkit has been launched in debug mode)"
 	ssh victim@192.168.100.3 'sudo -S rmmod epirootkit'
 
-doc:
+doc: doc-en doc-fr
+	@echo "Documentation generated!"
+	@echo "English documentation available at docs/html/index.html"
+	@echo ""
+	@echo "To view the french documentation, open 'file://$(ROOT_DIR)/docs/html/fr/html/index.html' in your web browser."
+	@echo ""
+	@echo "To view the english documentation, open 'file://$(ROOT_DIR)/docs/html/en/html/index.html' in your web browser."
+
+doc-fr:
 	@if ! command -v doxygen >/dev/null 2>&1; then \
 		echo "Doxygen not found. Installing..."; \
 		sudo apt-get update && sudo apt-get install -y doxygen; \
 	else \
 		echo "Doxygen is already installed."; \
 	fi
-	@echo "Generating documentation..."
-	@cd $(ROOT_DIR)/docs && doxygen Doxyfile > /dev/null 2>&1
-	@echo "Documentation generated successfully."
-	@echo "You can find the documentation in the 'docs/html' directory."
-	@echo "To view the documentation, open 'file://$(ROOT_DIR)/docs/html/index.html' in your web browser."
+	@echo "Generating French documentation..."
+	@mkdir -p $(ROOT_DIR)/docs/html/fr
+	@cd $(ROOT_DIR)/docs && doxygen Doxyfile.fr
+	@cp -r $(ROOT_DIR)/docs/img $(ROOT_DIR)/docs/html/fr/ 2>/dev/null || true
+	@echo "French documentation generated successfully at docs/html/fr/html/index.html"
+
+doc-en:
+	@if ! command -v doxygen >/dev/null 2>&1; then \
+		echo "Doxygen not found. Installing..."; \
+		sudo apt-get update && sudo apt-get install -y doxygen; \
+	else \
+		echo "Doxygen is already installed."; \
+	fi
+	@echo "Generating English documentation..."
+	@mkdir -p $(ROOT_DIR)/docs/html/en
+	@cd $(ROOT_DIR)/docs && doxygen Doxyfile.en
+	@cp -r $(ROOT_DIR)/docs/img $(ROOT_DIR)/docs/html/en/ 2>/dev/null || true
+	@echo "English documentation generated successfully at docs/html/en/html/index.html"
 
 clean:
 	@echo "Cleaning up..."
@@ -67,4 +88,4 @@ clean:
 	@$(BOOT_DIR)/3__clean.sh $(BOOT_DIR)
 	@echo "Cleanup completed."
 	
-.PHONY: prepare start update_attacker launch_attacker update_victim launch_victim launch_debug_victim stop_epirootkit doc clean
+.PHONY: prepare start update_attacker launch_attacker update_victim launch_victim launch_debug_victim stop_epirootkit doc doc-fr doc-en clean

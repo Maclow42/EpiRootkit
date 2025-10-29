@@ -6,7 +6,7 @@
 
 - Téléchargement du dépôt Git (sinon, on risque d'être rapidement embêtés...)
 - Ordinateur sous Ubuntu 24.10 avec QEMU/KVM et virtualisation activée
-- Des sucettes Choupa Choups à disposer dans le bureau de Laurence.C afin qu'Evann puisse se servir
+- Des sucettes Choupa Choups
 - Un peu de bonne humeur, ça fait toujours du bien !
 
 ### Virtualisation
