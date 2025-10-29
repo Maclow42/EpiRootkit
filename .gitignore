@@ -13,7 +13,6 @@
 *.mod*
 *.ko
 rootkit/include/socat.h
-docs/html/*
 rootkit/socat.h
 __pycache__
 *.pyc

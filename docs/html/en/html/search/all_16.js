@@ -1,0 +1,28 @@
+var searchData=
+[
+  ['passwd_2ec_0',['passwd.c',['../de/d9a/passwd_8c.html',1,'']]],
+  ['passwd_2eh_1',['passwd.h',['../d5/d8e/passwd_8h.html',1,'']]],
+  ['passwd_5fcfg_5ffile_2',['PASSWD_CFG_FILE',['../db/d16/config_8h.html#a23ab7b7cfc6f6a6e689a4e413a9e5f4d',1,'config.h']]],
+  ['passwd_5fhash_5fsize_3',['PASSWD_HASH_SIZE',['../d5/d8e/passwd_8h.html#ad9b38e418113e77b30cbc532b3d5e8f3',1,'passwd.h']]],
+  ['passwd_5fload_4',['passwd_load',['../de/d9a/passwd_8c.html#a70a77a68f7fc072b15d93aa677216ed5',1,'passwd_load(void):&#160;passwd.c'],['../d5/d8e/passwd_8h.html#a70a77a68f7fc072b15d93aa677216ed5',1,'passwd_load(void):&#160;passwd.c']]],
+  ['passwd_5fset_5',['passwd_set',['../de/d9a/passwd_8c.html#aaf47e7a3849ed6f25adba557e1ab7462',1,'passwd_set(const char *new_password):&#160;passwd.c'],['../d5/d8e/passwd_8h.html#aaf47e7a3849ed6f25adba557e1ab7462',1,'passwd_set(const char *new_password):&#160;passwd.c']]],
+  ['passwd_5fverify_6',['passwd_verify',['../de/d9a/passwd_8c.html#acc0aaa97cddae59a2e4cf39e2b64dbe9',1,'passwd_verify(const char *password):&#160;passwd.c'],['../d5/d8e/passwd_8h.html#acc0aaa97cddae59a2e4cf39e2b64dbe9',1,'passwd_verify(const char *password):&#160;passwd.c']]],
+  ['password_20management_7',['Password Management',['../df/d99/password.html',1,'details']]],
+  ['password_20storage_8',['Password Storage',['../df/d99/password.html#autotoc_md69',1,'']]],
+  ['path_9',['path',['../db/d66/structforbidden__file.html#a44196e6a5696d10442c29e639437196e',1,'forbidden_file']]],
+  ['path_5fis_5fforbidden_10',['path_is_forbidden',['../d2/de7/forbid_8h.html#a20a0d663d324e1eda8a4dfe2265123bc',1,'forbid.h']]],
+  ['payload_11',['payload',['../dd/de6/reverse.html#autotoc_md70',1,'Loading socat into the module as payload'],['../d9/de3/structulist__item.html#a18f141cb2726073503afb9f1d6c85efb',1,'ulist_item::payload']]],
+  ['persistence_12',['Persistence',['../df/d95/persist.html',1,'details']]],
+  ['ping_5fhandler_13',['ping_handler',['../da/d32/cmd_8c.html#a90ade51438f0f8dc0759e920e621e8dd',1,'cmd.c']]],
+  ['port_14',['port',['../db/d16/config_8h.html#a63c89c04d1feae07ca35558055155ffb',1,'port:&#160;main.c'],['../d0/d29/main_8c.html#a63c89c04d1feae07ca35558055155ffb',1,'port:&#160;main.c'],['../d6/d7f/namespaceconfig.html#a78dc8eaa9905715367e9beb76bf4b5f7',1,'config.PORT']]],
+  ['port_5fcontains_15',['port_contains',['../d3/da8/hide__api_8h.html#a4142ebbb31991d3aae43ac6c26ea1318',1,'port_contains(const char *port):&#160;hide_api.c'],['../d6/dee/hide__api_8c.html#a4142ebbb31991d3aae43ac6c26ea1318',1,'port_contains(const char *port):&#160;hide_api.c']]],
+  ['port_5flist_5fget_16',['port_list_get',['../d6/dee/hide__api_8c.html#a5a3244673b55665a6128a2f187c75da3',1,'port_list_get(char *buf, size_t buf_size):&#160;hide_api.c'],['../d3/da8/hide__api_8h.html#a5a3244673b55665a6128a2f187c75da3',1,'port_list_get(char *buf, size_t buf_size):&#160;hide_api.c']]],
+  ['pos_17',['pos',['../d6/d3e/structkeylog__buffer.html#a5438a597ee291f523ae04a9fe355924f',1,'keylog_buffer']]],
+  ['preparation_18',['2.1 VM Preparation',['../d2/d6d/md_pages_2en_203__install.html#autotoc_md14',1,'']]],
+  ['prepare_5fdbgfs_19',['prepare_dbgfs',['../d9/dea/epikeylog_8c.html#a02f8cbdd34335171bced4d09e1747046',1,'epikeylog.c']]],
+  ['prerequisites_20',['1. 📋 Prerequisites',['../d2/d6d/md_pages_2en_203__install.html#autotoc_md11',1,'']]],
+  ['prev_5fmodule_21',['prev_module',['../d7/d09/ghost_8c.html#a33b4e731337ab9aae717ba42d0fc1814',1,'ghost.c']]],
+  ['process_22',['2. 🚀 Boot Process',['../df/d95/persist.html#autotoc_md54',1,'']]],
+  ['protocol_23',['protocol',['../d5/dc4/network.html#tcp-protocol',1,'2.2 📦 Protocol'],['../db/d16/config_8h.html#aac39b55be6469395f55ff0292ad8184c',1,'Protocol:&#160;config.h']]],
+  ['ptrace_5fhook_24',['ptrace_hook',['../dc/dfc/forbid_8c.html#a4d8022ad39aebdfd012d36f86728f834',1,'ptrace_hook(struct pt_regs *regs):&#160;forbid.c'],['../d2/de7/forbid_8h.html#a4d8022ad39aebdfd012d36f86728f834',1,'ptrace_hook(struct pt_regs *regs):&#160;forbid.c']]]
+];

@@ -1,0 +1,28 @@
+var api_8py =
+[
+    [ "api_change_directory", "d8/d07/api_8py.html#a040dbfce6015082345678d549398501a", null ],
+    [ "api_get_current_directory", "d8/d07/api_8py.html#aee51e8dd5097564d947b7b65a5d43b15", null ],
+    [ "api_list_remote_files", "d8/d07/api_8py.html#a2a6a204c4ba02e7563f664cf56a83e02", null ],
+    [ "api_remove_file", "d8/d07/api_8py.html#aa218c58c5eda1412082f3f13ed1eb957", null ],
+    [ "clientInfo", "d8/d07/api_8py.html#a5f68a8d1a1bc3749402d1a4d5a35d953", null ],
+    [ "connect_command", "d8/d07/api_8py.html#a890abc6558c9480a1c3251a513b986bd", null ],
+    [ "cpu_ram_command", "d8/d07/api_8py.html#a194ee6bc56e271f47c81fc389b94c50c", null ],
+    [ "delete_downloaded_file", "d8/d07/api_8py.html#a12c18513f9a77e260949b6e75a2cd95b", null ],
+    [ "disconnect_command", "d8/d07/api_8py.html#ae7e5108c5e921d51d0c6aa92f22a0d02", null ],
+    [ "diskusage_command", "d8/d07/api_8py.html#aa51da412b7cd04fb3b723a75dfe526f9", null ],
+    [ "download_downloaded_file", "d8/d07/api_8py.html#a5966f229cb97bade0c00e524d5390502", null ],
+    [ "download_remote", "d8/d07/api_8py.html#af3915ede66fe5bfe13f1d8eb30efb0e0", null ],
+    [ "exec_command", "d8/d07/api_8py.html#ae3443a2c8ea4a0566b6294b655f45a21", null ],
+    [ "get_downloaded_files", "d8/d07/api_8py.html#ae1fbc509a04a69b9af20732d1a1f9a8c", null ],
+    [ "get_history", "d8/d07/api_8py.html#a80657477b9c1015910c11a328e9bcb22", null ],
+    [ "getClientInfos", "d8/d07/api_8py.html#a68db25b94d427f6f9332c2f3a08ed6e0", null ],
+    [ "getshell", "d8/d07/api_8py.html#a83becc042f1bcdfd366a6519336327d1", null ],
+    [ "handle_command", "d8/d07/api_8py.html#a7537ee1cd9a142301e62198e53cc5588", null ],
+    [ "killcom_command", "d8/d07/api_8py.html#a759304e40dffd5d26b9422444d4e1341", null ],
+    [ "klg_command", "d8/d07/api_8py.html#a95b71eae0ef55742b22aa1f74af8fadd", null ],
+    [ "klgoff_command", "d8/d07/api_8py.html#a20c6757d1c330f58da48c67c6c7f9432", null ],
+    [ "klgon_command", "d8/d07/api_8py.html#a81c6f1882384f94d2b7867afb5f3974c", null ],
+    [ "send", "d8/d07/api_8py.html#a12bcef5130168b80d3d52dc82213f19a", null ],
+    [ "sysinfo_command", "d8/d07/api_8py.html#a338869bca6fea4c76d2f9a9c23c5819a", null ],
+    [ "upload", "d8/d07/api_8py.html#a160ae63d11b56d3190b172facb43a343", null ]
+];
