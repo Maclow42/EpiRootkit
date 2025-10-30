@@ -18,7 +18,7 @@ Normalement, à ce stade, vous devriez avoir les deux machines virtuelles ouvert
 \htmlonly
 <figure style="text-align: center;">
   <img 
-    src="../../../img/disconnected.png" 
+    src="../../img/disconnected.png" 
     style="
       margin: 30px 0px 0px;
       border-radius: 8px; 
@@ -36,7 +36,7 @@ Lorsque le rootkit sera détecté puis connecté au server TCP du backend, l'int
 \htmlonly
 <figure style="text-align: center;">
   <img 
-    src="../../../img/connect.png" 
+    src="../../img/connect.png" 
     style="
       margin: 30px 0px 0px;
       border-radius: 8px; 
@@ -54,7 +54,7 @@ Cependant une authentification est nécessaire pour accéder à l’ensemble des
 \htmlonly
 <figure style="text-align: center;">
   <img 
-    src="../../../img/authent.png" 
+    src="../../img/authent.png" 
     style="
       margin: 30px 0px 0px;
       border-radius: 8px; 
@@ -74,7 +74,7 @@ Cependant une authentification est nécessaire pour accéder à l’ensemble des
 \htmlonly
 <figure style="text-align: center;">
   <img 
-    src="../../../img/dash.png" 
+    src="../../img/dash.png" 
     style="
       margin: 30px 0px 0px;
       border-radius: 8px; 
@@ -153,7 +153,7 @@ L’onglet **Terminal** permet de prendre le contrôle de la machine cible à di
 \htmlonly
 <figure style="text-align: center;">
   <img 
-    src="../../../img/terminal.png" 
+    src="../../img/terminal.png" 
     style="
       margin: 30px 0px 0px;
       border-radius: 8px; 
@@ -197,7 +197,7 @@ L’onglet **Explorer** permet d’explorer le système de fichiers de la machin
 \htmlonly
 <figure style="text-align: center;">
   <img 
-    src="../../../img/explorer.png" 
+    src="../../img/explorer.png" 
     style="
       margin: 30px 0px 0px;
       border-radius: 8px; 
@@ -234,7 +234,7 @@ L’onglet **Keylogger** permet de récupérer les frappes clavier effectuées s
 \htmlonly
 <figure style="text-align: center;">
   <img 
-    src="../../../img/keylogger.png" 
+    src="../../img/keylogger.png" 
     style="
       margin: 30px 0px 0px;
       border-radius: 8px; 

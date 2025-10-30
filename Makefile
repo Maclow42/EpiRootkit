@@ -60,10 +60,10 @@ doc-fr:
 		echo "Doxygen is already installed."; \
 	fi
 	@echo "Generating French documentation..."
-	@mkdir -p $(ROOT_DIR)/docs/html/fr
+	@mkdir -p $(ROOT_DIR)/docs/build/fr
 	@cd $(ROOT_DIR)/docs && doxygen Doxyfile.fr
-	@cp -r $(ROOT_DIR)/docs/img $(ROOT_DIR)/docs/html/fr/ 2>/dev/null || true
-	@echo "French documentation generated successfully at docs/html/fr/html/index.html"
+	@cp -r $(ROOT_DIR)/docs/img $(ROOT_DIR)/docs/build/fr/html 2>/dev/null || true
+	@echo "French documentation generated successfully at docs/build/fr/html/index.html"
 
 doc-en:
 	@if ! command -v doxygen >/dev/null 2>&1; then \
@@ -73,10 +73,10 @@ doc-en:
 		echo "Doxygen is already installed."; \
 	fi
 	@echo "Generating English documentation..."
-	@mkdir -p $(ROOT_DIR)/docs/html/en
+	@mkdir -p $(ROOT_DIR)/docs/build/en
 	@cd $(ROOT_DIR)/docs && doxygen Doxyfile.en
-	@cp -r $(ROOT_DIR)/docs/img $(ROOT_DIR)/docs/html/en/ 2>/dev/null || true
-	@echo "English documentation generated successfully at docs/html/en/html/index.html"
+	@cp -r $(ROOT_DIR)/docs/img $(ROOT_DIR)/docs/build/en/html 2>/dev/null || true
+	@echo "English documentation generated successfully at docs/build/en/html/index.html"
 
 clean:
 	@echo "Cleaning up..."

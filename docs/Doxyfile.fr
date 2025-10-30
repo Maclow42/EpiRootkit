@@ -4,7 +4,7 @@
 PROJECT_NAME           = "EpiRootkit"
 PROJECT_BRIEF          = "Par STDBOOL"
 PROJECT_LOGO           = img/logo_no_text.png
-OUTPUT_DIRECTORY       = html/fr
+OUTPUT_DIRECTORY       = build/fr
 CREATE_SUBDIRS         = YES
 MARKDOWN_SUPPORT       = YES
 USE_MDFILE_AS_MAINPAGE = pages/fr/01_main.md

@@ -4,7 +4,7 @@
 
 \htmlonly
 <img 
-  src="../img/logo_white.png" 
+  src="img/logo_white.png" 
   style="
     display: block;
     border-radius: 8px; 
