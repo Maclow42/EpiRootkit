@@ -81,7 +81,7 @@ doc-en:
 clean:
 	@echo "Cleaning up..."
 	@echo "Removing generated documentation..."
-	@rm -rf $(ROOT_DIR)/docs/html
+	@rm -rf $(ROOT_DIR)/docs/build
 	@echo "Cleaning network interfaces..."
 	@cd $(BOOT_DIR)
 	@chmod +x $(BOOT_DIR)/3__clean.sh
